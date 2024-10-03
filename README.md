@@ -49,7 +49,7 @@ Moving forward, I do not have any particular plans regarding ChatApp's developme
 <img width="1000" alt="Login Screen" src="https://github.com/Koukobin/ChatApp/blob/master/Images/login-screen.png"/>
 
 ### Create Account Screen
-<img width="1137" height="648" alt="Create Account screen" src="https://github.com/Koukobin/ChatApp/blob/master/Images/create_account-screen.png"/>
+<img width="1000" alt="Create Account screen" src="https://github.com/Koukobin/ChatApp/blob/master/Images/create_account-screen.png"/>
 
 ### Messaging Interface
 <img width="1000" alt="Messaging Interface" src="https://github.com/Koukobin/ChatApp/blob/master/Images/messaging-interface.png"/>
