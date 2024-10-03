@@ -1,0 +1,10 @@
+[Unit]
+
+[Service]
+User=root
+WorkingDirectory=/srv/ChatApp-Server/
+ExecStart=/bin/bash -c 'cd /srv/ChatApp-Server/ && ./ChatApp-Server.sh'
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

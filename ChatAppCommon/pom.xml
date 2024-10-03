@@ -1,0 +1,45 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>github.chatapp.common</groupId>
+	<artifactId>chatapp.common</artifactId>
+	<version>1.0</version>
+	<name>ChatAppCommon</name>
+	<packaging>jar</packaging>
+
+	<licenses>
+		<license>
+			<name>GNU Affero General Public Licence, Version 3.0</name>
+			<url>https://www.gnu.org/licenses/agpl-3.0.en.html</url>
+		</license>
+	</licenses>
+	<inceptionYear>2023</inceptionYear>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-codec</artifactId>
+			<version>4.1.84.Final</version>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+
+		<sourceDirectory>src</sourceDirectory>
+
+		<plugins>
+
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.1</version>
+				<configuration>
+					<release>17</release>
+				</configuration>
+			</plugin>
+
+		</plugins>
+
+	</build>
+
+</project>

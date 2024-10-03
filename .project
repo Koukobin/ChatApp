@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>ChatApp</name>
+	<comment></comment>
+	<projects>
+		<project>ChatAppClient</project>
+		<project>ChatAppCommon</project>
+		<project>ChatAppServer</project>
+		<project>Installers</project>
+	</projects>
+	<buildSpec>
+	</buildSpec>
+	<natures>
+	</natures>
+</projectDescription>
