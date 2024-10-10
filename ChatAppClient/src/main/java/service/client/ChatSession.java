@@ -143,7 +143,6 @@ public class ChatSession {
 		return haveChatMessagesBeenCached;
 	}
 
-
 	@Override
 	public int hashCode() {
 		return Objects.hash(chatSessionID, chatSessionIndex);
@@ -171,7 +170,7 @@ public class ChatSession {
 				&& Objects.equals(members, other.members) 
 				&& Objects.equals(messages, other.messages);
 	}
-
+	
 	@Override
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(", ");

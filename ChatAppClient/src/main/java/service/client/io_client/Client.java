@@ -40,7 +40,6 @@ import javax.net.ssl.X509TrustManager;
 
 import org.chatapp.commons.entry.EntryType;
 import org.chatapp.commons.entry.LoginInfo;
-import org.chatapp.commons.entry.LoginInfo.Action;
 import org.chatapp.commons.entry.Verification;
 import org.chatapp.commons.EnumIntConverter;
 import org.chatapp.commons.ResultHolder;

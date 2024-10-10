@@ -579,8 +579,8 @@ final class MessageHadler extends ParentHandler {
 
 						payload.writeInt(chatSessionID);
 
-						payload.writeInt(membersClientIDS.size());
-
+						// The one that is subtracted is attributed to the user inquring this command
+						payload.writeInt(membersClientIDS.size() - 1);
 						try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
 							for (int j = 0; j < membersClientIDS.size(); j++) {
 
@@ -588,6 +588,11 @@ final class MessageHadler extends ParentHandler {
 								byte[] usernameBytes;
 
 								ClientInfo clientInfo = clientIDSToActiveClients.get(clientID);
+								
+								if (this.clientInfo.equals(clientInfo)) {
+									continue;
+								}
+								
 								if (clientInfo == null) {
 									usernameBytes = conn.getUsername(clientID).getBytes();
 								} else {

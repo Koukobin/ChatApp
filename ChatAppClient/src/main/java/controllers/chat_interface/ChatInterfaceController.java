@@ -470,7 +470,7 @@ public class ChatInterfaceController implements Initializable {
 							return;
 						}
 
-						if (e.getButton() == MouseButton.PRIMARY) {
+						if (e.getButton() == MouseButton.PRIMARY /* Left Click */) {
 
 							ChatSession chatSession = (ChatSession) cell.getItem();
 
@@ -487,7 +487,7 @@ public class ChatInterfaceController implements Initializable {
 									chatBox.getChildren().add(createClientMessageLabel(messages.get(i)));
 								}
 							}
-						} else if (e.getButton() == MouseButton.SECONDARY) {
+						} else if (e.getButton() == MouseButton.SECONDARY /* Right Click */) {
 
 							final ContextMenu contextMenu = new ContextMenu();
 							MenuItem delete = new MenuItem("Delete");

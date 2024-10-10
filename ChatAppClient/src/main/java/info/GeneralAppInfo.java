@@ -31,7 +31,7 @@ public final class GeneralAppInfo {
 	public static final String TITLE = GENERAL_NAME + "-Client";
 
 	public static final Image MAIN_ICON;
-	public static final File LICENCE;
+	public static final File LICENSE;
 
 	public static final String CLIENT_DATABASE_PATH;
 	public static final String CLIENT_INFO_PATH;
@@ -42,7 +42,7 @@ public final class GeneralAppInfo {
 		String appInstallationFolder;
 
 		if (SystemUtils.IS_OS_WINDOWS) {
-			appInstallationFolder = System.getProperty("user.home") + "\\AppData\\Local\\Programs\\";
+			appInstallationFolder = "C:\\Program Files (x86)\\";
 		} else if (SystemUtils.IS_OS_LINUX) {
 			appInstallationFolder = "/opt/";
 		} else {
@@ -52,10 +52,10 @@ public final class GeneralAppInfo {
 		appInstallationFolder = appInstallationFolder + TITLE + File.separator;
 		
 		String mainIconPath = "file:" + appInstallationFolder + "icons" + File.separator + TITLE + ".png";
-		String licencePath = appInstallationFolder + "LICENCE.txt";
+		String licensePath = appInstallationFolder + "LICENSE.txt";
 		
 		MAIN_ICON = new Image(mainIconPath);
-		LICENCE = new File(licencePath);
+		LICENSE = new File(licensePath);
 		
 		String appInfoFolder = appInstallationFolder + "info" + File.separator;
 		

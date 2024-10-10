@@ -16,12 +16,9 @@
 package main.java.application;
 
 import java.io.IOException;
-import java.util.Optional;
 
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
-
-import org.chatapp.commons.util.FileEditor;
 
 import javafx.animation.Interpolator;
 import javafx.animation.ScaleTransition;
@@ -30,18 +27,14 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import javafx.scene.paint.Color;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import main.java.application.starting_screen.StartingScreenInterface;
 import main.java.controllers.chat_interface.ChatInterfaceController;
-import main.java.info.AppInfo;
 import main.java.info.GeneralAppInfo;
 import main.java.info.chat_interface.ChatInterfaceInfo;
-import main.java.util.dialogs.Dialogs;
 
 /**
  * @author Ilias Koukovinis
@@ -54,31 +47,15 @@ public class Main extends Application {
 	}
 
 	@Override
-	public void start(Stage primaryStage) throws LineUnavailableException, UnsupportedAudioFileException {
-		try {
-			System.setProperty("prism.lcdtext", "false");
+	public void start(Stage primaryStage) throws IOException {
+		System.setProperty("prism.lcdtext", "false"); // Disable LCD anti-aliasing to improve text clarity
 
-			if (!Boolean.parseBoolean(AppInfo.Key.HAS_AGREED_TO_LICENCE_AGREEMENT.value())) {
+		// Show the starting screen and wait for it to close
+		StartingScreenInterface startingScreen = new StartingScreenInterface();
+		startingScreen.showAndWait();
 
-				Alert confirmationDialog = Dialogs.createConfirmationDialog("Do you agree to the licence agreement?",
-						FileEditor.readFile(GeneralAppInfo.LICENCE), ButtonType.YES, ButtonType.NO);
-
-				Optional<ButtonType> result = confirmationDialog.showAndWait();
-
-				if (!result.isPresent() || result.get() == ButtonType.NO) {
-					return;
-				}
-
-				AppInfo.Key.HAS_AGREED_TO_LICENCE_AGREEMENT.replaceValue(String.valueOf(true));
-			}
-
-			StartingScreenInterface startingScreen = new StartingScreenInterface();
-			startingScreen.showAndWait();
-
-			startChatInterface(primaryStage);
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-		}
+		// Start the chat interface
+		startChatInterface(primaryStage);
 	}
 	
 	private void startChatInterface(Stage primaryStage) throws IOException {

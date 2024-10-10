@@ -10,7 +10,7 @@ For contribution guidelines, please refer to the main ChatApp README file.
 
 ## Authors
 
-* Ilias Koukovinis (2023) [ilias.koukovinis@gmail.com]*
+* Ilias Koukovinis (2023) [ilias.koukovinis@gmail.com]
 
 ## License
 

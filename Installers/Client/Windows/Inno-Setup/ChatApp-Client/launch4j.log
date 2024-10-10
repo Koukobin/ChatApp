@@ -1,0 +1,299 @@
+
+
+Version:	3.50
+CmdLine:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe --l4j-debug
+JNI:		No
+WOW64:		Yes
+Working dir:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\.
+Requires JDK:	No
+Requires 64-Bit: No
+Java min ver:	1.017.000
+Java max ver:	
+JRE paths:	jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\java
+Check launcher:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\java\bin\javaw.exe (not found)
+64-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8
+Version string: 1.008.000 / 64-Bit (Ignore)
+Ignore:		1.008.000
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8.0_361
+Version string: 1.008.000_361 / 64-Bit (Ignore)
+Ignore:		1.008.000_361
+32-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+64-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+32-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+64-bit search:	SOFTWARE\JavaSoft\JRE...
+32-bit search:	SOFTWARE\JavaSoft\JRE...
+64-bit search:	SOFTWARE\JavaSoft\JDK...
+Check:		SOFTWARE\JavaSoft\JDK\17.0.6
+Version string: 1.017.000_006 / 64-Bit (OK)
+Check launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe (OK)
+Match:		1.017.000_006
+Runtime used:	1.017.000_006 (64-bit)
+Launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe
+Launcher args:	-client --add-opens java.base/java.lang=ALL-UNNAMED -XX:+UseZGC -XX:+ShrinkHeapInSteps -XX:MinHeapFreeRatio=2 -XX:MaxHeapFreeRatio=5 -Dfile.encoding=UTF-8 -jar "C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe"
+Args length:	230/32768 chars
+Exit code:	0
+
+
+Version:	3.50
+CmdLine:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe --l4j-debug
+JNI:		No
+WOW64:		Yes
+Working dir:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\.
+Requires JDK:	No
+Requires 64-Bit: No
+Java min ver:	1.017.000
+Java max ver:	
+JRE paths:	jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\java
+Check launcher:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\java\bin\javaw.exe (not found)
+64-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8
+Version string: 1.008.000 / 64-Bit (Ignore)
+Ignore:		1.008.000
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8.0_361
+Version string: 1.008.000_361 / 64-Bit (Ignore)
+Ignore:		1.008.000_361
+32-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+64-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+32-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+64-bit search:	SOFTWARE\JavaSoft\JRE...
+32-bit search:	SOFTWARE\JavaSoft\JRE...
+64-bit search:	SOFTWARE\JavaSoft\JDK...
+Check:		SOFTWARE\JavaSoft\JDK\17.0.6
+Version string: 1.017.000_006 / 64-Bit (OK)
+Check launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe (OK)
+Match:		1.017.000_006
+Runtime used:	1.017.000_006 (64-bit)
+Launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe
+Launcher args:	-client --add-opens java.base/java.lang=ALL-UNNAMED -XX:+UseZGC -XX:+ShrinkHeapInSteps -XX:MinHeapFreeRatio=2 -XX:MaxHeapFreeRatio=5 -Dfile.encoding=UTF-8 -jar "C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe"
+Args length:	230/32768 chars
+Exit code:	0
+
+
+Version:	3.50
+CmdLine:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe --l4j-debug
+JNI:		No
+WOW64:		Yes
+Working dir:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\.
+Requires JDK:	No
+Requires 64-Bit: No
+Java min ver:	1.017.000
+Java max ver:	
+JRE paths:	jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\java
+Check launcher:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\java\bin\javaw.exe (not found)
+64-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8
+Version string: 1.008.000 / 64-Bit (Ignore)
+Ignore:		1.008.000
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8.0_361
+Version string: 1.008.000_361 / 64-Bit (Ignore)
+Ignore:		1.008.000_361
+32-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+64-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+32-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+64-bit search:	SOFTWARE\JavaSoft\JRE...
+32-bit search:	SOFTWARE\JavaSoft\JRE...
+64-bit search:	SOFTWARE\JavaSoft\JDK...
+Check:		SOFTWARE\JavaSoft\JDK\17.0.6
+Version string: 1.017.000_006 / 64-Bit (OK)
+Check launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe (OK)
+Match:		1.017.000_006
+Runtime used:	1.017.000_006 (64-bit)
+Launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe
+Launcher args:	-client --add-opens java.base/java.lang=ALL-UNNAMED -XX:+UseZGC -XX:+ShrinkHeapInSteps -XX:MinHeapFreeRatio=2 -XX:MaxHeapFreeRatio=5 -Dfile.encoding=UTF-8 -jar "C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe"
+Args length:	230/32768 chars
+Exit code:	0
+
+
+Version:	3.50
+CmdLine:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe --l4j-debug
+JNI:		No
+WOW64:		Yes
+Working dir:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\.
+Requires JDK:	No
+Requires 64-Bit: No
+Java min ver:	1.017.000
+Java max ver:	
+JRE paths:	jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\java
+Check launcher:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\java\bin\javaw.exe (not found)
+64-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8
+Version string: 1.008.000 / 64-Bit (Ignore)
+Ignore:		1.008.000
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8.0_361
+Version string: 1.008.000_361 / 64-Bit (Ignore)
+Ignore:		1.008.000_361
+32-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+64-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+32-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+64-bit search:	SOFTWARE\JavaSoft\JRE...
+32-bit search:	SOFTWARE\JavaSoft\JRE...
+64-bit search:	SOFTWARE\JavaSoft\JDK...
+Check:		SOFTWARE\JavaSoft\JDK\17.0.6
+Version string: 1.017.000_006 / 64-Bit (OK)
+Check launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe (OK)
+Match:		1.017.000_006
+Runtime used:	1.017.000_006 (64-bit)
+Launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe
+Launcher args:	-client --add-opens java.base/java.lang=ALL-UNNAMED -XX:+UseZGC -XX:+ShrinkHeapInSteps -XX:MinHeapFreeRatio=2 -XX:MaxHeapFreeRatio=5 -Dfile.encoding=UTF-8 -jar "C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe"
+Args length:	230/32768 chars
+Exit code:	0
+
+
+Version:	3.50
+CmdLine:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe --l4j-debug
+JNI:		No
+WOW64:		Yes
+Working dir:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\.
+Requires JDK:	No
+Requires 64-Bit: No
+Java min ver:	1.017.000
+Java max ver:	
+JRE paths:	jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\java
+Check launcher:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\java\bin\javaw.exe (not found)
+64-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8
+Version string: 1.008.000 / 64-Bit (Ignore)
+Ignore:		1.008.000
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8.0_361
+Version string: 1.008.000_361 / 64-Bit (Ignore)
+Ignore:		1.008.000_361
+32-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+64-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+32-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+64-bit search:	SOFTWARE\JavaSoft\JRE...
+32-bit search:	SOFTWARE\JavaSoft\JRE...
+64-bit search:	SOFTWARE\JavaSoft\JDK...
+Check:		SOFTWARE\JavaSoft\JDK\17.0.6
+Version string: 1.017.000_006 / 64-Bit (OK)
+Check launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe (OK)
+Match:		1.017.000_006
+Runtime used:	1.017.000_006 (64-bit)
+Launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe
+Launcher args:	-client --add-opens java.base/java.lang=ALL-UNNAMED -XX:+UseZGC -XX:+ShrinkHeapInSteps -XX:MinHeapFreeRatio=2 -XX:MaxHeapFreeRatio=5 -Dfile.encoding=UTF-8 -jar "C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe"
+Args length:	230/32768 chars
+Exit code:	0
+
+
+Version:	3.50
+CmdLine:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe --l4j-debug
+JNI:		No
+WOW64:		Yes
+Working dir:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\.
+Requires JDK:	No
+Requires 64-Bit: No
+Java min ver:	1.017.000
+Java max ver:	
+JRE paths:	jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\java
+Check launcher:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\java\bin\javaw.exe (not found)
+64-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8
+Version string: 1.008.000 / 64-Bit (Ignore)
+Ignore:		1.008.000
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8.0_361
+Version string: 1.008.000_361 / 64-Bit (Ignore)
+Ignore:		1.008.000_361
+32-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+64-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+32-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+64-bit search:	SOFTWARE\JavaSoft\JRE...
+32-bit search:	SOFTWARE\JavaSoft\JRE...
+64-bit search:	SOFTWARE\JavaSoft\JDK...
+Check:		SOFTWARE\JavaSoft\JDK\17.0.6
+Version string: 1.017.000_006 / 64-Bit (OK)
+Check launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe (OK)
+Match:		1.017.000_006
+Runtime used:	1.017.000_006 (64-bit)
+Launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe
+Launcher args:	-client --add-opens java.base/java.lang=ALL-UNNAMED -XX:+UseZGC -XX:+ShrinkHeapInSteps -XX:MinHeapFreeRatio=2 -XX:MaxHeapFreeRatio=5 -Dfile.encoding=UTF-8 -jar "C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe"
+Args length:	230/32768 chars
+Exit code:	0
+
+
+Version:	3.50
+CmdLine:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe --l4j-debug
+JNI:		No
+WOW64:		Yes
+Working dir:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\.
+Requires JDK:	No
+Requires 64-Bit: No
+Java min ver:	1.017.000
+Java max ver:	
+JRE paths:	jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\java
+Check launcher:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\java\bin\javaw.exe (not found)
+64-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8
+Version string: 1.008.000 / 64-Bit (Ignore)
+Ignore:		1.008.000
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8.0_361
+Version string: 1.008.000_361 / 64-Bit (Ignore)
+Ignore:		1.008.000_361
+32-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+64-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+32-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+64-bit search:	SOFTWARE\JavaSoft\JRE...
+32-bit search:	SOFTWARE\JavaSoft\JRE...
+64-bit search:	SOFTWARE\JavaSoft\JDK...
+Check:		SOFTWARE\JavaSoft\JDK\17.0.6
+Version string: 1.017.000_006 / 64-Bit (OK)
+Check launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe (OK)
+Match:		1.017.000_006
+Runtime used:	1.017.000_006 (64-bit)
+Launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe
+Launcher args:	-client --add-opens java.base/java.lang=ALL-UNNAMED -XX:+UseZGC -XX:+ShrinkHeapInSteps -XX:MinHeapFreeRatio=2 -XX:MaxHeapFreeRatio=5 -Dfile.encoding=UTF-8 -jar "C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe"
+Args length:	230/32768 chars
+Exit code:	0
+
+
+Version:	3.50
+CmdLine:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe --l4j-debug
+JNI:		No
+WOW64:		Yes
+Working dir:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\.
+Requires JDK:	No
+Requires 64-Bit: No
+Java min ver:	1.017.000
+Java max ver:	
+JRE paths:	ChatApp-Client\jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64
+Check launcher:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatApp-Client\jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\javaw.exe (not found)
+64-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8
+Version string: 1.008.000 / 64-Bit (Ignore)
+Ignore:		1.008.000
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8.0_361
+Version string: 1.008.000_361 / 64-Bit (Ignore)
+Ignore:		1.008.000_361
+32-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+64-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+32-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+64-bit search:	SOFTWARE\JavaSoft\JRE...
+32-bit search:	SOFTWARE\JavaSoft\JRE...
+64-bit search:	SOFTWARE\JavaSoft\JDK...
+32-bit search:	SOFTWARE\JavaSoft\JDK...
+64-bit search:	SOFTWARE\IBM\Java Runtime Environment...
+32-bit search:	SOFTWARE\IBM\Java Runtime Environment...
+64-bit search:	SOFTWARE\IBM\Java Development Kit...
+32-bit search:	SOFTWARE\IBM\Java Development Kit...
+64-bit search:	SOFTWARE\IBM\Java2 Runtime Environment...
+32-bit search:	SOFTWARE\IBM\Java2 Runtime Environment...
+64-bit search:	SOFTWARE\IBM\Java Development Kit...
+32-bit search:	SOFTWARE\IBM\Java Development Kit...
+Error msg:	This application requires a Java Runtime Environment 17
+
+
+Version:	3.50
+CmdLine:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe --l4j-debug
+JNI:		No
+WOW64:		Yes
+Working dir:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\.
+Requires JDK:	No
+Requires 64-Bit: No
+Java min ver:	1.017.000
+Java max ver:	
+JRE paths:	jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64
+Check launcher:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\javaw.exe (OK)
+Version string: 1.017.000_006 / 64-Bit (OK)
+Launcher:	C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\jre\zulu17.40.19-ca-jre17.0.6-win_x64\zulu17.40.19-ca-jre17.0.6-win_x64\bin\javaw.exe
+Launcher args:	--add-opens java.base/java.lang=ALL-UNNAMED -client -XX:+UseZGC -XX:+ShrinkHeapInSteps -XX:MinHeapFreeRatio=2 -XX:MaxHeapFreeRatio=5 -Dfile.encoding=UTF-8 -jar "C:\Users\ilias\Downloads\Inno-Setup\ChatApp-Client\ChatAppClient.exe"
+Args length:	230/32768 chars
+Exit code:	0
