@@ -100,6 +100,6 @@ When reporting an issue, please include:
 
 ## License
 
-ChatApp-Server is distributed under the GNU Affero General Public License Version 3.0 which can be found in the `LICENSE` file.
+ChatApp is distributed under the GNU Affero General Public License Version 3.0 which can be found in the `LICENSE` file.
 
 By using this software, you agree to the terms outlined in the license agreement.
