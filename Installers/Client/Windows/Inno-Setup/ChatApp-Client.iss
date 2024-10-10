@@ -22,7 +22,7 @@ DisableProgramGroupPage=yes
 LicenseFile={#MyAppLicence}
 ; Comment the following line to run in administrative install mode (install for all users.)
 ;PrivilegesRequired=lowest
-OutputBaseFilename=mysetup
+OutputBaseFilename=ChatApp-Client-64-bit-installer
 SetupIconFile={#MyAppIcon}
 Compression=lzma
 SolidCompression=yes
@@ -38,8 +38,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "{#MyAppFolder}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
-[Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+[Icons] 
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
