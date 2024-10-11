@@ -13,32 +13,28 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package github.chatapp.common.entry;
+package github.chatapp.client.main.java.controllers.chat_interface.dialogs;
 
-import github.chatapp.common.reults.ResultHolder;
+import github.chatapp.client.main.java.dialogs.MFXActionDialog;
+import io.github.palexdev.materialfx.font.MFXFontIcon;
+import javafx.scene.Parent;
+import javafx.stage.Stage;
 
 /**
- * 
  * @author Ilias Koukovinis
  *
  */
-public final class Verification {
+public class LogoutDialog extends MFXActionDialog {
 	
-	private Verification() {}
-	
-	public enum Action {
-		RESEND_CODE;
-	}
-	
-	public enum Result {
-		SUCCESFULLY_VERIFIED(true, "Succesfully verified!"),
-		WRONG_CODE(false, "Incorrent code!"),
-		RUN_OUT_OF_ATTEMPTS(false, "Run out of attempts!");
+	public LogoutDialog(Stage stage, Parent rootPane)	{
 
-		public final ResultHolder resultHolder;
-		
-		Result(boolean isSuccesfull, String message) {
-			resultHolder = new ResultHolder(isSuccesfull, message);
-		}
+		super(stage, rootPane);
+
+		dialogContent.setContentText("Are you sure you want to logout?");
+
+		MFXFontIcon infoIcon = new MFXFontIcon("mfx-info-circle-filled", 18);
+		dialogContent.setHeaderText("Logout Dialog");
+		dialogContent.setHeaderIcon(infoIcon);
+		dialogContent.getStyleClass().add("mfx-info-dialog");
 	}
 }

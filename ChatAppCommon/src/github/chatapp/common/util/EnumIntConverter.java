@@ -13,32 +13,30 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package github.chatapp.common.entry;
-
-import github.chatapp.common.reults.ResultHolder;
+package github.chatapp.common.util;
 
 /**
- * 
  * @author Ilias Koukovinis
  *
  */
-public final class Verification {
+public class EnumIntConverter {
 	
-	private Verification() {}
+	private EnumIntConverter() {}
 	
-	public enum Action {
-		RESEND_CODE;
+	public static <T extends Enum<T>> int getEnumAsInt(T enumm) {
+		return enumm.ordinal();
 	}
-	
-	public enum Result {
-		SUCCESFULLY_VERIFIED(true, "Succesfully verified!"),
-		WRONG_CODE(false, "Incorrent code!"),
-		RUN_OUT_OF_ATTEMPTS(false, "Run out of attempts!");
 
-		public final ResultHolder resultHolder;
-		
-		Result(boolean isSuccesfull, String message) {
-			resultHolder = new ResultHolder(isSuccesfull, message);
-		}
+	/**
+	 * 
+	 * @param <T>
+	 * @param enumIndex
+	 * @param clazz
+	 * @return
+	 * 
+	 * @throws IndexOutOfBoundsException if enum index doesn't exist in enum.
+	 */
+	public static <T extends Enum<T>> T getIntAsEnum(int enumIndex, Class<T> clazz) {
+		return clazz.getEnumConstants()[enumIndex];
 	}
 }

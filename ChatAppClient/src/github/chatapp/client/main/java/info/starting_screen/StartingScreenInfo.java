@@ -13,32 +13,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package github.chatapp.common.entry;
-
-import github.chatapp.common.reults.ResultHolder;
+package github.chatapp.client.main.java.info.starting_screen;
 
 /**
- * 
  * @author Ilias Koukovinis
  *
  */
-public final class Verification {
-	
-	private Verification() {}
-	
-	public enum Action {
-		RESEND_CODE;
-	}
-	
-	public enum Result {
-		SUCCESFULLY_VERIFIED(true, "Succesfully verified!"),
-		WRONG_CODE(false, "Incorrent code!"),
-		RUN_OUT_OF_ATTEMPTS(false, "Run out of attempts!");
+public final class StartingScreenInfo {
 
-		public final ResultHolder resultHolder;
-		
-		Result(boolean isSuccesfull, String message) {
-			resultHolder = new ResultHolder(isSuccesfull, message);
-		}
-	}
+	public static final String CSS_LOCATION = StartingScreenInfo.class.getResource("/main/resources/css/StartingScreen.css").toExternalForm();
+	
+	public static final int STAGE_WIDTH = 350;
+	public static final int STAGE_HEIGHT = 410;
+
+	public static final int ICON_WITDH = 220;
+	public static final int ICON_HEIGHT = 209;
+
+	private StartingScreenInfo() {}
 }

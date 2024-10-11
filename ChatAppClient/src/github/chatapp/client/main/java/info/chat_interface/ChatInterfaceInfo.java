@@ -13,32 +13,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package github.chatapp.common.entry;
+package github.chatapp.client.main.java.info.chat_interface;
 
-import github.chatapp.common.reults.ResultHolder;
+import java.net.URL;
 
 /**
- * 
  * @author Ilias Koukovinis
  *
  */
-public final class Verification {
-	
-	private Verification() {}
-	
-	public enum Action {
-		RESEND_CODE;
-	}
-	
-	public enum Result {
-		SUCCESFULLY_VERIFIED(true, "Succesfully verified!"),
-		WRONG_CODE(false, "Incorrent code!"),
-		RUN_OUT_OF_ATTEMPTS(false, "Run out of attempts!");
+public final class ChatInterfaceInfo {
 
-		public final ResultHolder resultHolder;
-		
-		Result(boolean isSuccesfull, String message) {
-			resultHolder = new ResultHolder(isSuccesfull, message);
-		}
-	}
+	public static final URL FXML_LOCATION = ChatInterfaceInfo.class.getResource("/main/resources/view/chat_interface/ChatInterfaceScene.fxml");
+	public static final String CSS_LOCATION = ChatInterfaceInfo.class.getResource("/main/resources/css/chat_interface/ChatInterfaceScene.css").toExternalForm();
+	public static final String NOTIFICATION_SOUND_LOCATION = ChatInterfaceInfo.class.getResource("/main/resources/sounds/notification.wav").toExternalForm();
+	
+	public static final int STAGE_MIN_HEIGHT = 550;
+	public static final int STAGE_MIN_WIDTH = 550;
+
+	private ChatInterfaceInfo() {}
 }

@@ -13,32 +13,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package github.chatapp.common.entry;
-
-import github.chatapp.common.reults.ResultHolder;
+package github.chatapp.common.reults;
 
 /**
- * 
  * @author Ilias Koukovinis
  *
  */
-public final class Verification {
-	
-	private Verification() {}
-	
-	public enum Action {
-		RESEND_CODE;
-	}
-	
-	public enum Result {
-		SUCCESFULLY_VERIFIED(true, "Succesfully verified!"),
-		WRONG_CODE(false, "Incorrent code!"),
-		RUN_OUT_OF_ATTEMPTS(false, "Run out of attempts!");
+public enum IsPasswordValidResult {
+	SUCCESFULLY_VALIDATED_PASSWORD(true, "Succesfully validated password!"),
+	REQUIREMENTS_NOT_MET(false, "Password requirements not met!");
 
-		public final ResultHolder resultHolder;
-		
-		Result(boolean isSuccesfull, String message) {
-			resultHolder = new ResultHolder(isSuccesfull, message);
-		}
+	public final ResultHolder resultHolder;
+	
+	IsPasswordValidResult(boolean isSuccesfull, String message) {
+		resultHolder = new ResultHolder(isSuccesfull, message);
 	}
 }

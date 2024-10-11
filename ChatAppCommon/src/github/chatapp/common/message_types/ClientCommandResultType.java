@@ -13,32 +13,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package github.chatapp.common.entry;
-
-import github.chatapp.common.reults.ResultHolder;
+package github.chatapp.common.message_types;
 
 /**
- * 
  * @author Ilias Koukovinis
  *
  */
-public final class Verification {
-	
-	private Verification() {}
-	
-	public enum Action {
-		RESEND_CODE;
-	}
-	
-	public enum Result {
-		SUCCESFULLY_VERIFIED(true, "Succesfully verified!"),
-		WRONG_CODE(false, "Incorrent code!"),
-		RUN_OUT_OF_ATTEMPTS(false, "Run out of attempts!");
-
-		public final ResultHolder resultHolder;
-		
-		Result(boolean isSuccesfull, String message) {
-			resultHolder = new ResultHolder(isSuccesfull, message);
-		}
-	}
+public enum ClientCommandResultType {
+	DELETE_CHAT_MESSAGE,
+	DOWNLOAD_FILE,
+	GET_USERNAME,
+	GET_CLIENT_ID,
+	GET_CHAT_REQUESTS,
+	GET_CHAT_SESSIONS,
+	GET_WRITTEN_TEXT,
+	GET_DONATION_PAGE,
+	GET_SERVER_SOURCE_CODE_PAGE
 }

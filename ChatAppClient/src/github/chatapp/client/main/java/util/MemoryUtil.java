@@ -13,32 +13,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package github.chatapp.common.entry;
+package github.chatapp.client.main.java.util;
 
-import github.chatapp.common.reults.ResultHolder;
+import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
 
 /**
- * 
  * @author Ilias Koukovinis
  *
  */
-public final class Verification {
-	
-	private Verification() {}
-	
-	public enum Action {
-		RESEND_CODE;
-	}
-	
-	public enum Result {
-		SUCCESFULLY_VERIFIED(true, "Succesfully verified!"),
-		WRONG_CODE(false, "Incorrent code!"),
-		RUN_OUT_OF_ATTEMPTS(false, "Run out of attempts!");
+public final class MemoryUtil {
 
-		public final ResultHolder resultHolder;
-		
-		Result(boolean isSuccesfull, String message) {
-			resultHolder = new ResultHolder(isSuccesfull, message);
+	private MemoryUtil() {}
+	
+	public static void freeStringFromMemory(String stringToFree) {
+		try {
+			Field field = String.class.getDeclaredField("value");
+			field.setAccessible(true);
+			field.set(stringToFree, new byte[] {});
+		} catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException | InaccessibleObjectException e) {
+			e.printStackTrace();
 		}
 	}
 }

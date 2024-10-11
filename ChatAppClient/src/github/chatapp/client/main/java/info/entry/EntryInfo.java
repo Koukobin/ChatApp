@@ -13,32 +13,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package github.chatapp.common.entry;
+package github.chatapp.client.main.java.info.entry;
 
-import github.chatapp.common.reults.ResultHolder;
+import java.net.URL;
 
 /**
- * 
  * @author Ilias Koukovinis
  *
  */
-public final class Verification {
-	
-	private Verification() {}
-	
-	public enum Action {
-		RESEND_CODE;
-	}
-	
-	public enum Result {
-		SUCCESFULLY_VERIFIED(true, "Succesfully verified!"),
-		WRONG_CODE(false, "Incorrent code!"),
-		RUN_OUT_OF_ATTEMPTS(false, "Run out of attempts!");
+public final class EntryInfo {
 
-		public final ResultHolder resultHolder;
+	public static class Login {
 		
-		Result(boolean isSuccesfull, String message) {
-			resultHolder = new ResultHolder(isSuccesfull, message);
-		}
+		public static final URL FXML_LOCATION = EntryInfo.class.getResource("/main/resources/view/entry/LoginScene.fxml");
+		public static final String CSS_LOCATION = EntryInfo.class.getResource("/main/resources/css/entry/LoginScene.css").toExternalForm();
+		
+		private Login() {}
 	}
+	
+	public static class CreateAccount {
+		
+		public static final URL FXML_LOCATION = EntryInfo.class.getResource("/main/resources/view/entry/CreateAccountScene.fxml");
+		public static final String CSS_LOCATION = EntryInfo.class.getResource("/main/resources/css/entry/CreateAccountScene.css").toExternalForm();
+		
+		private CreateAccount() {}
+	}
+
+	private EntryInfo() {}
 }

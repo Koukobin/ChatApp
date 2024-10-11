@@ -4,41 +4,39 @@
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package github.chatapp.common.entry;
+package github.chatapp.client.main.java;
 
-import github.chatapp.common.reults.ResultHolder;
+import java.io.IOException;
+import java.io.InputStream;
+
+import github.chatapp.client.main.java.configs.LoggerSettings;
+import github.chatapp.client.main.java.server.Server;
 
 /**
- * 
  * @author Ilias Koukovinis
- *
  */
-public final class Verification {
-	
-	private Verification() {}
-	
-	public enum Action {
-		RESEND_CODE;
+public class ServerLauncher {
+
+	static {
+		LoggerSettings.initializeConfigurationFile();
 	}
 	
-	public enum Result {
-		SUCCESFULLY_VERIFIED(true, "Succesfully verified!"),
-		WRONG_CODE(false, "Incorrent code!"),
-		RUN_OUT_OF_ATTEMPTS(false, "Run out of attempts!");
-
-		public final ResultHolder resultHolder;
-		
-		Result(boolean isSuccesfull, String message) {
-			resultHolder = new ResultHolder(isSuccesfull, message);
+	public static void main(String[] args) {
+		try (InputStream is = ServerLauncher.class.getResourceAsStream("/main/resources/banner.txt")) {
+			System.out.println(new String(is.readAllBytes())); // Print ChatApp Server banner
+		} catch (IOException ioe) {
+			ioe.printStackTrace(); // Shouldn't happen
+		} finally {
+			Server.start();
 		}
 	}
 }

@@ -13,32 +13,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package github.chatapp.common.entry;
-
-import github.chatapp.common.reults.ResultHolder;
+package github.chatapp.common.reults;
 
 /**
- * 
  * @author Ilias Koukovinis
  *
  */
-public final class Verification {
+public enum ChangeUsernameResult {
 	
-	private Verification() {}
-	
-	public enum Action {
-		RESEND_CODE;
-	}
-	
-	public enum Result {
-		SUCCESFULLY_VERIFIED(true, "Succesfully verified!"),
-		WRONG_CODE(false, "Incorrent code!"),
-		RUN_OUT_OF_ATTEMPTS(false, "Run out of attempts!");
+	SUCCESFULLY_CHANGED_USERNAME(true, "Succesfully changed username!"),
+	ERROR_WHILE_CHANGING_USERNAME(false, "There was an error while trying to change username!");
 
-		public final ResultHolder resultHolder;
-		
-		Result(boolean isSuccesfull, String message) {
-			resultHolder = new ResultHolder(isSuccesfull, message);
-		}
+	public final ResultHolder resultHolder;
+	
+	ChangeUsernameResult(boolean isSuccesfull, String message) {
+		resultHolder = new ResultHolder(isSuccesfull, message);
 	}
 }

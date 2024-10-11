@@ -34,8 +34,8 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.chatapp.commons</groupId>
-			<artifactId>commons-chatapp</artifactId>
+			<groupId>github.chatapp.common</groupId>
+			<artifactId>chatapp.common</artifactId>
 			<version>1.0</version>
 		</dependency>
 		

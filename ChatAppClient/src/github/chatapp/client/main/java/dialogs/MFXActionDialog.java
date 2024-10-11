@@ -13,32 +13,36 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package github.chatapp.common.entry;
+package github.chatapp.client.main.java.dialogs;
 
-import github.chatapp.common.reults.ResultHolder;
+import java.util.Map;
+
+import io.github.palexdev.materialfx.controls.MFXButton;
+import javafx.scene.Parent;
+import javafx.scene.input.MouseEvent;
+import javafx.stage.Stage;
 
 /**
- * 
  * @author Ilias Koukovinis
  *
  */
-public final class Verification {
+public class MFXActionDialog extends MFXDialog {
+
+	protected boolean isCanceled = true;
 	
-	private Verification() {}
-	
-	public enum Action {
-		RESEND_CODE;
+	protected MFXActionDialog(Stage stage, Parent rootPane) {
+		super(stage, rootPane);
+		
+		dialogContent.addActions(
+				Map.entry(new MFXButton("Confirm"), (MouseEvent e) -> {
+					isCanceled = false;
+					mfxDialog.close();
+				}), Map.entry(new MFXButton("Cancel"), (MouseEvent e) -> {
+					mfxDialog.close();
+				}));
 	}
 	
-	public enum Result {
-		SUCCESFULLY_VERIFIED(true, "Succesfully verified!"),
-		WRONG_CODE(false, "Incorrent code!"),
-		RUN_OUT_OF_ATTEMPTS(false, "Run out of attempts!");
-
-		public final ResultHolder resultHolder;
-		
-		Result(boolean isSuccesfull, String message) {
-			resultHolder = new ResultHolder(isSuccesfull, message);
-		}
+	public boolean isCanceled() {
+		return isCanceled;
 	}
 }

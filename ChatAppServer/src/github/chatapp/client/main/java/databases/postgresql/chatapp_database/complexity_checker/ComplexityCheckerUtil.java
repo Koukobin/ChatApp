@@ -13,32 +13,36 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package github.chatapp.common.entry;
+package github.chatapp.client.main.java.databases.postgresql.chatapp_database.complexity_checker;
 
-import github.chatapp.common.reults.ResultHolder;
+import com.google.common.base.CharMatcher;
 
 /**
- * 
  * @author Ilias Koukovinis
  *
  */
-public final class Verification {
-	
-	private Verification() {}
-	
-	public enum Action {
-		RESEND_CODE;
-	}
-	
-	public enum Result {
-		SUCCESFULLY_VERIFIED(true, "Succesfully verified!"),
-		WRONG_CODE(false, "Incorrent code!"),
-		RUN_OUT_OF_ATTEMPTS(false, "Run out of attempts!");
+final class ComplexityCheckerUtil {
 
-		public final ResultHolder resultHolder;
+	private ComplexityCheckerUtil() {}
+	
+	public static boolean estimate(Requirements requirements, String string) {
+
+		// Check if username has exceeded minimum required entropy
+		boolean hasStringExceededMaxLength = string.length() > requirements.getMaxLength();
 		
-		Result(boolean isSuccesfull, String message) {
-			resultHolder = new ResultHolder(isSuccesfull, message);
+		if (hasStringExceededMaxLength) {
+			return false;
 		}
+
+		if (requirements.getInvalidCharacters() != null) {
+			
+			boolean doesStringMatchInvalidCharacters = CharMatcher.anyOf(requirements.getInvalidCharacters()).matchesAnyOf(string);
+
+			if (doesStringMatchInvalidCharacters) {
+				return false;
+			}
+		}
+		
+		return true;
 	}
 }
