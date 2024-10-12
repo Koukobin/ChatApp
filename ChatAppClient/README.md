@@ -10,7 +10,7 @@
 
 - **Real-time Messaging**: Chat with friends, family, or colleagues instantly.
 - **Media Sharing**: Easily share images, videos, and documents within your chats.
-- **Secure Connections**: Integrated with end-to-end encryption in order to ensure privacy and security.
+- **Secure Connections**: Integrated with TLS in order to ensure privacy and security.
 
 ## Requirements
 
