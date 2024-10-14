@@ -15,7 +15,7 @@
  */
 package github.chatapp.common.entry;
 
-import github.chatapp.common.reults.ResultHolder;
+import github.chatapp.common.results.ResultHolder;
 
 /**
  * 

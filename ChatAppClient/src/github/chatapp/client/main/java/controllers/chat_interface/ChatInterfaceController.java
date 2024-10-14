@@ -56,7 +56,7 @@ import github.chatapp.common.entry.LoginInfo;
 import github.chatapp.common.entry.LoginInfo.PasswordType;
 import github.chatapp.common.message_types.ContentType;
 import github.chatapp.common.message_types.Message;
-import github.chatapp.common.reults.ResultHolder;
+import github.chatapp.common.results.ResultHolder;
 
 import org.controlsfx.control.Notifications;
 import org.controlsfx.glyphfont.Glyph;

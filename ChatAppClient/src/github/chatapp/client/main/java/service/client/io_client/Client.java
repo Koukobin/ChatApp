@@ -41,7 +41,7 @@ import javax.net.ssl.X509TrustManager;
 import github.chatapp.common.entry.EntryType;
 import github.chatapp.common.entry.LoginInfo;
 import github.chatapp.common.entry.Verification;
-import github.chatapp.common.reults.ResultHolder;
+import github.chatapp.common.results.ResultHolder;
 import github.chatapp.common.util.EnumIntConverter;
 import github.chatapp.client.main.java.service.client.ChatRequest;
 import github.chatapp.client.main.java.service.client.ChatSession;

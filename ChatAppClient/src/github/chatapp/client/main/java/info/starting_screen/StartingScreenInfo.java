@@ -21,7 +21,7 @@ package github.chatapp.client.main.java.info.starting_screen;
  */
 public final class StartingScreenInfo {
 
-	public static final String CSS_LOCATION = StartingScreenInfo.class.getResource("/main/resources/css/StartingScreen.css").toExternalForm();
+	public static final String CSS_LOCATION = StartingScreenInfo.class.getResource("/github/chatapp/client/main/resources/css/StartingScreen.css").toExternalForm();
 	
 	public static final int STAGE_WIDTH = 350;
 	public static final int STAGE_HEIGHT = 410;

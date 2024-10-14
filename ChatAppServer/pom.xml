@@ -9,6 +9,8 @@
 
 	<properties>
 		<mainClass>main.java.ServerLauncher</mainClass>
+        <src.resources>src/github/chatapp/server/main/resources</src.resources>
+        <target.resources>${project.build.directory}/classes/github/chatapp/server/main/resources/</target.resources>
 	</properties>
 
 	<licenses>
@@ -114,8 +116,8 @@
 		<resources>
 
 			<resource>
-				<directory>src/main/resources</directory>
-				<targetPath>${project.build.directory}/classes/main/resources/</targetPath>
+                <directory>${src.resources}</directory>
+                <targetPath>${target.resources}</targetPath>
 			</resource>
 
 		</resources>
