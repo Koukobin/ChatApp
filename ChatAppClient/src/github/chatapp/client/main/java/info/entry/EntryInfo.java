@@ -25,16 +25,16 @@ public final class EntryInfo {
 
 	public static class Login {
 		
-		public static final URL FXML_LOCATION = EntryInfo.class.getResource("/main/resources/view/entry/LoginScene.fxml");
-		public static final String CSS_LOCATION = EntryInfo.class.getResource("/main/resources/css/entry/LoginScene.css").toExternalForm();
+		public static final URL FXML_LOCATION = EntryInfo.class.getResource("/github/chatapp/client/main/resources/view/entry/LoginScene.fxml");
+		public static final String CSS_LOCATION = EntryInfo.class.getResource("/github/chatapp/client/main/resources/css/entry/LoginScene.css").toExternalForm();
 		
 		private Login() {}
 	}
 	
 	public static class CreateAccount {
 		
-		public static final URL FXML_LOCATION = EntryInfo.class.getResource("/main/resources/view/entry/CreateAccountScene.fxml");
-		public static final String CSS_LOCATION = EntryInfo.class.getResource("/main/resources/css/entry/CreateAccountScene.css").toExternalForm();
+		public static final URL FXML_LOCATION = EntryInfo.class.getResource("/github/chatapp/client/main/resources/view/entry/CreateAccountScene.fxml");
+		public static final String CSS_LOCATION = EntryInfo.class.getResource("/github/chatapp/client/main/resources/css/entry/CreateAccountScene.css").toExternalForm();
 		
 		private CreateAccount() {}
 	}

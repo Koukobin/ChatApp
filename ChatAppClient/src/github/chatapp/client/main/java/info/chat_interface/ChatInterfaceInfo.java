@@ -23,9 +23,9 @@ import java.net.URL;
  */
 public final class ChatInterfaceInfo {
 
-	public static final URL FXML_LOCATION = ChatInterfaceInfo.class.getResource("/main/resources/view/chat_interface/ChatInterfaceScene.fxml");
-	public static final String CSS_LOCATION = ChatInterfaceInfo.class.getResource("/main/resources/css/chat_interface/ChatInterfaceScene.css").toExternalForm();
-	public static final String NOTIFICATION_SOUND_LOCATION = ChatInterfaceInfo.class.getResource("/main/resources/sounds/notification.wav").toExternalForm();
+	public static final URL FXML_LOCATION = ChatInterfaceInfo.class.getResource("/github/chatapp/client/main/resources/view/chat_interface/ChatInterfaceScene.fxml");
+	public static final String CSS_LOCATION = ChatInterfaceInfo.class.getResource("/github/chatapp/client/main/resources/css/chat_interface/ChatInterfaceScene.css").toExternalForm();
+	public static final String NOTIFICATION_SOUND_LOCATION = ChatInterfaceInfo.class.getResource("/github/chatapp/client/main/resources/sounds/notification.wav").toExternalForm();
 	
 	public static final int STAGE_MIN_HEIGHT = 550;
 	public static final int STAGE_MIN_WIDTH = 550;
