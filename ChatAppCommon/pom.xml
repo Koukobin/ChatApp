@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>github.chatapp.common</groupId>
 	<artifactId>chatapp.common</artifactId>
-	<version>1.0</version>
+	<version>1.0.0-rc1</version>
 	<name>ChatAppCommon</name>
 	<packaging>jar</packaging>
 

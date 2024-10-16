@@ -4,7 +4,7 @@
 	<groupId>github.chatapp.server</groupId>
 	<artifactId>chatapp.server</artifactId>
 	<name>ChatAppServer</name>
-	<version>1.0</version>
+	<version>1.0.0-rc1</version>
 	<packaging>jar</packaging>
 	
 	<properties>
@@ -73,7 +73,7 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>31.1-jre</version>
+			<version>33.3.0-jre</version>
 		</dependency>
 
 		<dependency>
