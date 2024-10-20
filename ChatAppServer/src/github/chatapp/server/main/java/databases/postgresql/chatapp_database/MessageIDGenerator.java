@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Logger;
  */
 final class MessageIDGenerator {
 
+	@SuppressWarnings("unused")
 	private static final Logger logger = LogManager.getLogger("database");
 	
 	private static final Object lockObjectForGettingMessageIDCountAsAtomicInteger = new Object();

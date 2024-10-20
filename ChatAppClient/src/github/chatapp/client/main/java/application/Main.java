@@ -16,10 +16,17 @@
 package github.chatapp.client.main.java.application;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import github.chatapp.client.main.java.application.chat_interface.ChatInterface;
+import github.chatapp.client.main.java.application.decide_server_to_connect.ChooseServerDialog;
 import github.chatapp.client.main.java.application.starting_screen.StartingScreenInterface;
+import github.chatapp.client.main.java.database.ServerInfo;
+import github.chatapp.client.main.java.service.client.io_client.Client;
+import github.chatapp.client.main.java.util.dialogs.CustomDialogButtonTypes;
+import github.chatapp.client.main.java.util.dialogs.DialogsUtil;
 import javafx.application.Application;
+import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 
 /**
@@ -37,11 +44,57 @@ public class Main extends Application {
 		System.setProperty("prism.lcdtext", "false"); // Disable LCD anti-aliasing to improve text clarity
 
 		// Show the starting screen and wait for it to close
-		StartingScreenInterface startingScreen = new StartingScreenInterface();
-		startingScreen.showAndWait();
+		{
+			StartingScreenInterface startingScreen = new StartingScreenInterface();
+			startingScreen.showAndWait();
+		}
+
+		// Decide server to connect to
+		{
+			boolean retry = false;
+			
+			do {
+				try {
+					ChooseServerDialog dialog = new ChooseServerDialog(null, null);
+					dialog.showAndWait();
+					
+					if (dialog.isCanceled()) {
+						return;
+					}
+					
+					ServerInfo serverInfo = dialog.getResult();
+					
+					if (serverInfo == null) {
+						DialogsUtil.showErrorDialog("Server info cannot be empty!");
+						retry = true;
+						continue;
+					}
+
+					Client.ServerCertificateVerification verify = dialog.shouldCheckServerCertificate()
+							? Client.ServerCertificateVerification.VERIFY
+							: Client.ServerCertificateVerification.IGNORE;
+
+					Client.initialize(serverInfo.getAddress(), serverInfo.getPort(), verify);
+					
+					retry = false;
+				} catch (Exception e) {
+					
+					Optional<ButtonType> exceptionDialogResult = DialogsUtil.showExceptionDialog(e);
+					
+					if (!exceptionDialogResult.isPresent() || exceptionDialogResult.get() == CustomDialogButtonTypes.RETRY_BUTTON) {
+						retry = true;
+						continue;
+					}
+					
+					return;
+				}
+			} while (retry);
+		}
 
 		// Start the chat interface
-		ChatInterface chatInterface = new ChatInterface(primaryStage, getHostServices());
-		chatInterface.start();
+		{
+			ChatInterface chatInterface = new ChatInterface(primaryStage, getHostServices());
+			chatInterface.start();
+		}
 	}
 }

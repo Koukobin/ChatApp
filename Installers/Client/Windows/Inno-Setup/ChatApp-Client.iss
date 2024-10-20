@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "ChatApp-Client"
-#define MyAppVersion "1.0"
+#define MyAppVersion "1.0-rc"
 #define MyAppExeName "ChatAppClient.exe"
 #define MyAppIcon "ChatApp-Client.ico"
 #define MyAppLicence "ChatApp-Client\LICENSE.txt"
@@ -22,7 +22,7 @@ DisableProgramGroupPage=yes
 LicenseFile={#MyAppLicence}
 ; Comment the following line to run in administrative install mode (install for all users.)
 ;PrivilegesRequired=lowest
-OutputBaseFilename=ChatApp-Client-64-bit-installer
+OutputBaseFilename=ChatApp-Client_x64
 SetupIconFile={#MyAppIcon}
 Compression=lzma
 SolidCompression=yes
@@ -43,5 +43,6 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
 
 

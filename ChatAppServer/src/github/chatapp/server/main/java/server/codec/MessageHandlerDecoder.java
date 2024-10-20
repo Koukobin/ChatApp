@@ -88,6 +88,8 @@ public class MessageHandlerDecoder extends Decoder {
 		}
 		case COMMAND -> {
 			try {
+				@SuppressWarnings("unused")
+				// Ensures valid message
 				ClientCommandType commandType = EnumIntConverter.getIntAsEnum(in.readInt(), ClientCommandType.class);
 				maxLength = maxMessageTextLength;
 			} catch (IndexOutOfBoundsException iooe) {

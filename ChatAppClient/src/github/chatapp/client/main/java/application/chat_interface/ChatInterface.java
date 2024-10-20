@@ -40,25 +40,22 @@ import javafx.util.Duration;
 public class ChatInterface {
 	
 	private Stage stage;
-	
+	private HostServices hostServices;
+
+	private FXMLLoader loaderFXML;
+
 	public ChatInterface(Stage primaryStage, HostServices hostServices) throws IOException {
 		
 		this.stage = primaryStage;
+		this.hostServices = hostServices;
 		
-		FXMLLoader loader = new FXMLLoader(ChatInterfaceInfo.FXML_LOCATION);
-		Parent root = loader.load();
-		ChatInterfaceController controller = loader.getController();
-		controller.setStage(stage);
-		controller.setHostServices(hostServices);
+		loaderFXML = new FXMLLoader(ChatInterfaceInfo.FXML_LOCATION);
+		Parent root = loaderFXML.load();
 
 		Scene scene = new Scene(root);
 		scene.getStylesheets().add(ChatInterfaceInfo.CSS_LOCATION);
 		scene.setFill(Color.TRANSPARENT);
 
-		stage.setOnCloseRequest((WindowEvent e) -> {
-			controller.closeClient();
-			stage.close();
-		});
 		stage.setMinHeight(ChatInterfaceInfo.STAGE_MIN_HEIGHT);
 		stage.setMinWidth(ChatInterfaceInfo.STAGE_MIN_WIDTH);
 		stage.getIcons().add(GeneralAppInfo.MAIN_ICON);
@@ -80,6 +77,15 @@ public class ChatInterface {
 	}
 	
 	public void start() {
+		
+		ChatInterfaceController controller = loaderFXML.getController();
+		controller.setStage(stage);
+		controller.setHostServices(hostServices);
+		
+		stage.setOnCloseRequest((WindowEvent e) -> {
+			controller.closeClient();
+			stage.close();
+		});
 		stage.show();
 		stage.requestFocus();
 	}

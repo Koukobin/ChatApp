@@ -32,7 +32,7 @@ public enum ClientCommandType {
 	GET_WRITTEN_TEXT(CommandLevel.HEAVY),
 	
 	GET_DONATION_PAGE(CommandLevel.LIGHT),
-	GET_SERVER_SOURCE_CODE_PAGE(CommandLevel.LIGHT),
+	GET_SOURCE_CODE_PAGE(CommandLevel.LIGHT),
 
 	SEND_CHAT_REQUEST(CommandLevel.HEAVY),
 	ACCEPT_CHAT_REQUEST(CommandLevel.HEAVY),

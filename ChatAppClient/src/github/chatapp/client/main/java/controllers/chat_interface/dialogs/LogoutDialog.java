@@ -15,7 +15,7 @@
  */
 package github.chatapp.client.main.java.controllers.chat_interface.dialogs;
 
-import github.chatapp.client.main.java.dialogs.MFXActionDialog;
+import github.chatapp.client.main.java.general_dialogs.MFXActionDialog;
 import io.github.palexdev.materialfx.font.MFXFontIcon;
 import javafx.scene.Parent;
 import javafx.stage.Stage;

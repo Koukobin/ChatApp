@@ -19,8 +19,8 @@ import java.util.Map;
 
 import com.google.common.base.Throwables;
 
-import github.chatapp.client.main.java.dialogs.MFXActionDialog;
-import github.chatapp.client.main.java.util.dialogs.MFXDialogs;
+import github.chatapp.client.main.java.general_dialogs.MFXActionDialog;
+import github.chatapp.client.main.java.util.dialogs.MFXDialogsUtil;
 import io.github.palexdev.materialfx.controls.MFXButton;
 import io.github.palexdev.materialfx.controls.MFXTextField;
 import io.github.palexdev.materialfx.enums.FloatMode;
@@ -56,14 +56,14 @@ public class SendChatRequestDialog extends MFXActionDialog {
 						clientID = Integer.parseInt(friendRequestTextField.getText());
 						
 						isCanceled = false;
-						mfxDialog.close();
+						super.close();
 					} catch (NumberFormatException nfe) {
-						MFXDialogs.showSimpleInformationDialog(null, null, Throwables.getStackTraceAsString(nfe));
+						MFXDialogsUtil.showSimpleInformationDialog(null, null, Throwables.getStackTraceAsString(nfe));
 					}
 				}), 
 				Map.entry(new MFXButton("Cancel"), (MouseEvent e) -> {
 					isCanceled = true;
-					mfxDialog.close();
+					super.close();
 				}));
 
 		MFXFontIcon infoIcon = new MFXFontIcon("mfx-info-circle-filled", 18);

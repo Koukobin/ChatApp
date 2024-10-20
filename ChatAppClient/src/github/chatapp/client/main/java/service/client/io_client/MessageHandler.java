@@ -196,7 +196,7 @@ public abstract class MessageHandler implements AutoCloseable {
 			
 			ByteBuf payload = Unpooled.buffer();
 			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientMessageType.COMMAND));
-			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.GET_SERVER_SOURCE_CODE_PAGE));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.GET_SOURCE_CODE_PAGE));
 			
 			out.write(payload);
 		}
@@ -496,7 +496,7 @@ public abstract class MessageHandler implements AutoCloseable {
 
 								donationPageReceived(htmlPage);
 							}
-							case GET_SERVER_SOURCE_CODE_PAGE -> {
+							case GET_SOURCE_CODE_PAGE -> {
 								
 								byte[] htmlPageURL = new byte[msg.readableBytes()];
 								msg.readBytes(htmlPageURL);

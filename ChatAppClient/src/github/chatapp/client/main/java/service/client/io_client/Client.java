@@ -54,22 +54,26 @@ import io.netty.buffer.Unpooled;
  * 
  * @author Ilias Koukovinis
  */
-public class Client implements AutoCloseable {
+public class Client {
 
-	private ByteBufInputStream in;
-	private ByteBufOutputStream out;
+	private static ByteBufInputStream in;
+	private static ByteBufOutputStream out;
 	
-	private SSLSocket sslSocket;
+	private static SSLSocket sslSocket;
 	
-	private AtomicBoolean isLoggedIn = new AtomicBoolean(false);
+	private static AtomicBoolean isLoggedIn = new AtomicBoolean(false);
 
-	private MessageHandler messageHandler;
+	private static MessageHandler messageHandler;
 	
 	public enum ServerCertificateVerification {
 		VERIFY, IGNORE
 	}
 	
-	public Client(InetAddress remoteAddress, int remotePort, ServerCertificateVerification serverCertificateVerification) throws IOException {
+	private Client() throws IllegalAccessException {
+		throw new IllegalAccessException("Client cannot be constructed since it is statically initialized!");
+	}
+	
+	public static void initialize(InetAddress remoteAddress, int remotePort, ServerCertificateVerification serverCertificateVerification) throws IOException {
 		
 		if (remotePort <= 0) {
 			throw new IllegalArgumentException("Port cannot be below zero");
@@ -121,7 +125,7 @@ public class Client implements AutoCloseable {
 		}
 	}
 	
-	public class Entry<T extends Enum<T>> {
+	public static class Entry<T extends Enum<T>> {
 
 		private final EntryType entryType;
 		
@@ -168,14 +172,14 @@ public class Client implements AutoCloseable {
 	}
 
 	
-	public class CreateAccountEntry extends Entry<CreateAccountInfo.Credential> {
+	public static class CreateAccountEntry extends Entry<CreateAccountInfo.Credential> {
 
 		private CreateAccountEntry() {
 			super(EntryType.CREATE_ACCOUNT);
 		}
 	}
 	
-	public class LoginEntry extends Entry<LoginInfo.Credential> {
+	public static class LoginEntry extends Entry<LoginInfo.Credential> {
 		
 		private LoginEntry() {
 			super(EntryType.LOGIN);
@@ -194,7 +198,7 @@ public class Client implements AutoCloseable {
 		}
 	}
 	
-	public class BackupVerificationEntry {
+	public static class BackupVerificationEntry {
 		
 		public ResultHolder getResult() throws IOException	{
 			
@@ -211,7 +215,7 @@ public class Client implements AutoCloseable {
 		}
 	}
 
-	public class VerificationEntry {
+	public static class VerificationEntry {
 		
 		private boolean isVerificationComplete = false;
 		
@@ -261,88 +265,87 @@ public class Client implements AutoCloseable {
 		}
 	}
 	
-	public void startMessageHandler(MessageHandler messageHandler) throws IOException {
+	public static void startMessageHandler(MessageHandler messageHandler) throws IOException {
 
 		if (!isLoggedIn()) {
 			throw new IllegalStateException("User can't start writing server if he isn't logged in");
 		}
 
-		this.messageHandler = messageHandler;
-		this.messageHandler.setByteBufInputStream(in);
-		this.messageHandler.setByteBufOutputStream(out);
-		this.messageHandler.startListeningToMessages();
+		Client.messageHandler = messageHandler;
+		Client.messageHandler.setByteBufInputStream(in);
+		Client.messageHandler.setByteBufOutputStream(out);
+		Client.messageHandler.startListeningToMessages();
 	}
 
-	public void sendMessageToClient(String message, int chatSessionIndex) throws IOException {
+	public static void sendMessageToClient(String message, int chatSessionIndex) throws IOException {
 		messageHandler.sendMessageToClient(message, chatSessionIndex);
 	}
 
-	public void sendFile(File file, int chatSessionIndex) throws IOException {
+	public static void sendFile(File file, int chatSessionIndex) throws IOException {
 		messageHandler.sendFile(file, chatSessionIndex);
 	}
 
-	public void stopListeningToMessages() {
+	public static void stopListeningToMessages() {
 		messageHandler.stopListeningToMessages();
 	}
 
-	public VerificationEntry createNewVerificationEntry() {
+	public static VerificationEntry createNewVerificationEntry() {
 		return new VerificationEntry();
 	}
 	
-	public BackupVerificationEntry createNewBackupVerificationEntry() {
+	public static BackupVerificationEntry createNewBackupVerificationEntry() {
 		return new BackupVerificationEntry();
 	}
 	
-	public CreateAccountEntry createNewCreateAccountEntry() {
+	public static CreateAccountEntry createNewCreateAccountEntry() {
 		return new CreateAccountEntry();
 	}
 	
-	public LoginEntry createNewLoginEntry() {
+	public static LoginEntry createNewLoginEntry() {
 		return new LoginEntry();
 	}
 
-	public boolean isLoggedIn() {
+	public static boolean isLoggedIn() {
 		return isLoggedIn.get();
 	}
 
-	public boolean isClientListeningToMessages() {
+	public static boolean isClientListeningToMessages() {
 		return messageHandler.isClientListeningToMessages();
 	}
 
-	public String getUsername() {
+	public static String getUsername() {
 		return messageHandler.getUsername();
 	}
 	
-	public int getClientID() {
+	public static int getClientID() {
 		return messageHandler.getClientID();
 	}
 
-	public List<ChatSession> getChatSessions() {
+	public static List<ChatSession> getChatSessions() {
 		return messageHandler.getChatSessions();
 	}
 
-	public List<ChatRequest> getFriendRequests() {
+	public static List<ChatRequest> getFriendRequests() {
 		return messageHandler.getChatRequests();
 	}
 	
-	public MessageHandler.Commands getCommands() {
+	public static MessageHandler.Commands getCommands() {
 		return messageHandler.getCommands();
 	}
 	
-	public ByteBufInputStream getByteBufInputStream() {
+	public static ByteBufInputStream getByteBufInputStream() {
 		return in;
 	}
 	
-	public ByteBufOutputStream getByteBufOutputStream() {
+	public static ByteBufOutputStream getByteBufOutputStream() {
 		return out;
 	}
 	
-	public MessageHandler getMessageHandler() {
+	public static MessageHandler getMessageHandler() {
 		return messageHandler;
 	}
 	
-	@Override
-	public void close() throws IOException {
+	public static void close() throws IOException {
 		messageHandler.close();
 		out.close();
 		in.close();

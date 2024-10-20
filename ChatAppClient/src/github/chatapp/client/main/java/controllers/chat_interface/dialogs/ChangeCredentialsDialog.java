@@ -15,7 +15,7 @@
  */
 package github.chatapp.client.main.java.controllers.chat_interface.dialogs;
 
-import github.chatapp.client.main.java.dialogs.MFXActionDialog;
+import github.chatapp.client.main.java.general_dialogs.MFXActionDialog;
 import io.github.palexdev.materialfx.controls.MFXTextField;
 import io.github.palexdev.materialfx.enums.FloatMode;
 import javafx.scene.Parent;

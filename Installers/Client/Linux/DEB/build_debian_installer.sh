@@ -1,3 +1,3 @@
 #! /bin/bash
 
-sudo dpkg-deb --build ChatApp-Client-64-bit-installer/
+sudo dpkg-deb --build ChatApp-Client_amd64/

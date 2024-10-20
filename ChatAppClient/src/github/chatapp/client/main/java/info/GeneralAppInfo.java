@@ -31,12 +31,15 @@ public final class GeneralAppInfo {
 	public static final String TITLE = GENERAL_NAME + "-Client";
 
 	public static final Image MAIN_ICON;
-	public static final File LICENSE;
 
 	public static final String CLIENT_DATABASE_PATH;
 	public static final String CLIENT_INFO_PATH;
 	public static final String SOURCE_CODE_HTML_PAGE_URL = "https://github.com/Koukobin/ChatApp";
-	
+
+	public static final String DARK_THEME_CSS = GeneralAppInfo.class
+			.getResource("/github/chatapp/client/main/resources/css/mfx_dialogs/dark-theme.css")
+			.toExternalForm();
+
 	static {
 
 		String appInstallationFolder;
@@ -52,10 +55,8 @@ public final class GeneralAppInfo {
 		appInstallationFolder = appInstallationFolder + TITLE + File.separator;
 		
 		String mainIconPath = "file:" + appInstallationFolder + "icons" + File.separator + TITLE + ".png";
-		String licensePath = appInstallationFolder + "LICENSE.txt";
 		
 		MAIN_ICON = new Image(mainIconPath);
-		LICENSE = new File(licensePath);
 		
 		String appInfoFolder = appInstallationFolder + "info" + File.separator;
 		

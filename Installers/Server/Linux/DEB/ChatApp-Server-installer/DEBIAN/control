@@ -1,5 +1,5 @@
 Package: chatapp-server
-Version: 1.0
+Version: 1.0-rc
 Architecture: all
 Essential: no
 Priority: optional

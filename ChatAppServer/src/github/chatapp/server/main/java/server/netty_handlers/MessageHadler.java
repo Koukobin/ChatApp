@@ -229,7 +229,7 @@ final class MessageHadler extends ParentHandler {
 			case LIGHT -> {
 				executeCommand(commandType, msg);
 			}
-			default -> { /* Do nothing. */ }
+			default -> { /* No such case */ }
 			}
 			
 		}
@@ -238,13 +238,28 @@ final class MessageHadler extends ParentHandler {
 	private static void broadcastMessageToChatSession(ByteBuf payload, ChatSession chatSession) {
 
 		List<ClientInfo> membersOfChatSession = chatSession.getActiveMembers();
-		payload.retain(membersOfChatSession.size()); // increase reference count by the amount of clients that this message is gonna be sent to
+
+		/*
+		 * Increase reference count by the amount of clients that this message is gonna
+		 * be sent to.
+		 * 
+		 * Since the reference count is already at 1, we release once and increase by
+		 * the number of the users the message will be sent to.
+		 * 
+		 * For instance, if there are 2 users in the chat session, we increase the
+		 * payload's reference count by 2 (2 + 1 = 3) and release once (3 - 1 = 2),
+		 * which ensures the adequate number of writes for the specific number of users
+		 * 
+		 * Note: We cannot directly use (membersOfChatSession.size() - 1) because it would
+		 * throw an IllegalArgumentException if the size is 0.
+		 */
+		payload.retain(membersOfChatSession.size());
+		payload.release();
+
 		for (int i = 0; i < membersOfChatSession.size(); i++) {
 			EpollSocketChannel channel = membersOfChatSession.get(i).getChannel();
 			channel.writeAndFlush(payload.duplicate());
 		}
-
-		payload.release();
 	}
 
 	/**
@@ -624,11 +639,11 @@ final class MessageHadler extends ParentHandler {
 
 				channel.writeAndFlush(payload);
 			}
-			case GET_SERVER_SOURCE_CODE_PAGE -> {
+			case GET_SOURCE_CODE_PAGE -> {
 
 				ByteBuf payload = channel.alloc().ioBuffer();
 				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_SERVER_SOURCE_CODE_PAGE));
+				payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_SOURCE_CODE_PAGE));
 				payload.writeBytes(ServerSettings.SOURCE_CODE_URL.getBytes());
 
 				channel.writeAndFlush(payload);
@@ -643,7 +658,8 @@ final class MessageHadler extends ParentHandler {
 			}
 			}
 		} finally {
-			args.release();
+			System.out.println(args.refCnt());
+//			args.release();
 		}
 
 	}

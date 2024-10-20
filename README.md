@@ -54,6 +54,9 @@ Moving forward, I do not have any particular plans regarding ChatApp's developme
 ### Messaging Interface
 <img width="1000" alt="Messaging Interface" src="https://github.com/Koukobin/ChatApp/blob/master/Images/messaging-interface.png"/>
 
+### Choose Server Screen
+<img width="1000" alt="Choose Server Screen" src="https://github.com/Koukobin/ChatApp/blob/master/Images/choose_server-screen.png"/>
+
 
 
 ## Getting Started

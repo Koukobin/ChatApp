@@ -36,8 +36,6 @@ import github.chatapp.client.main.java.application.entry.EntryInterface;
 import github.chatapp.client.main.java.controllers.chat_interface.dialogs.ChangeCredentialsDialog;
 import github.chatapp.client.main.java.controllers.chat_interface.dialogs.LogoutDialog;
 import github.chatapp.client.main.java.controllers.chat_interface.dialogs.SendChatRequestDialog;
-import github.chatapp.client.main.java.controllers.chat_interface.dialogs.decide_server_to_connect.DecideServerToConnectToDialog;
-import github.chatapp.client.main.java.databases.ServerInfo;
 import github.chatapp.client.main.java.info.GeneralAppInfo;
 import github.chatapp.client.main.java.info.chat_interface.ChatInterfaceInfo;
 import github.chatapp.client.main.java.service.client.ChatRequest;
@@ -47,8 +45,9 @@ import github.chatapp.client.main.java.service.client.io_client.Client;
 import github.chatapp.client.main.java.service.client.io_client.MessageHandler;
 import github.chatapp.client.main.java.service.client.io_client.Client.BackupVerificationEntry;
 import github.chatapp.client.main.java.util.MemoryUtil;
-import github.chatapp.client.main.java.util.dialogs.Dialogs;
-import github.chatapp.client.main.java.util.dialogs.MFXDialogs;
+import github.chatapp.client.main.java.util.dialogs.CustomDialogButtonTypes;
+import github.chatapp.client.main.java.util.dialogs.DialogsUtil;
+import github.chatapp.client.main.java.util.dialogs.MFXDialogsUtil;
 import github.chatapp.common.LoadedInMemoryFile;
 import github.chatapp.common.entry.CreateAccountInfo;
 import github.chatapp.common.entry.EntryType;
@@ -78,13 +77,11 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
-import com.google.common.base.Throwables;
 import com.jfoenix.controls.JFXListCell;
 import com.jfoenix.controls.JFXListView;
 
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContentDisplay;
@@ -146,486 +143,457 @@ public class ChatInterfaceController implements Initializable {
 	@FXML
 	private TextField inputField;
 
-	private Client client;
-
 	private HostServices hostServices;
 	private Stage stage;
 
 	@Override
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void initialize(URL arg0, ResourceBundle arg1) {
+		try {
+			while (!Client.isLoggedIn()) {
 
-		boolean retry = false;
+				EntryInterface entryInterface = new EntryInterface();
+				entryInterface.showAndWait();
 
-		do {
-			try {
+				EntryType registrationType = entryInterface.getRegistrationType();
+
+				String email = entryInterface.getEmail();
+				String password = entryInterface.getPassword();
+
+				Map credentials = null;
+				Client.Entry<?> credentialsExchangeEntry = null;
 				
-				{
-					DecideServerToConnectToDialog dialog = new DecideServerToConnectToDialog(null, null);
-					dialog.showAndWait();
-					
-					if (dialog.isCanceled()) {
-						System.exit(0);
+				switch (registrationType) {
+				case LOGIN -> {
+
+					Client.LoginEntry loginEntry = Client.createNewLoginEntry();
+					loginEntry.sendEntryType();
+
+					credentials = new EnumMap<>(LoginInfo.Credential.class);
+					credentials.put(LoginInfo.Credential.EMAIL, email);
+					credentials.put(LoginInfo.Credential.PASSWORD, password);
+
+					if (entryInterface.getPasswordType() != PasswordType.PASSWORD) {
+						loginEntry.togglePasswordType();
 					}
 					
-					ServerInfo serverInfo = dialog.getResult();
+					credentialsExchangeEntry = loginEntry;
+				}
+				case CREATE_ACCOUNT -> {
 
-					Client.ServerCertificateVerification verify = dialog.getCheckServerCertificate()
-							? Client.ServerCertificateVerification.VERIFY
-							: Client.ServerCertificateVerification.IGNORE;
+					credentialsExchangeEntry = Client.createNewCreateAccountEntry();
+					credentialsExchangeEntry.sendEntryType();
 
-					client = new Client(serverInfo.getAddress(), serverInfo.getPort(), verify);
+					credentials = new EnumMap<>(CreateAccountInfo.Credential.class);
+					credentials.put(CreateAccountInfo.Credential.EMAIL, email);
+					credentials.put(CreateAccountInfo.Credential.USERNAME, entryInterface.getUsername());
+					credentials.put(CreateAccountInfo.Credential.PASSWORD, password);
+				}
 				}
 				
-				while (!client.isLoggedIn()) {
-
-					EntryInterface entryInterface = new EntryInterface();
-					entryInterface.showAndWait();
-
-					EntryType registrationType = entryInterface.getRegistrationType();
-
-					String email = entryInterface.getEmail();
-					String password = entryInterface.getPassword();
-
-					Map credentials = null;
-					Client.Entry<?> credentialsExchangeEntry = null;
+				credentialsExchangeEntry.sendCredentials(credentials);
+				
+				MemoryUtil.freeStringFromMemory(password);
+				MemoryUtil.freeStringFromMemory(email);
+				
+				{
+					ResultHolder entryResult = credentialsExchangeEntry.getCredentialsExchangeResult();
+					boolean isSuccesfull = entryResult.isSuccesfull();
+					String resultMessage = entryResult.getResultMessage();
 					
-					switch (registrationType) {
-					case LOGIN -> {
-
-						Client.LoginEntry loginEntry = client.createNewLoginEntry();
-						loginEntry.sendEntryType();
-
-						credentials = new EnumMap<>(LoginInfo.Credential.class);
-						credentials.put(LoginInfo.Credential.EMAIL, email);
-						credentials.put(LoginInfo.Credential.PASSWORD, password);
-
-						if (entryInterface.getPasswordType() != PasswordType.PASSWORD) {
-							loginEntry.togglePasswordType();
-						}
-						
-						credentialsExchangeEntry = loginEntry;
+					if (!isSuccesfull) {
+						DialogsUtil.showErrorDialog(resultMessage);
+						continue;
 					}
-					case CREATE_ACCOUNT -> {
+				}
 
-						credentialsExchangeEntry = client.createNewCreateAccountEntry();
-						credentialsExchangeEntry.sendEntryType();
-
-						credentials = new EnumMap<>(CreateAccountInfo.Credential.class);
-						credentials.put(CreateAccountInfo.Credential.EMAIL, email);
-						credentials.put(CreateAccountInfo.Credential.USERNAME, entryInterface.getUsername());
-						credentials.put(CreateAccountInfo.Credential.PASSWORD, password);
-					}
-					}
+				if (registrationType == EntryType.CREATE_ACCOUNT || entryInterface.getPasswordType() == PasswordType.PASSWORD) {
 					
-					credentialsExchangeEntry.sendCredentials(credentials);
+					Client.VerificationEntry verificationEntry = Client.createNewVerificationEntry();
 					
-					MemoryUtil.freeStringFromMemory(password);
-					MemoryUtil.freeStringFromMemory(email);
-					
-					{
-						ResultHolder entryResult = credentialsExchangeEntry.getCredentialsExchangeResult();
-						boolean isSuccesfull = entryResult.isSuccesfull();
-						String resultMessage = entryResult.getResultMessage();
+					class VerificationDialog {
 						
-						if (!isSuccesfull) {
-							Dialogs.showErrorDialog(resultMessage);
-							continue;
-						}
-					}
-
-					if (registrationType == EntryType.CREATE_ACCOUNT || entryInterface.getPasswordType() == PasswordType.PASSWORD) {
+						private TextInputDialog verificationCodeDialog;
+						private String verificationCode;
 						
-						Client.VerificationEntry verificationEntry = client.createNewVerificationEntry();
-						
-						class VerificationDialog {
+						public VerificationDialog() {
 							
-							private TextInputDialog verificationCodeDialog;
-							private String verificationCode;
+							String headerText = "Enter the code that was sent to your email to verify it is really you";
 							
-							public VerificationDialog() {
-								
-								String headerText = "Enter the code that was sent to your email to verify it is really you";
-								
-								ButtonType resendVerificationCodeButtonType = new ButtonType("Resend verification code");
-								verificationCodeDialog = Dialogs.createTextInputDialog(headerText, null, "Verification Code", resendVerificationCodeButtonType, ButtonType.OK);
-								
-								Button resendVerificationCodeButton = (Button) verificationCodeDialog.getDialogPane().lookupButton(resendVerificationCodeButtonType);
-								resendVerificationCodeButton.pressedProperty().addListener(new ChangeListener<Boolean>() {
+							ButtonType resendVerificationCodeButtonType = new ButtonType("Resend verification code");
+							verificationCodeDialog = DialogsUtil.createTextInputDialog(headerText, null, "Verification Code", resendVerificationCodeButtonType, ButtonType.OK);
+							
+							Button resendVerificationCodeButton = (Button) verificationCodeDialog.getDialogPane().lookupButton(resendVerificationCodeButtonType);
+							resendVerificationCodeButton.pressedProperty().addListener(new ChangeListener<Boolean>() {
 
-									@Override
-									public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-										try {
-											verificationEntry.resendVerificationCode();
-										} catch (IOException ioe) {
-											ioe.printStackTrace();
-										}
+								@Override
+								public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+									try {
+										verificationEntry.resendVerificationCode();
+									} catch (IOException ioe) {
+										ioe.printStackTrace();
 									}
-								});
-							}
-							
-							public void showAndWait() {
-								
-								Optional<String> result = verificationCodeDialog.showAndWait();
-								
-								if (!result.isPresent()) {
-									return;
 								}
-								
-								verificationCode = result.get();
-							}
-							
-							public String getVerificationCode() {
-								return verificationCode;
-							}
+							});
 						}
 						
-						VerificationDialog verificationDialog = new VerificationDialog();
-						while (!verificationEntry.isVerificationComplete()) {
+						public void showAndWait() {
 							
-							verificationDialog.showAndWait();
-							verificationEntry.sendVerificationCode(verificationDialog.getVerificationCode());
+							Optional<String> result = verificationCodeDialog.showAndWait();
 							
-							ResultHolder entryResult = verificationEntry.getResult();
-							boolean isSuccesfull = entryResult.isSuccesfull();
-							String resultMessage = entryResult.getResultMessage();
-							
-							if (isSuccesfull) {
-								Dialogs.showSuccessDialog(resultMessage);
-								break;
+							if (!result.isPresent()) {
+								return;
 							}
 							
-							Dialogs.showErrorDialog(resultMessage);
+							verificationCode = result.get();
 						}
-					} else {
 						
-						BackupVerificationEntry backupVerificationEntry = client.createNewBackupVerificationEntry();
+						public String getVerificationCode() {
+							return verificationCode;
+						}
+					}
+					
+					VerificationDialog verificationDialog = new VerificationDialog();
+					while (!verificationEntry.isVerificationComplete()) {
 						
-						ResultHolder entryResult = backupVerificationEntry.getResult();
+						verificationDialog.showAndWait();
+						verificationEntry.sendVerificationCode(verificationDialog.getVerificationCode());
+						
+						ResultHolder entryResult = verificationEntry.getResult();
 						boolean isSuccesfull = entryResult.isSuccesfull();
 						String resultMessage = entryResult.getResultMessage();
 						
 						if (isSuccesfull) {
-							Dialogs.showSuccessDialog(resultMessage);
+							DialogsUtil.showSuccessDialog(resultMessage);
 							break;
 						}
 						
-						Dialogs.showErrorDialog(resultMessage);
+						DialogsUtil.showErrorDialog(resultMessage);
 					}
+				} else {
+					
+					BackupVerificationEntry backupVerificationEntry = Client.createNewBackupVerificationEntry();
+					
+					ResultHolder entryResult = backupVerificationEntry.getResult();
+					boolean isSuccesfull = entryResult.isSuccesfull();
+					String resultMessage = entryResult.getResultMessage();
+					
+					if (isSuccesfull) {
+						DialogsUtil.showSuccessDialog(resultMessage);
+						break;
+					}
+					
+					DialogsUtil.showErrorDialog(resultMessage);
+				}
+			}
+
+			Client.startMessageHandler(new MessageHandler() {
+				
+				@Override
+				public void serverMessageReceived(String message) {
+					Platform.runLater(() -> DialogsUtil.showInfoDialog(message));						
+				}
+				
+				@Override
+				public void messageReceived(Message message, int chatSessionIndex) {
+					Platform.runLater(new Runnable() {
+						
+						private static final MediaPlayer notificationPlayer;
+
+						static {
+							Media media = new Media(ChatInterfaceInfo.NOTIFICATION_SOUND_LOCATION);
+							notificationPlayer = new MediaPlayer(media);
+							notificationPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+						}
+
+						@Override
+						public void run() {
+							
+							ChatInterfaceController.this.printToMessageArea(message, chatSessionIndex);
+
+							/*
+							 * Skip notification if the user is focused on the app and the message received
+							 * originates from the chat session he is currently active in.*
+							 */
+							if (stage.isFocused() && chatSessionIndex == getChatSessionIndex()) {
+								return;
+							}
+
+							Notifications.create().title(GeneralAppInfo.TITLE).text(new String(message.getText()))
+									.hideAfter(Duration.seconds(5)).position(Pos.TOP_RIGHT).darkStyle()
+									.showInformation();
+
+							notificationPlayer.play();
+						}
+					});
 				}
 
-				client.startMessageHandler(new MessageHandler() {
-					
-					@Override
-					public void serverMessageReceived(String message) {
-						Platform.runLater(() -> Dialogs.showInfoDialog(message));						
-					}
-					
-					@Override
-					public void messageReceived(Message message, int chatSessionIndex) {
-						Platform.runLater(new Runnable() {
-							
-							private static final MediaPlayer notificationPlayer;
-							
-							static {
-								Media media = new Media(ChatInterfaceInfo.NOTIFICATION_SOUND_LOCATION);
-								notificationPlayer = new MediaPlayer(media);
-								notificationPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-							}
-							
-							@Override
-							public void run() {
-								
-								ChatInterfaceController.this.printToMessageArea(message, chatSessionIndex);
+				@Override
+				public void alreadyWrittenTextReceived(ChatSession chatSession) {
+					Platform.runLater(() -> {
+						
+						chatBox.getChildren().clear();
 
-								if (stage.isFocused() && chatSessionIndex == getChatSessionIndex()) {
-									return;
+						int chatSessionIndex = chatSession.getChatSessionIndex();
+						List<Message> messages = chatSession.getMessages();
+						
+						for (int i = 0; i < messages.size(); i++) {
+							ChatInterfaceController.this.printToMessageArea(messages.get(i), chatSessionIndex);
+						}
+					});
+				}
+
+				@Override
+				public void fileDownloaded(LoadedInMemoryFile file) {
+					try {
+
+						String dirPathString = FileSystemView.getFileSystemView().getDefaultDirectory().getPath()
+								+ "/Documents/" + GeneralAppInfo.GENERAL_NAME + "Downloads/";
+						Path dirPath = Paths.get(dirPathString);
+
+						try {
+							Files.createDirectory(dirPath);
+						} catch (FileAlreadyExistsException faee) {
+							// Do nothing
+						}
+
+						Path filePath = Paths.get(dirPathString + File.separator + file.getFileName());
+						Files.write(filePath, file.getFileBytes());
+
+						Platform.runLater(() -> MFXDialogsUtil.showSimpleInformationDialog(stage, rootBorderPane, "Succesfully saved file!"));
+					} catch (IOException ioe) {
+						ioe.printStackTrace();
+					}
+				}
+				
+				@Override
+				public void donationPageReceived(DonationHtmlPage donationPage) {
+					Platform.runLater(() -> {
+						try {
+							String html = donationPage.getHtml();
+							Path pathToCreateHtmlFile = Files.createTempFile(donationPage.getHtmlFileName(), ".html");
+							Files.write(pathToCreateHtmlFile, html.getBytes());
+							String htmlUrl = pathToCreateHtmlFile.toUri().toURL().toString();
+							
+							hostServices.showDocument(htmlUrl);
+						} catch (IOException ioe) {
+							ioe.printStackTrace();
+						}
+					});
+				}
+				
+				@Override
+				public void serverSourceCodeReceived(String serverSourceCodeURL) {
+					Platform.runLater(() -> hostServices.showDocument(serverSourceCodeURL));
+				}
+
+				@Override
+				public void usernameReceived(String username) {
+					// Do nothing.
+				}
+				
+				@Override
+				public void clientIDReceived(int clientID) {
+					Platform.runLater(() -> clientIDLabel.setText(clientIDLabel.getText().concat(String.valueOf(clientID))));
+				}
+				
+				@Override
+				public void chatSessionsReceived(List<ChatSession> chatSessions) {
+					Platform.runLater(() -> {
+						chatSessionsListView.getItems().clear();
+						chatSessionsListView.getItems().addAll(chatSessions);
+					});
+				}
+				
+				@Override
+				public void chatRequestsReceived(List<ChatRequest> chatRequests) {
+					Platform.runLater(() -> {
+						chatRequestsListView.getItems().clear();
+						chatRequestsListView.getItems().addAll(chatRequests);
+					});
+				}
+
+				@Override
+				public void messageDeleted(ChatSession chatSession, int messageIDOfDeletedMessage) {
+					Platform.runLater(() -> {
+
+						List<Message> messages = chatSession.getMessages();
+						for (int i = 0; i < messages.size(); i++) {
+
+							Message message = messages.get(i);
+
+							if (message.getMessageID() == messageIDOfDeletedMessage) {
+
+								messages.remove(i);
+
+								if (getChatSessionIndex() == chatSession.getChatSessionIndex()) {
+									chatBox.getChildren().remove(i);
 								}
 
-								Notifications.create()
-										.title(GeneralAppInfo.TITLE)
-										.text(new String(message.getText()))
-										.hideAfter(Duration.seconds(5)).position(Pos.TOP_RIGHT)
-										.darkStyle()
-										.showInformation();
-
-								notificationPlayer.play();
+								break;
 							}
-						});
+
+						}
+
+					});
+				}
+			});
+
+			{
+				chatSessionsListView.setOnMouseClicked((MouseEvent e) -> {
+
+					if (!(e.getPickResult().getIntersectedNode() instanceof JFXListCell<?> cell)) {
+						return;
 					}
 
-					@Override
-					public void alreadyWrittenTextReceived(ChatSession chatSession) {
-						Platform.runLater(() -> {
-							
-							chatBox.getChildren().clear();
+					if (e.getButton() == MouseButton.PRIMARY /* Left Click */) {
 
-							int chatSessionIndex = chatSession.getChatSessionIndex();
-							List<Message> messages = chatSession.getMessages();
-							
-							for (int i = 0; i < messages.size(); i++) {
-								ChatInterfaceController.this.printToMessageArea(messages.get(i), chatSessionIndex);
-							}
-						});
-					}
+						ChatSession chatSession = (ChatSession) cell.getItem();
 
-					@Override
-					public void fileDownloaded(LoadedInMemoryFile file) {
-						try {
-
-							String dirPathString = FileSystemView.getFileSystemView().getDefaultDirectory().getPath()
-									+ "/Documents/" + GeneralAppInfo.GENERAL_NAME + "Downloads/";
-							Path dirPath = Paths.get(dirPathString);
-
+						chatBox.getChildren().clear();
+						if (!chatSession.haveChatMessagesBeenCached()) {
 							try {
-								Files.createDirectory(dirPath);
-							} catch (FileAlreadyExistsException faee) {
-								// Do nothing
+								Client.getCommands().sendGetWrittenText(chatSession.getChatSessionIndex());
+							} catch (IOException ioe) {
+								ioe.printStackTrace();
 							}
+						} else {
+							List<Message> messages = chatSession.getMessages();
+							for (int i = 0; i < messages.size(); i++) {
+								chatBox.getChildren().add(createClientMessageLabel(messages.get(i)));
+							}
+						}
+					} else if (e.getButton() == MouseButton.SECONDARY /* Right Click */) {
 
-							Path filePath = Paths.get(dirPathString + File.separator + file.getFileName());
-							Files.write(filePath, file.getFileBytes());
+						final ContextMenu contextMenu = new ContextMenu();
+						MenuItem delete = new MenuItem("Delete");
+						contextMenu.getItems().addAll(delete);
 
-							Platform.runLater(() -> MFXDialogs.showSimpleInformationDialog(stage, rootBorderPane, "Succesfully saved file!"));
+						delete.setOnAction(new EventHandler<ActionEvent>() {
+							@Override
+							public void handle(ActionEvent event) {
+								try {
+									Client.getCommands().deleteChatSession(getChatSessionIndex());
+								} catch (IOException ioe) {
+									ioe.printStackTrace();
+								}
+							}
+						});
+
+						contextMenu.show(cell, e.getScreenX(), e.getScreenY());
+					}
+				});
+
+				chatRequestsListView.setOnMouseClicked((MouseEvent e) -> {
+					if (e.getButton() == MouseButton.SECONDARY
+							&& e.getPickResult().getIntersectedNode() instanceof JFXListCell<?> cell) {
+
+						final ContextMenu contextMenu = new ContextMenu();
+						MenuItem accept = new MenuItem("Accept");
+						MenuItem decline = new MenuItem("Decline");
+						contextMenu.getItems().addAll(accept, decline);
+						
+						accept.setOnAction(new EventHandler<ActionEvent>() {
+						    @Override
+						    public void handle(ActionEvent event) {
+						    	
+						    	ChatRequest user = (ChatRequest) cell.getItem();
+						    	
+						    	try {
+									Client.getCommands().acceptChatRequest(user.clientID());
+								} catch (IOException ioe) {
+									ioe.printStackTrace();
+								}
+						    }
+						});
+						
+						decline.setOnAction(new EventHandler<ActionEvent>() {
+						    @Override
+						    public void handle(ActionEvent event) {
+						    	
+						    	ChatRequest user = (ChatRequest) cell.getItem();
+						    	
+						    	try {
+									Client.getCommands().declineChatRequest(user.clientID());
+								} catch (IOException ioe) {
+									ioe.printStackTrace();
+								}
+						    }
+						});
+
+						contextMenu.show(cell, e.getScreenX(), e.getScreenY());
+					}
+				});
+			}
+			
+			// This basically retrieves more messages from the conversation when it reaches the top of the conversation
+			chatBoxScrollpane.setOnScroll(new EventHandler<ScrollEvent>() {
+
+				private Instant lastTimeRequrestedMoreMessages;
+
+				@Override
+				public void handle(ScrollEvent event) {
+
+					if (lastTimeRequrestedMoreMessages != null) {
+
+						long elapsedSeconds = Instant.now().getEpochSecond() - lastTimeRequrestedMoreMessages.getEpochSecond();
+
+						// Have a time limit since if user sends to many requests to get messages then
+						// he will probably crash by the enormous amount of messages sent to him
+						if (elapsedSeconds < 3) {
+							return;
+						}
+					}
+
+					// When it reaches the top of the scroll pane get more written messages
+					if (Double.compare(chatBoxScrollpane.getVvalue(), chatBoxScrollpane.getVmin()) == 0) {
+						try {
+							Client.getCommands().sendGetWrittenText(getChatSessionIndex());
+							lastTimeRequrestedMoreMessages = Instant.now();
 						} catch (IOException ioe) {
 							ioe.printStackTrace();
 						}
 					}
 					
-					@Override
-					public void donationPageReceived(DonationHtmlPage donationPage) {
-						Platform.runLater(() -> {
-							try {
-								String html = donationPage.getHtml();
-								Path pathToCreateHtmlFile = Files.createTempFile(donationPage.getHtmlFileName(), ".html");
-								Files.write(pathToCreateHtmlFile, html.getBytes());
-								String htmlUrl = pathToCreateHtmlFile.toUri().toURL().toString();
-								
-								hostServices.showDocument(htmlUrl);
-							} catch (IOException ioe) {
-								ioe.printStackTrace();
-							}
-						});
-					}
-					
-					@Override
-					public void serverSourceCodeReceived(String serverSourceCodeURL) {
-						Platform.runLater(() -> hostServices.showDocument(serverSourceCodeURL));
-					}
-
-					@Override
-					public void usernameReceived(String username) {
-						// Do nothing.
-					}
-					
-					@Override
-					public void clientIDReceived(int clientID) {
-						Platform.runLater(() -> clientIDLabel.setText(clientIDLabel.getText().concat(String.valueOf(clientID))));
-					}
-					
-					@Override
-					public void chatSessionsReceived(List<ChatSession> chatSessions) {
-						Platform.runLater(() -> {
-							chatSessionsListView.getItems().clear();
-							chatSessionsListView.getItems().addAll(chatSessions);
-						});
-					}
-					
-					@Override
-					public void chatRequestsReceived(List<ChatRequest> chatRequests) {
-						Platform.runLater(() -> {
-							chatRequestsListView.getItems().clear();
-							chatRequestsListView.getItems().addAll(chatRequests);
-						});
-					}
-
-					@Override
-					public void messageDeleted(ChatSession chatSession, int messageIDOfDeletedMessage) {
-						Platform.runLater(() -> {
-
-							List<Message> messages = chatSession.getMessages();
-							for (int i = 0; i < messages.size(); i++) {
-
-								Message message = messages.get(i);
-
-								if (message.getMessageID() == messageIDOfDeletedMessage) {
-
-									messages.remove(i);
-
-									if (getChatSessionIndex() == chatSession.getChatSessionIndex()) {
-										chatBox.getChildren().remove(i);
-									}
-
-									break;
-								}
-
-							}
-
-						});
-					}
-				});
-
-				{
-					chatSessionsListView.setOnMouseClicked((MouseEvent e) -> {
-
-						if (!(e.getPickResult().getIntersectedNode() instanceof JFXListCell<?> cell)) {
-							return;
-						}
-
-						if (e.getButton() == MouseButton.PRIMARY /* Left Click */) {
-
-							ChatSession chatSession = (ChatSession) cell.getItem();
-
-							chatBox.getChildren().clear();
-							if (!chatSession.haveChatMessagesBeenCached()) {
-								try {
-									client.getCommands().sendGetWrittenText(chatSession.getChatSessionIndex());
-								} catch (IOException ioe) {
-									ioe.printStackTrace();
-								}
-							} else {
-								List<Message> messages = chatSession.getMessages();
-								for (int i = 0; i < messages.size(); i++) {
-									chatBox.getChildren().add(createClientMessageLabel(messages.get(i)));
-								}
-							}
-						} else if (e.getButton() == MouseButton.SECONDARY /* Right Click */) {
-
-							final ContextMenu contextMenu = new ContextMenu();
-							MenuItem delete = new MenuItem("Delete");
-							contextMenu.getItems().addAll(delete);
-
-							delete.setOnAction(new EventHandler<ActionEvent>() {
-								@Override
-								public void handle(ActionEvent event) {
-									try {
-										client.getCommands().deleteChatSession(getChatSessionIndex());
-									} catch (IOException ioe) {
-										ioe.printStackTrace();
-									}
-								}
-							});
-
-							contextMenu.show(cell, e.getScreenX(), e.getScreenY());
-						}
-					});
-
-					chatRequestsListView.setOnMouseClicked((MouseEvent e) -> {
-						if (e.getButton() == MouseButton.SECONDARY
-								&& e.getPickResult().getIntersectedNode() instanceof JFXListCell<?> cell) {
-
-							final ContextMenu contextMenu = new ContextMenu();
-							MenuItem accept = new MenuItem("Accept");
-							MenuItem decline = new MenuItem("Decline");
-							contextMenu.getItems().addAll(accept, decline);
-							
-							accept.setOnAction(new EventHandler<ActionEvent>() {
-							    @Override
-							    public void handle(ActionEvent event) {
-							    	
-							    	ChatRequest user = (ChatRequest) cell.getItem();
-							    	
-							    	try {
-										client.getCommands().acceptChatRequest(user.clientID());
-									} catch (IOException ioe) {
-										ioe.printStackTrace();
-									}
-							    }
-							});
-							
-							decline.setOnAction(new EventHandler<ActionEvent>() {
-							    @Override
-							    public void handle(ActionEvent event) {
-							    	
-							    	ChatRequest user = (ChatRequest) cell.getItem();
-							    	
-							    	try {
-										client.getCommands().declineChatRequest(user.clientID());
-									} catch (IOException ioe) {
-										ioe.printStackTrace();
-									}
-							    }
-							});
-
-							contextMenu.show(cell, e.getScreenX(), e.getScreenY());
-						}
-					});
 				}
-				
-				// This basically retrieves more messages from the conversation when it reaches the top of the conversation
-				chatBoxScrollpane.setOnScroll(new EventHandler<ScrollEvent>() {
+			});
 
-					private Instant lastTimeRequrestedMoreMessages;
-
-					@Override
-					public void handle(ScrollEvent event) {
-
-						if (lastTimeRequrestedMoreMessages != null) {
-
-							long elapsedSeconds = Instant.now().getEpochSecond() - lastTimeRequrestedMoreMessages.getEpochSecond();
-
-							// Have a time limit since if user sends to many requests to get messages then
-							// he will probably crash by the enormous amount of messages sent to him
-							if (elapsedSeconds < 3) {
-								return;
-							}
-						}
-
-						// When it reaches the top of the scroll pane get more written messages
-						if (Double.compare(chatBoxScrollpane.getVvalue(), chatBoxScrollpane.getVmin()) == 0) {
-							try {
-								client.getCommands().sendGetWrittenText(getChatSessionIndex());
-								lastTimeRequrestedMoreMessages = Instant.now();
-							} catch (IOException ioe) {
-								ioe.printStackTrace();
-							}
-						}
-						
+			{
+				// this listener changes the width of the labels in chatbox whenever the width
+				// of the tab pane or split pane change. This way the labels texts wrap
+				// whenever hitting the edge of the stage
+				ChangeListener<Number> listener = (observable, oldValue, newValue) -> {
+					double prefWidth = stage.getWidth() - tabPane.getWidth();
+					Iterator<Node> iterator = chatBox.getChildren().iterator();
+					while (iterator.hasNext()) {
+						Label label = (Label) iterator.next();
+						label.setPrefWidth(prefWidth);
 					}
-				});
-
-				{
-					// this listener changes the width of the labels in chatbox whenever the width
-					// of the tab pane or split pane change. This way the labels texts wrap
-					// whenever hitting the edge of the stage
-					ChangeListener<Number> listener = (observable, oldValue, newValue) -> {
-						double prefWidth = stage.getWidth() - tabPane.getWidth();
-						Iterator<Node> iterator = chatBox.getChildren().iterator();
-						while (iterator.hasNext()) {
-							Label label = (Label) iterator.next();
-							label.setPrefWidth(prefWidth);
-						}
-					};
-					
-					tabPane.widthProperty().addListener(listener);
-					splitPane.widthProperty().addListener(listener);
-				}
+				};
 				
-				new JMetro(tabPane, Style.DARK);
-				
-				retry = false;
-			} catch (Exception e) {
-				
-				ButtonType retryButton = new ButtonType("Retry");
-
-				Alert confirmationDialog = Dialogs.createConfirmationDialog("An error occured: " + e.getMessage(),
-						Throwables.getStackTraceAsString(e));
-
-				Optional<ButtonType> result = confirmationDialog.showAndWait();
-
-				if (!result.isPresent() || result.get() == retryButton) {
-					retry = true;
-					continue;
-				}
-				
-				System.exit(0);
+				tabPane.widthProperty().addListener(listener);
+				splitPane.widthProperty().addListener(listener);
 			}
-		} while (retry);
+
+			new JMetro(tabPane, Style.DARK); // Applys a nice dark theme to the tabPane
+		} catch (Exception e) {
+
+
+			Optional<ButtonType> exceptionDialogResult = DialogsUtil.showExceptionDialog(e);
+
+			if (!exceptionDialogResult.isPresent() || exceptionDialogResult.get() == CustomDialogButtonTypes.RETRY_BUTTON) {
+				initialize(arg0, arg1);
+			} else {
+				Platform.exit();
+			}
+			
+		}
 	}
 
 	@FXML
 	public void refreshChatSessionsListView(ActionEvent event) {
 		try {
-			client.getCommands().sendGetChatSessions();
+			Client.getCommands().sendGetChatSessions();
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
@@ -634,7 +602,7 @@ public class ChatInterfaceController implements Initializable {
 	@FXML
 	public void refreshChatRequestsListView(ActionEvent event) {
 		try {
-			client.getCommands().sendGetChatRequests();
+			Client.getCommands().sendGetChatRequests();
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
@@ -658,8 +626,7 @@ public class ChatInterfaceController implements Initializable {
 
 			differentFromBefore = false;
 
-			// reverse loop so sorted items appear from top to bottom and not from bottom to
-			// top
+			// reverse loop so sorted items appear from top to bottom and not from bottom to top
 			for (int i = items.size() - 1; i > 0; i--) {
 
 				int a = Math.abs(items.get(i).clientID() - num);
@@ -689,7 +656,7 @@ public class ChatInterfaceController implements Initializable {
 		content.putString(clientID);
 		clipboard.setContent(content);
 		
-		MFXDialogs.showSimpleInformationDialog(stage, rootBorderPane, "Succesfully copied clientID");
+		MFXDialogsUtil.showSimpleInformationDialog(stage, rootBorderPane, "Succesfully copied clientID");
 	}
 
 	public Label createClientMessageLabel(Message message) {
@@ -706,7 +673,7 @@ public class ChatInterfaceController implements Initializable {
 		MenuItem delete = new MenuItem("Delete");
 		delete.setOnAction((e) -> {
 			try {
-				client.getCommands().deleteMessage(getChatSessionIndex(), message.getMessageID());
+				Client.getCommands().deleteMessage(getChatSessionIndex(), message.getMessageID());
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 			}
@@ -748,8 +715,8 @@ public class ChatInterfaceController implements Initializable {
 	        downloadButton.setPadding(new Insets(0.0, 4.0, 0.0, 4.0));
 	        downloadButton.setOnAction(actionEvent -> {
 				try {
-					MFXDialogs.showSimpleInformationDialog(stage, rootBorderPane, "Downloading file...");
-					client.getCommands().downloadFile(message.getMessageID(), getChatSessionIndex());
+					MFXDialogsUtil.showSimpleInformationDialog(stage, rootBorderPane, "Downloading file...");
+					Client.getCommands().downloadFile(message.getMessageID(), getChatSessionIndex());
 				} catch (IOException ioe) {
 					ioe.printStackTrace();
 				}
@@ -800,7 +767,7 @@ public class ChatInterfaceController implements Initializable {
 		}
 
 		try {
-			client.sendFile(file, getChatSessionIndex());
+			Client.sendFile(file, getChatSessionIndex());
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
@@ -833,7 +800,7 @@ public class ChatInterfaceController implements Initializable {
 		}
 
 		try {
-			client.sendMessageToClient(message, chatSessionIndex);
+			Client.sendMessageToClient(message, chatSessionIndex);
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
@@ -843,12 +810,12 @@ public class ChatInterfaceController implements Initializable {
 
 	@FXML
 	public void getServerHosterDonationHTMLPage(ActionEvent event) throws IOException {
-		client.getCommands().sendGetDonationHTMLPage();
+		Client.getCommands().sendGetDonationHTMLPage();
 	}
 	
 	@FXML
 	public void getServerSourceCodeHTMLPage(ActionEvent event) throws IOException {
-		client.getCommands().sendGetServerSourceCodeHTMLPage();
+		Client.getCommands().sendGetServerSourceCodeHTMLPage();
 	}
 	
 	@FXML
@@ -864,7 +831,7 @@ public class ChatInterfaceController implements Initializable {
 
 		if (!dialog.isCanceled()) {
 			int friendRequestClientID = dialog.getFriendRequest();
-			client.getCommands().sendChatRequest(friendRequestClientID);
+			Client.getCommands().sendChatRequest(friendRequestClientID);
 		}
 	}
 	
@@ -876,7 +843,7 @@ public class ChatInterfaceController implements Initializable {
 		
 		if (!dialog.isCanceled()) {
 			String newUsername = dialog.getNewCredential();
-			client.getCommands().changeUsername(newUsername);
+			Client.getCommands().changeUsername(newUsername);
 			MemoryUtil.freeStringFromMemory(newUsername);
 		}
 	}
@@ -889,7 +856,7 @@ public class ChatInterfaceController implements Initializable {
 		
 		if (!dialog.isCanceled()) {
 			String newPassword = dialog.getNewCredential();
-			client.getCommands().changePassword(newPassword);
+			Client.getCommands().changePassword(newPassword);
 			MemoryUtil.freeStringFromMemory(newPassword);
 		}
 	}
@@ -901,7 +868,7 @@ public class ChatInterfaceController implements Initializable {
 		dialog.showAndWait();
 		
 		if (!dialog.isCanceled()) {
-			client.getCommands().logout();
+			Client.getCommands().logout();
 			System.exit(0);
 		}
 	}
@@ -920,7 +887,7 @@ public class ChatInterfaceController implements Initializable {
 
 	public void closeClient() {
 		try {
-			client.close();
+			Client.close();
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
