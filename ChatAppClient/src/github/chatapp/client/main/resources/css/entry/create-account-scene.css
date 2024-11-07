@@ -22,6 +22,17 @@
 	-fx-background-color: -fx-default-background-color;
 }
 
+/* Style the background track of the progress bar */
+.mfx-progress-bar .track {
+	-fx-fill: rgb(10,10,10);
+}
+
+.mfx-progress-bar .bar1,
+.mfx-progress-bar:indeterminate .bar1,
+.mfx-progress-bar:indeterminate .bar2 {
+	-fx-fill: rgb(15, 157, 88);
+}
+
 .jfx-check-box {
 	-fx-cursor: HAND;
 }
@@ -38,7 +49,8 @@
 }
 
 #switchToLoginSceneButton {
-	-fx-border-color: black;
+	-fx-background-color: rgb(10,10,10);
+	-fx-border-color: white;
 }
 
 #createAccountLabel {

@@ -33,17 +33,20 @@ public final class Message {
 	private byte[] text;
 	private byte[] fileName;
 	
+	private long timeWritten;
+	
 	private ContentType contentType;
 
 	public Message() {}
 
-	public Message(String username, int clientID, int messageID, int chatSessionID, byte[] text, byte[] fileName, ContentType contentType) {
+	public Message(String username, int clientID, int messageID, int chatSessionID, byte[] text, byte[] fileName, long timeWritten, ContentType contentType) {
 		this.username = username;
 		this.clientID = clientID;
 		this.messageID = messageID;
 		this.chatSessionID = chatSessionID;
 		this.text = text;
 		this.fileName = fileName;
+		this.timeWritten = timeWritten;
 		this.contentType = contentType;
 	}
 
@@ -69,6 +72,10 @@ public final class Message {
 
 	public void setFileName(byte[] fileName) {
 		this.fileName = fileName;
+	}
+	
+	public void setTimeWritten(long timeWritten) {
+		this.timeWritten = timeWritten;
 	}
 
 	public void setContentType(ContentType contentType) {
@@ -98,6 +105,10 @@ public final class Message {
 	public byte[] getFileName() {
 		return fileName;
 	}
+	
+	public long getTimeWritten() {
+		return timeWritten;
+	}
 
 	public ContentType getContentType() {
 		return contentType;
@@ -124,16 +135,26 @@ public final class Message {
 		}
 		
 		Message other = (Message) obj;
-		return chatSessionID == other.chatSessionID && clientID == other.clientID && contentType == other.contentType
-				&& Arrays.equals(fileName, other.fileName) && messageID == other.messageID
-				&& Arrays.equals(text, other.text) && Objects.equals(username, other.username);
+		return chatSessionID == other.chatSessionID 
+				&& clientID == other.clientID 
+				&& contentType == other.contentType
+				&& Arrays.equals(fileName, other.fileName) 
+				&& messageID == other.messageID
+				&& Arrays.equals(text, other.text) 
+				&& Objects.equals(timeWritten, other.getTimeWritten())
+				&& Objects.equals(username, other.username);
 	}
 
 	@Override
 	public String toString() {
-		return "Message [username=" + username + ", clientID=" + clientID + ", messageID=" + messageID
-				+ ", chatSessionID=" + chatSessionID + ", text=" + Arrays.toString(text) + ", fileName="
-				+ Arrays.toString(fileName) + ", contentType=" + contentType + "]";
+		return "Message [username=" + username
+				+ ", clientID=" + clientID
+				+ ", messageID=" + messageID
+				+ ", chatSessionID=" + chatSessionID
+				+ ", text=" + Arrays.toString(text)
+				+ ", fileName=" + Arrays.toString(fileName)
+				+ ", timeWritten=" + timeWritten
+				+ ", contentType=" + contentType
+				+ "]";
 	}
-
 }

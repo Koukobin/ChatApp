@@ -20,7 +20,7 @@ import java.util.Map;
 import github.chatapp.client.main.java.database.ClientDatabase;
 import github.chatapp.client.main.java.database.ServerInfo;
 import github.chatapp.client.main.java.general_dialogs.MFXDialog;
-import github.chatapp.client.main.java.info.GeneralAppInfo;
+import github.chatapp.client.main.java.info.Icons;
 import github.chatapp.client.main.java.info.choose_server_dialog.ChooseServerDialogInfo;
 import io.github.palexdev.materialfx.controls.MFXButton;
 import io.github.palexdev.materialfx.controls.MFXComboBox;
@@ -31,10 +31,8 @@ import io.github.palexdev.materialfx.enums.FloatMode;
 import io.github.palexdev.materialfx.enums.ScrimPriority;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.Parent;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
-import javafx.stage.Stage;
 
 /**
  * @author Ilias Koukovinis
@@ -49,8 +47,8 @@ public class ChooseServerDialog extends MFXDialog {
 	
 	private boolean isCanceled = true;
 	
-	public ChooseServerDialog(Stage stage, Parent rootPane) {
-		super(stage, rootPane);
+	public ChooseServerDialog() {
+		super(null /* No stage */, null /* No rootPane*/);
 		
 		MFXComboBox<ServerInfo> mfxComboBox = new MFXComboBox<>();
 		mfxComboBox.setFloatMode(FloatMode.ABOVE);
@@ -115,12 +113,12 @@ public class ChooseServerDialog extends MFXDialog {
 		super.setScrimPriority(ScrimPriority.WINDOW);
 		dialogContent.setHeaderText("Choose server to connect to");
 		
-		ImageView headerIcon = new ImageView(GeneralAppInfo.MAIN_ICON);
+		ImageView headerIcon = new ImageView(Icons.PRIMARY_APPLICATION_ICON);
 		headerIcon.setFitWidth(30);
 		headerIcon.setFitHeight(30);
 		dialogContent.setHeaderIcon(headerIcon);
 		
-        super.getContent().getStylesheets().add(GeneralAppInfo.DARK_THEME_CSS);
+        super.getContent().getStylesheets().add(ChooseServerDialogInfo.CHOOSE_SERSVER_DIALOG_CSS);
 	}
 
 	@Override

@@ -24,7 +24,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.StackPane?>
 
-<StackPane fx:id="parentContainer" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="github.chatapp.client.main.java.controllers.entry.LoginSceneController">												
+<StackPane fx:id="parentContainer" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" stylesheets="@../../css/entry/login-scene.css" fx:controller="github.chatapp.client.main.java.controllers.entry.LoginSceneController">												
    <children>
       <AnchorPane fx:id="loginAnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="266.0" prefWidth="450.0">
          <children>
@@ -32,7 +32,7 @@
             <JFXButton fx:id="loginButton" layoutX="88.0" layoutY="209.0" onAction="#proceed" prefHeight="41.0" prefWidth="127.0" text="Login" />
             <TextField fx:id="emailTextField" layoutX="97.0" layoutY="96.0" prefHeight="24.0" prefWidth="260.0" promptText="Email" />
             <PasswordField fx:id="passwordFieldTextHidden" layoutX="97.0" layoutY="139.0" prefHeight="24.0" prefWidth="260.0" promptText="Password" />
-            <JFXButton fx:id="togglePasswordTypeButton" layoutX="225.0" layoutY="175.0" onAction="#flipPasswordType" prefHeight="24.0" prefWidth="222.0" text="Use backup verification code" textAlignment="CENTER" wrapText="true" />
+            <JFXButton fx:id="togglePasswordTypeButton" layoutX="225.0" layoutY="175.0" onAction="#flipPasswordType" prefHeight="24.0" prefWidth="207.0" text="Use backup verification code" textAlignment="CENTER" wrapText="true" />
             <JFXCheckBox fx:id="changePasswordVisibilityCheckBox" layoutX="77.0" layoutY="178.0" onAction="#changePasswordVisibility" text="Show Password" />
             <JFXButton fx:id="switchToCreateAccountSceneButton" layoutX="227.0" layoutY="209.0" onAction="#switchScene" prefHeight="41.0" prefWidth="127.0" text="Create Account" />
             <TextField fx:id="passwordFieldTextVisible" layoutX="97.0" layoutY="139.0" prefHeight="24.0" prefWidth="260.0" promptText="Password" visible="false" />

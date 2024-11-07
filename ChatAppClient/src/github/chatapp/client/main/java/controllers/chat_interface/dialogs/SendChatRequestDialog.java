@@ -33,7 +33,7 @@ import javafx.stage.Stage;
  * @author Ilias Koukovinis
  *
  */
-public class SendChatRequestDialog extends MFXActionDialog {
+public final class SendChatRequestDialog extends MFXActionDialog {
 
 	private int clientID;
 	
@@ -67,12 +67,12 @@ public class SendChatRequestDialog extends MFXActionDialog {
 				}));
 
 		MFXFontIcon infoIcon = new MFXFontIcon("mfx-info-circle-filled", 18);
-		dialogContent.setHeaderText("Send Chat Request Dialog");
+		dialogContent.setHeaderText("Send Chat Request");
 		dialogContent.setHeaderIcon(infoIcon);
 		dialogContent.getStyleClass().add("mfx-info-dialog");
 	}
 	
-	public int getFriendRequest() {
+	public int getChatRequest() {
 		return clientID;
 	}
 }

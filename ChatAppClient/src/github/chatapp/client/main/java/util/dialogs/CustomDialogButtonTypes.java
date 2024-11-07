@@ -18,7 +18,7 @@ package github.chatapp.client.main.java.util.dialogs;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ButtonBar.ButtonData;
 
-public class CustomDialogButtonTypes {
+public final class CustomDialogButtonTypes {
 	
 	public static final ButtonType RETRY_BUTTON = new ButtonType("Retry", ButtonData.NEXT_FORWARD);
 	public static final ButtonType EXIT_BUTTON = new ButtonType("Exit", ButtonData.CANCEL_CLOSE);

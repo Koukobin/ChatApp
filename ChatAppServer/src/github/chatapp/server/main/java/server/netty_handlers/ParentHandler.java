@@ -33,10 +33,17 @@ abstract sealed class ParentHandler extends SimpleChannelInboundHandler<ByteBuf>
 
 	protected static final Logger logger = LogManager.getLogger("server");
 	protected final ClientInfo clientInfo;
-	
+
 	protected ParentHandler(ClientInfo clientInfo) {
 		this.clientInfo = clientInfo;
 	}
+
+	/**
+	 * Note: ByteBuf message is automatically released since this class extends
+	 * SimpleChannelInboundHandler.
+	 */
+	@Override
+	protected abstract void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception;
 
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {

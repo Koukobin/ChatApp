@@ -22,6 +22,7 @@ import github.chatapp.client.main.java.controllers.entry.CreateAccountSceneContr
 import github.chatapp.client.main.java.controllers.entry.GeneralEntryController;
 import github.chatapp.client.main.java.controllers.entry.LoginSceneController;
 import github.chatapp.client.main.java.info.GeneralAppInfo;
+import github.chatapp.client.main.java.info.Icons;
 import github.chatapp.client.main.java.info.entry.EntryInfo;
 import github.chatapp.common.entry.EntryType;
 import github.chatapp.common.entry.LoginInfo.PasswordType;
@@ -53,7 +54,7 @@ public class EntryInterface {
 		
 		stage = new Stage();
 		stage.setOnCloseRequest(event -> System.exit(0));
-		stage.getIcons().add(GeneralAppInfo.MAIN_ICON);
+		stage.getIcons().add(Icons.PRIMARY_APPLICATION_ICON);
 		stage.setTitle(GeneralAppInfo.TITLE);
 		stage.setResizable(false);
 		stage.setScene(scene);

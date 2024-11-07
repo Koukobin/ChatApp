@@ -20,6 +20,7 @@ import java.util.Optional;
 import com.google.common.base.Throwables;
 
 import github.chatapp.client.main.java.info.GeneralAppInfo;
+import github.chatapp.client.main.java.info.Icons;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Dialog;
@@ -51,13 +52,17 @@ public class DialogsUtil {
 	}
 	
 	public static Alert createConfirmationDialog(String headerText, String contentText, ButtonType... buttons) {
+		return createConfirmationDialog(headerText, contentText, AlertType.CONFIRMATION, buttons);
+	}
+	
+	public static Alert createConfirmationDialog(String headerText, String contentText, AlertType alertType, ButtonType... buttons) {
 
-		Alert alert = new Alert(AlertType.CONFIRMATION);
+		Alert alert = new Alert(alertType);
 		alert.setTitle(GeneralAppInfo.TITLE);
 		alert.getDialogPane().getScene().getWindow().sizeToScene();
 		alert.setHeaderText(headerText);
 		addButtons(alert, buttons);
-		addIcon(alert, GeneralAppInfo.MAIN_ICON);
+		addPrimaryApplicationIon(alert);
 
 		TextArea textArea = new TextArea(contentText);
 		textArea.setEditable(false);
@@ -79,26 +84,30 @@ public class DialogsUtil {
 
 		Alert alert = new Alert(AlertType.INFORMATION);
 		alert.setTitle(GeneralAppInfo.TITLE);
-		alert.setHeaderText("Info!");
+		alert.setHeaderText(null);
 		alert.setContentText(contentText);
 		alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
-		addIcon(alert, GeneralAppInfo.MAIN_ICON);
+		addPrimaryApplicationIon(alert);
 		
 		alert.showAndWait();
 	}
 	
 	public static void showSuccessDialog(String contentText) {
 
+		TextArea textArea = new TextArea(contentText);
+		textArea.setEditable(false);
+		textArea.setWrapText(true);
 		GridPane gridPane = new GridPane();
 		gridPane.setMaxWidth(Double.MAX_VALUE);
-
+		gridPane.add(textArea, 0, 0);
+		
 		Alert alert = new Alert(AlertType.INFORMATION);
 		alert.setTitle(GeneralAppInfo.TITLE);
 		alert.setHeaderText("Success!");
 		alert.setContentText(contentText);
-		alert.getDialogPane().setContent(gridPane);
 		alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
-		addIcon(alert, GeneralAppInfo.MAIN_ICON);
+		alert.getDialogPane().setContent(gridPane);
+		addPrimaryApplicationIon(alert);
 		
 		alert.showAndWait();
 	}
@@ -110,17 +119,17 @@ public class DialogsUtil {
 		alert.setHeaderText("Error!");
 		alert.setContentText(contentText);
 		alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
-		addIcon(alert, GeneralAppInfo.MAIN_ICON);
+		addPrimaryApplicationIon(alert);
 		
 		alert.showAndWait();
 	}
 	
 	public static Optional<ButtonType> showExceptionDialog(Throwable exception) {
 		return DialogsUtil.createConfirmationDialog("An error occured: " + exception.getMessage(),
-				Throwables.getStackTraceAsString(exception),
+				Throwables.getStackTraceAsString(exception), AlertType.ERROR,
 				CustomDialogButtonTypes.EXIT_BUTTON, CustomDialogButtonTypes.RETRY_BUTTON).showAndWait();
 	}
-	
+
 	public static Alert createCustomAlertDialog(String headerText, String contentText, AlertType alertType,
 			ButtonType... buttons) {
 
@@ -129,7 +138,7 @@ public class DialogsUtil {
 		alert.setHeaderText(headerText);
 		alert.setContentText(contentText);
 		addButtons(alert, buttons);
-		addIcon(alert, GeneralAppInfo.MAIN_ICON);
+		addPrimaryApplicationIon(alert);
 
 		return alert;
 	}
@@ -142,7 +151,7 @@ public class DialogsUtil {
 		serverToConnectToTD.setTitle(GeneralAppInfo.TITLE);
 		serverToConnectToTD.getDialogPane().getScene().getWindow().sizeToScene();
 		addButtons(serverToConnectToTD, buttons);
-		addIcon(serverToConnectToTD, GeneralAppInfo.MAIN_ICON);
+		addPrimaryApplicationIon(serverToConnectToTD);
 		
 		return serverToConnectToTD;
 	}
@@ -155,7 +164,7 @@ public class DialogsUtil {
 		choiceDialog.setTitle(GeneralAppInfo.TITLE);
 		choiceDialog.getDialogPane().getScene().getWindow().sizeToScene();
 		addButtons(choiceDialog, buttons);
-		addIcon(choiceDialog, GeneralAppInfo.MAIN_ICON);
+		addPrimaryApplicationIon(choiceDialog);
 		
 		return choiceDialog;
 	}
@@ -169,6 +178,10 @@ public class DialogsUtil {
 		DialogPane dialogPane = dialog.getDialogPane();
 		dialogPane.getButtonTypes().clear();
 		dialogPane.getButtonTypes().addAll(buttons);
+	}
+	
+	private static void addPrimaryApplicationIon(Dialog<?> dialog) {
+		addIcon(dialog, Icons.PRIMARY_APPLICATION_ICON);
 	}
 	
 	private static void addIcon(Dialog<?> dialog, Image image) {

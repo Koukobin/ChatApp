@@ -22,6 +22,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -285,7 +286,9 @@ public final class ChatAppDatabase {
 			String[] hashedBackupVerificationCodes;
 
 			{
-				SimpleHash passwordHash = HashUtil.createHash(password, DatabaseSettings.Client.General.SaltForHashing.SALT_LENGTH,  DatabaseSettings.Client.Password.Hashing.HASHING_ALGORITHM);
+				SimpleHash passwordHash = HashUtil.createHash(password,
+						DatabaseSettings.Client.General.SaltForHashing.SALT_LENGTH,
+						DatabaseSettings.Client.Password.Hashing.HASHING_ALGORITHM);
 
 				passwordHashResult = passwordHash.getHashString();
 				salt = passwordHash.getSalt();
@@ -315,7 +318,7 @@ public final class ChatAppDatabase {
 					
 					ResultHolder result = CreateAccountInfo.AuthenticationStage.CreateAccount.Result.SUCCESFULLY_CREATED_ACCOUNT.resultHolder;
 					result.addTextToResultMessage("Backup Verification Codes:\n" + String.join("\n", hashedBackupVerificationCodes));
-					result.addTextToResultMessage("Backup Verification Codes are automatically generated when you run out.");
+					result.addTextToResultMessage("Backup Verification Codes are automatically generated and sent to your email in the case that you run out.");
 					
 					return result;
 				}
@@ -1147,8 +1150,8 @@ public final class ChatAppDatabase {
 
 				if (rs.next()) {
 					byte[] fileBytes = rs.getBytes(1);
-					String fileName = rs.getString(2);
-					file = new LoadedInMemoryFile(fileName, fileBytes);
+					byte[] fileName = rs.getBytes(2);
+					file = new LoadedInMemoryFile(new String(fileName), fileBytes);
 				}
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
@@ -1162,7 +1165,7 @@ public final class ChatAppDatabase {
 			Message[] messages = new Message[0];
 
 			try (PreparedStatement selectMessages = conn.prepareStatement(
-					"SELECT message_id, sender_client_id, convert_from(text, 'UTF8'), convert_from(file_name, 'UTF8'), content_type "
+					"SELECT message_id, sender_client_id, convert_from(text, 'UTF8'), convert_from(file_name, 'UTF8'), ts_entered, content_type "
 							+ "FROM chat_messages "
 							+ "WHERE chat_session_id=? "
 							+ "AND message_id <= ? "
@@ -1211,8 +1214,11 @@ public final class ChatAppDatabase {
 					byte[] textBytes = rs.getBytes(3);
 					byte[] fileNameBytes = rs.getBytes(4);
 
-					ContentType contentType = ContentTypeConverter.getDatabaseIntAsContentType(rs.getInt(5));
-					messages[i] = new Message(username, clientID, messageID, chatSessionID, textBytes, fileNameBytes, contentType);
+					Timestamp timeWritten = rs.getTimestamp(5);
+					
+					ContentType contentType = ContentTypeConverter.getDatabaseIntAsContentType(rs.getInt(6));
+					
+					messages[i] = new Message(username, clientID, messageID, chatSessionID, textBytes, fileNameBytes, timeWritten.getTime(), contentType);
 				}
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));

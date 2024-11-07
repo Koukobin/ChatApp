@@ -14,38 +14,62 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-* {
-   -fx-default-background-color: rgb(85, 85, 85);
-}
+@import url("dark-theme.css");
 
 .root {
 	-fx-background-color: -fx-default-background-color;
 }
 
-.jfx-button {
-	-fx-background-color: rgb(136, 138, 133);
-	-fx-text-fill: white;
+.mfx-text-field {
 	-fx-background-radius: 3;
-	-fx-cursor: HAND
 }
 
 .text-field {
-	-fx-text-fill: white;
-	-fx-background-color: rgb(95, 95, 95);
-	-fx-background-radius: 3;
+    -fx-background-radius: 15;
 }
 
-.jfx-text-area {
-	-fx-font: 16 ComicSans;
-	-fx-text-fill: white;
-	-fx-background-color: -fx-default-background-color;
-	-fx-cursor: MOVE
+#optionsBar {
+    -fx-background-color: black;
 }
 
-.scroll-pane > .viewport {
+#chats {
+    -fx-background-color: rgb(10,10,10);
+}
+
+.jfx-list-view {
+    -fx-background-color: -fx-default-background-color;
+}
+
+.jfx-list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -mfx-main;
+    -fx-font-size: 14px;
+}
+
+.jfx-list-view .list-cell:selected {
+    -fx-background-color: -mfx-main;
+    -fx-text-fill: black;
+}
+
+#searchHBOX {
+    -fx-background-color: rgb(30, 30, 30);
+    -fx-background-radius: 15;  
+}
+
+#inputField {
+    -fx-background-radius: 3;
+}
+
+#chatHBox {
+    -fx-background-color: black;
+}
+
+#refreshChatSessionsButton {}
+
+.mfx-scroll-pane {
    -fx-background-color: -fx-default-background-color;
+   -fx-border-color: transparent;   /* Removes any border color on focus */
 }
-
 
 .scroll-bar:vertical .track {
     -fx-background-color: transparent;
@@ -121,25 +145,34 @@
     -fx-background-radius: 2.0em;
 }
 
-.split-pane:horizontal *.split-pane-divider {
-    -fx-padding: 0 1 0 1; /* Set divider to transparent*/
+#userMessageLabel, #otherMessageLabel {
+    -fx-min-width: 30px;
+    -fx-min-height: 35px;
+    -fx-text-fill: black;
+    -fx-font-size: 16px;
+    -fx-text-fill: black;
+    -fx-alignment: center;
+    -fx-background-color: linear-gradient(to top, rgb(2, 201, 61), rgb(67, 255, 54));
+    -fx-padding: 0 5 0 5;
+    -fx-background-radius: 15px;
 }
 
-#clientIDHBOX {
-	-fx-background-color: rgb(48, 48, 48);
+#userMessageLabel {
+    -fx-background-color: linear-gradient(to top, rgb(2, 201, 61), rgb(67, 255, 54));
 }
 
-#clientIDLabel {
-	-fx-text-fill: white;
-	-fx-cursor: hand;
-	-fx-font-size: 14pt;
+#otherMessageLabel {
+    -fx-background-color: linear-gradient(to top, rgb(100, 100, 100), rgb(130, 130, 130));
 }
 
-#chatBox:hover span {
-   -fx-border-color: white;
+#downloadFileButton {
+	-fx-background-color: transparent;
 }
 
-#userInputHBOX {
-	-fx-background-color: rgb(77, 77, 77);
-	-fx-prompt-text-fill: white;
+#chatBox {
+	-fx-padding: 5 50 5 50;	
 }
+
+
+
+

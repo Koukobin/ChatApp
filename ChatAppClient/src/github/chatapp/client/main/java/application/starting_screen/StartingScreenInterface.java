@@ -15,15 +15,14 @@
  */
 package github.chatapp.client.main.java.application.starting_screen;
 
-import java.util.Arrays;
-
 import github.chatapp.client.main.java.info.GeneralAppInfo;
+import github.chatapp.client.main.java.info.Icons;
 import github.chatapp.client.main.java.info.starting_screen.StartingScreenInfo;
-import io.github.palexdev.materialfx.controls.MFXProgressSpinner;
+import github.chatapp.client.main.java.util.Threads;
+import io.github.palexdev.materialfx.controls.MFXProgressBar;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
-import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -42,11 +41,14 @@ import javafx.util.Duration;
  */
 public class StartingScreenInterface {
 
+	private static final int FADE_DURATION_MS = 550;
+	private static final int DELAY_BEFORE_CLOSE_MS = 3000;
+	
 	private Stage stage;
 
 	public StartingScreenInterface() {
 
-		ImageView icon = new ImageView(GeneralAppInfo.MAIN_ICON);
+		ImageView icon = new ImageView(Icons.PRIMARY_APPLICATION_ICON);
 		icon.setFitWidth(StartingScreenInfo.ICON_WITDH);
 		icon.setFitHeight(StartingScreenInfo.ICON_HEIGHT);
 		icon.setPreserveRatio(false);
@@ -55,7 +57,8 @@ public class StartingScreenInterface {
 		label.setGraphic(icon);
 		label.setContentDisplay(ContentDisplay.CENTER);
 
-		MFXProgressSpinner spinner = new MFXProgressSpinner();
+//		MFXProgressSpinner spinner = new MFXProgressSpinner();
+		MFXProgressBar spinner = new MFXProgressBar();
 		BorderPane root = new BorderPane();
 
 		Scene scene = new Scene(root, StartingScreenInfo.STAGE_WIDTH, StartingScreenInfo.STAGE_HEIGHT);
@@ -69,7 +72,7 @@ public class StartingScreenInterface {
 
 		stage = new Stage();
 		stage.initStyle(StageStyle.TRANSPARENT); // Removes window decorations
-		stage.getIcons().add(GeneralAppInfo.MAIN_ICON);
+		stage.getIcons().add(Icons.PRIMARY_APPLICATION_ICON);
 		stage.setScene(scene);
 		stage.setOpacity(1.0f);
 	}
@@ -80,31 +83,20 @@ public class StartingScreenInterface {
 
 	public void showAndWait() {
 			
+		// Set initial opacity to 0 for fade-in effect
 		stage.getScene().getRoot().setOpacity(0.0);
 
+		// Timeline for opacity transition
 		Timeline timeline = new Timeline();
-		KeyFrame key = new KeyFrame(Duration.millis(550),
+		KeyFrame fadeInKeyFrame = new KeyFrame(Duration.millis(FADE_DURATION_MS),
 				new KeyValue(stage.getScene().getRoot().opacityProperty(), 1));
-		timeline.getKeyFrames().add(key);
-		timeline.setOnFinished(e -> delay(3000, stage::close));
+		timeline.getKeyFrames().add(fadeInKeyFrame);
+		
+		// Delay before closing the stage
+		timeline.setOnFinished(e -> Threads.delay(DELAY_BEFORE_CLOSE_MS, stage::close));
 		timeline.play();
 
 		stage.showAndWait();
 	}
 
-	private static void delay(long millis, Runnable... continuation) {
-
-		Task<Void> sleeper = new Task<>() {
-			@Override
-			protected Void call() throws Exception {
-				Thread.sleep(millis);
-				return null;
-			}
-		};
-		sleeper.setOnSucceeded(event -> Arrays.stream(continuation).forEach(Runnable::run));
-
-		Thread sleeperThread = new Thread(sleeper);
-		sleeperThread.setDaemon(true);
-		sleeperThread.start();
-	}
 }

@@ -20,15 +20,13 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 import github.chatapp.client.main.java.info.entry.EntryInfo;
+import github.chatapp.client.main.java.util.UITransitions;
 import github.chatapp.common.entry.EntryType;
 import github.chatapp.common.entry.LoginInfo.PasswordType;
 
 import com.jfoenix.controls.JFXButton;
 
 import javafx.animation.Interpolator;
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -103,17 +101,16 @@ public final class LoginSceneController extends GeneralEntryController {
 		
 		scene.getStylesheets().add(EntryInfo.CreateAccount.CSS_LOCATION);
 
-		root.translateYProperty().set(scene.getHeight());
-		parentContainer.getChildren().add(root);
+		Runnable transition = new UITransitions.Builder()
+				.setDirection(UITransitions.Direction.YAxis.BOTTOM_TO_TOP)
+				.setDuration(Duration.seconds(1))
+				.setInterpolator(Interpolator.EASE_OUT)
+				.setNewComponent(root)
+				.setOldComponent(loginAnchorPane)
+				.setParentContainer((StackPane) scene.getRoot())
+				.build();
 
-		Timeline timeline = new Timeline();
-		KeyValue kv = new KeyValue(root.translateYProperty(), 0, Interpolator.EASE_OUT);
-		KeyFrame kf = new KeyFrame(Duration.seconds(1), kv);
-		timeline.getKeyFrames().add(kf);
-
-		// remove login screen
-		timeline.setOnFinished(event2 -> parentContainer.getChildren().remove(loginAnchorPane));
-		timeline.play();
+		transition.run();
 	}
 	
 	public PasswordType getPasswordType() {

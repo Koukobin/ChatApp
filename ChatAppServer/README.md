@@ -12,24 +12,9 @@
 * **SSL/TLS support:** Ensure secure communication.
 * **PostgreSQL integration:** Manage user data, messages and logs in a reliable relational database.
 
-## System Requirements
+## Installation
 
-* PostgreSQLv14+
-* JREv17+
-
-## Setup Instructions
-
-To get the server running, follow these steps:
-
-1. **Generate an SSL Certificate:** Ensure secure data transfer between clients and the server.
-2. **Configure Database:**
-    - Install PostgreSQL and create a new database for ChatApp.
-    - The database will be autoimatically configured once the server runs.
-3. **Edit Configuration Files:**
-    - Navigate to `ChatApp-Server/configs/`.
-    - Fill in the required fields such as database credentials, SSL details, and port numbers.
-4. **Start the Server:**
-	- Once configured, **use the provided scripts** to run the application directly through the terminal:
+For a detailed step-by-step process for the installation of the server check the [wiki](https://github.com/Koukobin/ChatApp/wiki/ChatApp%E2%80%90Server-Installation)
 
 ## Contributing
 

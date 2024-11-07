@@ -94,7 +94,7 @@ public abstract class MessageHandler implements AutoCloseable {
 		payload.writeInt(fileNameBytes.length);
 		payload.writeBytes(fileNameBytes);
 		payload.writeBytes(fileBytes);
-
+		
 		out.write(payload);
 	}
 
@@ -112,9 +112,9 @@ public abstract class MessageHandler implements AutoCloseable {
 	
 	public class Commands {
 
-		public void changeUsername(String newUsername) throws IOException {
+		public void changeDisplayName(String newDisplayName) throws IOException {
 
-			byte[] newUsernameBytes = newUsername.getBytes();
+			byte[] newUsernameBytes = newDisplayName.getBytes();
 
 			ByteBuf payload = Unpooled.buffer();
 			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientMessageType.COMMAND));
@@ -136,67 +136,67 @@ public abstract class MessageHandler implements AutoCloseable {
 			out.write(payload);
 		}
 
-		public void sendGetUsername() throws IOException {
+		public void fetchUsername() throws IOException {
 			
 			ByteBuf payload = Unpooled.buffer();
 			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientMessageType.COMMAND));
-			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.GET_USERNAME));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.FETCH_USERNAME));
 			
 			out.write(payload);
 		}
 		
-		public void sendGetClientID() throws IOException {
+		public void fetchClientID() throws IOException {
 			
 			ByteBuf payload = Unpooled.buffer(Integer.BYTES * 2);
 			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientMessageType.COMMAND));
-			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.GET_CLIENT_ID));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.FETCH_CLIENT_ID));
 			
 			out.write(payload);
 		}
 		
-		public void sendGetWrittenText(int chatSessionIndex) throws IOException {
+		public void fetchWrittenText(int chatSessionIndex) throws IOException {
 			
 			ByteBuf payload = Unpooled.buffer();
 			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientMessageType.COMMAND));
-			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.GET_WRITTEN_TEXT));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.FETCH_WRITTEN_TEXT));
 			payload.writeInt(chatSessionIndex);
 			payload.writeInt(chatSessions.get(chatSessionIndex).getMessages().size() /* Amount of messages client already has */);
 			
 			out.write(payload);
 		}
 		
-		public void sendGetChatRequests() throws IOException {
+		public void fetchChatRequests() throws IOException {
 			
 			ByteBuf payload = Unpooled.buffer();
 			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientMessageType.COMMAND));
-			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.GET_CHAT_REQUESTS));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.FETCH_CHAT_REQUESTS));
 
 			out.write(payload);
 		}
 		
-		public void sendGetChatSessions() throws IOException {
+		public void fetchChatSessions() throws IOException {
 
 			ByteBuf payload = Unpooled.buffer();
 			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientMessageType.COMMAND));
-			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.GET_CHAT_SESSIONS));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.FETCH_CHAT_SESSIONS));
 
 			out.write(payload);
 		}
 		
-		public void sendGetDonationHTMLPage() throws IOException {
+		public void requestDonationHTMLPage() throws IOException {
 
 			ByteBuf payload = Unpooled.buffer();
 			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientMessageType.COMMAND));
-			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.GET_DONATION_PAGE));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.REQUEST_DONATION_PAGE));
 			
 			out.write(payload);
 		}
 		
-		public void sendGetServerSourceCodeHTMLPage() throws IOException {
+		public void requestServerSourceCodeHTMLPage() throws IOException {
 			
 			ByteBuf payload = Unpooled.buffer();
 			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientMessageType.COMMAND));
-			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.GET_SOURCE_CODE_PAGE));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandType.REQUEST_SOURCE_CODE_PAGE));
 			
 			out.write(payload);
 		}
@@ -220,8 +220,8 @@ public abstract class MessageHandler implements AutoCloseable {
 			
 			out.write(payload);
 			
-			sendGetChatRequests();
-			sendGetChatSessions();
+			fetchChatRequests();
+			fetchChatSessions();
 		}
 		
 		public void declineChatRequest(int userClientID) throws IOException {
@@ -233,7 +233,7 @@ public abstract class MessageHandler implements AutoCloseable {
 			
 			out.write(payload);
 
-			sendGetChatRequests();
+			fetchChatRequests();
 		}
 		
 		public void deleteChatSession(int chatSessionIndex) throws IOException {
@@ -245,7 +245,7 @@ public abstract class MessageHandler implements AutoCloseable {
 			
 			out.write(payload);
 			
-			sendGetChatSessions();
+			fetchChatSessions();
 		}
 		
 		public void deleteMessage(int chatSessionIndex, int messageID) throws IOException {
@@ -317,6 +317,8 @@ public abstract class MessageHandler implements AutoCloseable {
 							
 							ContentType contentType = EnumIntConverter.getIntAsEnum(msg.readInt(), ContentType.class);
 							
+							long timeWritten = msg.readLong();
+							
 							byte[] text = null;
 							byte[] fileNameBytes = null;
 							
@@ -336,7 +338,7 @@ public abstract class MessageHandler implements AutoCloseable {
 							byte[] usernameBytes = new byte[msg.readInt()];
 							msg.readBytes(usernameBytes);
 							
-							String username = new String(usernameBytes);
+							String username = String.valueOf(usernameBytes);
 							int clientID = msg.readInt();
 							int messageID = msg.readInt();
 							int chatSessionID = msg.readInt();
@@ -348,6 +350,7 @@ public abstract class MessageHandler implements AutoCloseable {
 							message.setChatSessionID(chatSessionID);
 							message.setText(text);
 							message.setFileName(fileNameBytes);
+							message.setTimeWritten(timeWritten);
 							
 							ChatSession chatSession = chatSessionIDSToChatSessions.get(chatSessionID);
 							
@@ -372,7 +375,7 @@ public abstract class MessageHandler implements AutoCloseable {
 								
 								fileDownloaded(new LoadedInMemoryFile(new String(fileNameBytes), fileBytes));
 							}
-							case GET_USERNAME -> {
+							case GET_DISPLAY_NAME -> {
 								
 								byte[] usernameBytes = new byte[msg.readableBytes()];
 								msg.readBytes(usernameBytes);
@@ -461,6 +464,8 @@ public abstract class MessageHandler implements AutoCloseable {
 
 									byte[] messageBytes = null;
 									byte[] fileNameBytes = null;
+
+									long timeWritten = msg.readLong();
 									
 									switch (contentType) {
 									case TEXT -> {
@@ -472,9 +477,16 @@ public abstract class MessageHandler implements AutoCloseable {
 										msg.readBytes(fileNameBytes);
 									}
 									}
-									
+
 									if (contentType != null) {
-										Message message = new Message(username, clientID, messageID, chatSession.getChatSessionID(), messageBytes, fileNameBytes, contentType);
+										Message message = new Message(username,
+												clientID,
+												messageID,
+												chatSession.getChatSessionID(),
+												messageBytes,
+												fileNameBytes,
+												timeWritten,
+												contentType);
 										messages.add(message);
 									}
 								}
@@ -524,10 +536,10 @@ public abstract class MessageHandler implements AutoCloseable {
 		thread.setDaemon(true);
 		thread.start();
 		
-		getCommands().sendGetUsername();
-		getCommands().sendGetClientID();
-		getCommands().sendGetChatSessions();
-		getCommands().sendGetChatRequests();
+		getCommands().fetchUsername();
+		getCommands().fetchClientID();
+		getCommands().fetchChatSessions();
+		getCommands().fetchChatRequests();
 	}
 
 	public void stopListeningToMessages() {

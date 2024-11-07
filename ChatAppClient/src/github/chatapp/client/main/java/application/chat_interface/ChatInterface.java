@@ -19,10 +19,10 @@ import java.io.IOException;
 
 import github.chatapp.client.main.java.controllers.chat_interface.ChatInterfaceController;
 import github.chatapp.client.main.java.info.GeneralAppInfo;
+import github.chatapp.client.main.java.info.Icons;
 import github.chatapp.client.main.java.info.chat_interface.ChatInterfaceInfo;
 import javafx.animation.Interpolator;
 import javafx.animation.ScaleTransition;
-import javafx.application.HostServices;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
@@ -40,25 +40,22 @@ import javafx.util.Duration;
 public class ChatInterface {
 	
 	private Stage stage;
-	private HostServices hostServices;
 
 	private FXMLLoader loaderFXML;
 
-	public ChatInterface(Stage primaryStage, HostServices hostServices) throws IOException {
+	public ChatInterface(Stage primaryStage) throws IOException {
 		
 		this.stage = primaryStage;
-		this.hostServices = hostServices;
 		
 		loaderFXML = new FXMLLoader(ChatInterfaceInfo.FXML_LOCATION);
 		Parent root = loaderFXML.load();
 
 		Scene scene = new Scene(root);
-		scene.getStylesheets().add(ChatInterfaceInfo.CSS_LOCATION);
 		scene.setFill(Color.TRANSPARENT);
 
 		stage.setMinHeight(ChatInterfaceInfo.STAGE_MIN_HEIGHT);
 		stage.setMinWidth(ChatInterfaceInfo.STAGE_MIN_WIDTH);
-		stage.getIcons().add(GeneralAppInfo.MAIN_ICON);
+		stage.getIcons().add(Icons.PRIMARY_APPLICATION_ICON);
 		stage.setTitle(GeneralAppInfo.TITLE);
 		stage.setMaximized(true);
 		stage.setScene(scene);
@@ -67,6 +64,7 @@ public class ChatInterface {
 		stage.setWidth(screenBounds.getWidth());
 		stage.setHeight(screenBounds.getHeight());
 
+		// Cool transition
 		ScaleTransition st = new ScaleTransition(Duration.millis(900), root);
 		st.setInterpolator(Interpolator.EASE_OUT);
 		st.setFromX(0.8);
@@ -80,7 +78,6 @@ public class ChatInterface {
 		
 		ChatInterfaceController controller = loaderFXML.getController();
 		controller.setStage(stage);
-		controller.setHostServices(hostServices);
 		
 		stage.setOnCloseRequest((WindowEvent e) -> {
 			controller.closeClient();

@@ -23,12 +23,15 @@ import java.net.URL;
  */
 public final class ChatInterfaceInfo {
 
-	public static final URL FXML_LOCATION = ChatInterfaceInfo.class.getResource("/github/chatapp/client/main/resources/view/chat_interface/chat-interface-scene.fxml");
-	public static final String CSS_LOCATION = ChatInterfaceInfo.class.getResource("/github/chatapp/client/main/resources/css/chat_interface/chat-interface.css").toExternalForm();
+	public static final URL FXML_LOCATION = ChatInterfaceInfo.class.getResource("/github/chatapp/client/main/resources/view/chat_interface/chat-interface.fxml");
 	public static final String NOTIFICATION_SOUND_LOCATION = ChatInterfaceInfo.class.getResource("/github/chatapp/client/main/resources/sounds/notification.wav").toExternalForm();
 	
-	public static final int STAGE_MIN_HEIGHT = 550;
-	public static final int STAGE_MIN_WIDTH = 550;
+	public static final int STAGE_MIN_HEIGHT = 700;
+	public static final int STAGE_MIN_WIDTH = 995;
+
+	public static final URL MESSAGING_LOCATION = ChatInterfaceInfo.class.getResource("/github/chatapp/client/main/resources/view/chat_interface/messaging.fxml");
+	public static final URL CHATS_LOCATION = ChatInterfaceInfo.class.getResource("/github/chatapp/client/main/resources/view/chat_interface/chats.fxml");
+	public static final URL CHATS_REQUESTS_INTERFACE_LOCATION = ChatInterfaceInfo.class.getResource("/github/chatapp/client/main/resources/view/chat_interface/chat-requests.fxml");
 
 	private ChatInterfaceInfo() {}
 }

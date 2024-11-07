@@ -16,10 +16,11 @@
 package github.chatapp.client.main.java.info;
 
 import java.io.File;
-
+import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import org.apache.commons.lang3.SystemUtils;
-
-import javafx.scene.image.Image;
 
 /**
  * @author Ilias Koukovinis
@@ -30,38 +31,38 @@ public final class GeneralAppInfo {
 	public static final String GENERAL_NAME = "ChatApp";
 	public static final String TITLE = GENERAL_NAME + "-Client";
 
-	public static final Image MAIN_ICON;
-
+	public static final String VERSION = "1.0-rc";
+	
 	public static final String CLIENT_DATABASE_PATH;
-	public static final String CLIENT_INFO_PATH;
 	public static final String SOURCE_CODE_HTML_PAGE_URL = "https://github.com/Koukobin/ChatApp";
 
-	public static final String DARK_THEME_CSS = GeneralAppInfo.class
-			.getResource("/github/chatapp/client/main/resources/css/mfx_dialogs/dark-theme.css")
-			.toExternalForm();
-
+	public static final String MAIN_PROJECT_PATH = "/github/chatapp/client/main/";
+	
 	static {
 
-		String appInstallationFolder;
+		String appDataFolder;
 
 		if (SystemUtils.IS_OS_WINDOWS) {
-			appInstallationFolder = "C:\\Program Files (x86)\\";
+			appDataFolder = System.getProperty("user.name") + "\\AppData\\Local\\";
 		} else if (SystemUtils.IS_OS_LINUX) {
-			appInstallationFolder = "/opt/";
+			appDataFolder = System.getProperty("user.home") + "/.";
 		} else {
 			throw new RuntimeException("Unknown OS type");
 		}
 
-		appInstallationFolder = appInstallationFolder + TITLE + File.separator;
+		appDataFolder = appDataFolder + TITLE.toLowerCase() + File.separator;
+		try {
+			// Using Files.createDirectories instead of Files.createDirectory ensures that
+			// all parent directories are created if they don't exist
+			Files.createDirectories(Paths.get(appDataFolder));
+		} catch (FileAlreadyExistsException faee) {
+			// If directory already exists, simply move on.
+		} catch (IOException e) {
+			// print other I/O exceptions
+			e.printStackTrace();
+		}
 		
-		String mainIconPath = "file:" + appInstallationFolder + "icons" + File.separator + TITLE + ".png";
-		
-		MAIN_ICON = new Image(mainIconPath);
-		
-		String appInfoFolder = appInstallationFolder + "info" + File.separator;
-		
-		CLIENT_DATABASE_PATH = appInfoFolder + "Client.db";
-		CLIENT_INFO_PATH = appInfoFolder + "chatapp-info.txt";
+		CLIENT_DATABASE_PATH = appDataFolder + "Client.db";
 	}
 	
 	private GeneralAppInfo() {}

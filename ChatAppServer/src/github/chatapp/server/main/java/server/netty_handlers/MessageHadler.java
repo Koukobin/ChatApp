@@ -15,6 +15,7 @@
  */
 package github.chatapp.server.main.java.server.netty_handlers;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -143,9 +144,9 @@ final class MessageHadler extends ParentHandler {
 
 		if (msgType == ClientMessageType.CLIENT_CONTENT) {
 
-			ContentType contentType = EnumIntConverter.getIntAsEnum(msg.readInt(), ContentType.class);
-
 			ChatSession chatSession;
+			
+			ContentType contentType = EnumIntConverter.getIntAsEnum(msg.readInt(), ContentType.class);
 			
 			try {
 				int indexOfChatSession = msg.readInt();
@@ -170,6 +171,8 @@ final class MessageHadler extends ParentHandler {
 			payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.CLIENT_CONTENT));
 			payload.writeInt(EnumIntConverter.getEnumAsInt(contentType));
 
+			payload.writeLong(System.currentTimeMillis());
+			
 			switch (contentType) {
 			case TEXT -> {
 				
@@ -202,7 +205,7 @@ final class MessageHadler extends ParentHandler {
 						chatSessionID,
 						textBytes,
 						fileNameBytes,
-						fileBytes, 
+						fileBytes,
 						contentType);
 
 				messageIDInDatabase = conn.addMessage(chatMessage);
@@ -215,7 +218,7 @@ final class MessageHadler extends ParentHandler {
 			
 			payload.writeInt(messageIDInDatabase);
 			payload.writeInt(chatSessionID);
-			
+
 			broadcastMessageToChatSession(payload, chatSession);
 		} else if (msgType == ClientMessageType.COMMAND) {
 
@@ -271,397 +274,396 @@ final class MessageHadler extends ParentHandler {
 		
 		EpollSocketChannel channel = clientInfo.getChannel();
 		
-		try {
-			switch (commandType) {
-			case CHANGE_USERNAME -> {
+		switch (commandType) {
+		case CHANGE_USERNAME -> {
 
-				byte[] newUsernameBytes = new byte[args.readableBytes()];
-				args.readBytes(newUsernameBytes);
+			byte[] newUsernameBytes = new byte[args.readableBytes()];
+			args.readBytes(newUsernameBytes);
 
-				String newUsername = new String(newUsernameBytes);
-				String currentUsername = clientInfo.getUsername();
-				
-				ByteBuf payload = channel.alloc().ioBuffer();
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.SERVER_MESSAGE_INFO));
-				
-				if (newUsername.equals(currentUsername)) {
-					payload.writeBytes("Username cannot be the same as old username!".getBytes());
-				} else {
-
-					ResultHolder resultHolder;
-					try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
-						resultHolder = conn.changeUsername(clientInfo.getClientID(), newUsername);
-					}
-
-					payload.writeBytes(resultHolder.getResultMessage().getBytes());
-					
-					if (resultHolder.isSuccesfull()) {
-						clientInfo.setUsername(newUsername);
-					}
-				}
-
-				channel.writeAndFlush(payload);
-			}
-			case CHANGE_PASSWORD -> {
-				
-				byte[] newPasswordBytes = new byte[args.readableBytes()];
-				args.readBytes(newPasswordBytes);
-
-				// Note that unlike the CHANGE_USERNAME command we don't check wether or not the
-				// password is the same for security reasons
-				String newPassword = new String(newPasswordBytes);
+			String newUsername = new String(newUsernameBytes);
+			String currentUsername = clientInfo.getUsername();
+			
+			ByteBuf payload = channel.alloc().ioBuffer();
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.SERVER_MESSAGE_INFO));
+			
+			if (newUsername.equals(currentUsername)) {
+				payload.writeBytes("Username cannot be the same as old username!".getBytes());
+			} else {
 
 				ResultHolder resultHolder;
 				try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
-					resultHolder = conn.changePassword(clientInfo.getEmail(), newPassword);
+					resultHolder = conn.changeUsername(clientInfo.getClientID(), newUsername);
 				}
 
+				payload.writeBytes(resultHolder.getResultMessage().getBytes());
+				
+				if (resultHolder.isSuccesfull()) {
+					clientInfo.setUsername(newUsername);
+				}
+			}
+
+			channel.writeAndFlush(payload);
+		}
+		case CHANGE_PASSWORD -> {
+			
+			byte[] newPasswordBytes = new byte[args.readableBytes()];
+			args.readBytes(newPasswordBytes);
+
+			// Note that unlike the CHANGE_USERNAME command we don't check wether or not the
+			// password is the same for security reasons
+			String newPassword = new String(newPasswordBytes);
+
+			ResultHolder resultHolder;
+			try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
+				resultHolder = conn.changePassword(clientInfo.getEmail(), newPassword);
+			}
+
+			ByteBuf payload = channel.alloc().ioBuffer();
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.SERVER_MESSAGE_INFO));
+			payload.writeBytes(resultHolder.getResultMessage().getBytes());
+			channel.writeAndFlush(payload);
+		}
+		case DOWNLOAD_FILE -> {
+			
+			int chatSessionIndex = args.readInt();
+			int messageID = args.readInt();
+			
+			LoadedInMemoryFile file;
+			try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
+				file = conn.getFile(messageID, clientInfo.getChatSessions().get(chatSessionIndex).getChatSessionID());
+			}
+
+			byte[] fileBytes = file.getFileBytes();
+			byte[] fileNameBytes = file.getFileName().getBytes();
+
+			ByteBuf payload = channel.alloc().ioBuffer();
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.DOWNLOAD_FILE));
+			payload.writeInt(fileNameBytes.length);
+			payload.writeBytes(fileNameBytes);
+			payload.writeBytes(fileBytes);
+			
+			channel.writeAndFlush(payload);
+		}
+		case SEND_CHAT_REQUEST -> {
+			
+			int receiverID = args.readInt();
+			int senderClientID = clientInfo.getClientID();
+			
+			int resultUpdate;
+			try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
+				resultUpdate = conn.sendChatRequest(receiverID, senderClientID);
+			}
+			
+			boolean isSuccessfull = resultUpdate == 1;
+			
+			if (!isSuccessfull) {
 				ByteBuf payload = channel.alloc().ioBuffer();
 				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.SERVER_MESSAGE_INFO));
-				payload.writeBytes(resultHolder.getResultMessage().getBytes());
+				payload.writeBytes("An error occured while trying to send chat request!".getBytes());
+				channel.writeAndFlush(payload);
+			} else {
+				clientIDSToActiveClients.get(receiverID).getChatRequests().add(senderClientID);
+			}
+		}
+		case ACCEPT_CHAT_REQUEST -> {
+			
+			int senderClientID = args.readInt();
+			int receiverClientID = clientInfo.getClientID();
+			
+			int chatSessionID;
+			try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
+				chatSessionID = conn.acceptChatRequestIfExists(receiverClientID, senderClientID);
+			}
+
+			if (chatSessionID != -1) {
+
+				List<Integer> membersList = Ints.asList(receiverClientID, senderClientID);
+				List<ClientInfo> activeMembersList = new ArrayList<>(membersList.size());
+
+				ChatSession chatSession = new ChatSession(chatSessionID, activeMembersList, membersList);
+
+				ActiveChatSessions.addChatSession(chatSessionID, chatSession);
+
+				clientInfo.getChatRequests().remove(Integer.valueOf(senderClientID));
+				clientInfo.getChatSessions().add(chatSession);
+
+				ClientInfo senderClientInfo = clientIDSToActiveClients.get(senderClientID);
+
+				if (senderClientInfo != null) {
+					senderClientInfo.getChatSessions().add(chatSession);
+				}
+			} else {
+				ByteBuf payload = channel.alloc().ioBuffer();
+				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.SERVER_MESSAGE_INFO));
+				payload.writeBytes("Something went wrong while trying accept chat request!".getBytes());
 				channel.writeAndFlush(payload);
 			}
-			case DOWNLOAD_FILE -> {
-				
+		}
+		case DECLINE_CHAT_REQUEST -> {
+			
+			int senderClientID = args.readInt();
+			int receiverClientID = clientInfo.getClientID();
+			
+			int resultUpdate;
+			try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
+				resultUpdate = conn.deleteChatRequest(receiverClientID, senderClientID);
+			}
+			
+			boolean isSuccessfull = resultUpdate == 1;
+			
+			if (!isSuccessfull) {
+				ByteBuf payload = channel.alloc().ioBuffer();
+				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.SERVER_MESSAGE_INFO));
+				payload.writeBytes("Something went wrong while trying to decline chat request!".getBytes());
+				channel.writeAndFlush(payload);
+			} else {
+				clientInfo.getChatRequests().remove(Integer.valueOf(senderClientID));
+			}
+		}
+		case DELETE_CHAT_SESSION -> {
+			
+			int chatSessionID;
+			
+			{
 				int chatSessionIndex = args.readInt();
-				int messageID = args.readInt();
-				
-				LoadedInMemoryFile file;
-				try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
-					file = conn.getFile(messageID, clientInfo.getChatSessions().get(chatSessionIndex).getChatSessionID());
-				}
+				chatSessionID = clientInfo.getChatSessions().get(chatSessionIndex).getChatSessionID();
+			}
+			
+			int resultUpdate;
+			try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
+				resultUpdate = conn.deleteChatSession(chatSessionID);
+			}
+			
+			boolean isSuccessfull = resultUpdate == 1;
 
-				byte[] fileBytes = file.getFileBytes();
-				byte[] fileNameBytes = file.getFileName().getBytes();
+			if (!isSuccessfull) {
+				ByteBuf payload = channel.alloc().ioBuffer();
+				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.SERVER_MESSAGE_INFO));
+				payload.writeBytes("Something went wrong while trying delete chat session!".getBytes());
+				channel.writeAndFlush(payload);
+			} else {
+				
+				ChatSession chatSession = ActiveChatSessions.getChatSession(chatSessionID);
+				
+				if (chatSession != null) {
+					
+					List<ClientInfo> activeMembers = chatSession.getActiveMembers();
+					for (int i = 0; i < activeMembers.size(); i++) {
+						activeMembers.get(i).getChatSessions().remove(chatSession);
+					}
+					
+					ActiveChatSessions.removeChatSession(chatSessionID);
+				}
+			}
+		}
+		case DELETE_CHAT_MESSAGE -> {
+
+			int chatSessionID;
+
+			{
+				int chatSessionIndex = args.readInt();
+				chatSessionID = clientInfo.getChatSessions().get(chatSessionIndex).getChatSessionID();
+			}
+
+			int messageID = args.readInt();
+
+			int resultUpdate;
+			try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
+				resultUpdate = conn.deleteChatMessage(chatSessionID, messageID);
+			}
+
+			boolean isSuccesfull = resultUpdate == 1;
+
+			if (isSuccesfull) {
 
 				ByteBuf payload = channel.alloc().ioBuffer();
 				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.DOWNLOAD_FILE));
-				payload.writeInt(fileNameBytes.length);
-				payload.writeBytes(fileNameBytes);
-				payload.writeBytes(fileBytes);
+				payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.DELETE_CHAT_MESSAGE));
+				payload.writeInt(chatSessionID);
+				payload.writeInt(messageID);
+
+				broadcastMessageToChatSession(payload, ActiveChatSessions.getChatSession(chatSessionID));
+			}
+		}
+		case LOGOUT -> {
+			
+			try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
+				conn.logout(channel.remoteAddress().getAddress(), clientInfo.getClientID());
+			}
+			
+			channel.close();
+		}
+		case FETCH_USERNAME -> {
+			ByteBuf payload = channel.alloc().ioBuffer();
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_DISPLAY_NAME));
+			payload.writeBytes(clientInfo.getUsername().getBytes());
+			channel.writeAndFlush(payload);
+		}
+		case FETCH_CLIENT_ID -> {
+			ByteBuf payload = channel.alloc().ioBuffer();
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_CLIENT_ID));
+			payload.writeInt(clientInfo.getClientID());
+			channel.writeAndFlush(payload);
+		}
+		case FETCH_WRITTEN_TEXT -> {
+			
+			int chatSessionIndex = args.readInt();
+			int chatSessionID = clientInfo.getChatSessions().get(chatSessionIndex).getChatSessionID();
+
+			int numOfMessagesAlreadySelected = args.readInt();
+			
+			Message[] messages;
+			
+			try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
+				messages = conn.selectMessages(chatSessionID, numOfMessagesAlreadySelected, ServerSettings.NUMBER_OF_MESSAGES_TO_READ_FROM_THE_DATABASE_AT_A_TIME);
+			}
+			
+			if (messages.length > 0) {
 				
+				ByteBuf payload = channel.alloc().ioBuffer();
+				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
+				payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_WRITTEN_TEXT));
+				payload.writeInt(chatSessionIndex);
+
+				for (int i = 0; i < messages.length; i++) {
+
+					Message message = messages[i];
+					byte[] messageBytes = message.getText();
+					byte[] fileNameBytes = message.getFileName();
+					byte[] usernameBytes = message.getUsername().getBytes();
+					long timeWritten = message.getTimeWritten();
+					ContentType contentType = message.getContentType();
+					
+					payload.writeInt(EnumIntConverter.getEnumAsInt(contentType));
+					payload.writeInt(message.getClientID());
+					payload.writeInt(message.getMessageID());
+
+					payload.writeInt(usernameBytes.length);
+					payload.writeBytes(usernameBytes);
+
+					payload.writeLong(timeWritten);
+					
+					switch (contentType) {
+					case TEXT -> {
+						payload.writeInt(messageBytes.length);
+						payload.writeBytes(messageBytes);
+					}
+					case FILE -> {
+						payload.writeInt(fileNameBytes.length);
+						payload.writeBytes(fileNameBytes);
+					}
+					}
+				}
+
 				channel.writeAndFlush(payload);
 			}
-			case SEND_CHAT_REQUEST -> {
-				
-				int receiverID = args.readInt();
-				int senderClientID = clientInfo.getClientID();
-				
-				int resultUpdate;
-				try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
-					resultUpdate = conn.sendChatRequest(receiverID, senderClientID);
-				}
-				
-				boolean isSuccessfull = resultUpdate == 1;
-				
-				if (!isSuccessfull) {
-					ByteBuf payload = channel.alloc().ioBuffer();
-					payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.SERVER_MESSAGE_INFO));
-					payload.writeBytes("An error occured while trying to send chat request!".getBytes());
-					channel.writeAndFlush(payload);
-				} else {
-					clientIDSToActiveClients.get(receiverID).getChatRequests().add(senderClientID);
+		}
+		case FETCH_CHAT_REQUESTS -> {
+			
+			List<Integer> chatRequests = clientInfo.getChatRequests();
+			
+			ByteBuf payload = channel.alloc().ioBuffer(Integer.BYTES * 3 + Integer.BYTES * chatRequests.size());
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_CHAT_REQUESTS));
+			payload.writeInt(chatRequests.size());
+			
+			if (!chatRequests.isEmpty()) {
+				for (int i = 0; i < chatRequests.size(); i++) {
+					int clientID = chatRequests.get(i);
+					payload.writeInt(clientID);
 				}
 			}
-			case ACCEPT_CHAT_REQUEST -> {
-				
-				int senderClientID = args.readInt();
-				int receiverClientID = clientInfo.getClientID();
-				
-				int chatSessionID;
-				try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
-					chatSessionID = conn.acceptChatRequestIfExists(receiverClientID, senderClientID);
-				}
+			
+			channel.writeAndFlush(payload);
+		}
+		case FETCH_CHAT_SESSIONS -> {
+			
+			ByteBuf payload = channel.alloc().ioBuffer();
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_CHAT_SESSIONS));
+			
+			List<ChatSession> chatSessions = clientInfo.getChatSessions();
 
-				if (chatSessionID != -1) {
+			payload.writeInt(chatSessions.size());
+			if (!chatSessions.isEmpty()) {
+				for (int i = 0; i < chatSessions.size(); i++) {
 
-					List<Integer> membersList = Ints.asList(receiverClientID, senderClientID);
-					List<ClientInfo> activeMembersList = new ArrayList<>(membersList.size());
+					ChatSession chatSession = chatSessions.get(i);
+					int chatSessionID = chatSession.getChatSessionID();
+					List<Integer> membersClientIDS = chatSession.getMembers();
 
-					ChatSession chatSession = new ChatSession(chatSessionID, activeMembersList, membersList);
-
-					ActiveChatSessions.addChatSession(chatSessionID, chatSession);
-
-					clientInfo.getChatRequests().remove(Integer.valueOf(senderClientID));
-					clientInfo.getChatSessions().add(chatSession);
-
-					ClientInfo senderClientInfo = clientIDSToActiveClients.get(senderClientID);
-
-					if (senderClientInfo != null) {
-						senderClientInfo.getChatSessions().add(chatSession);
-					}
-				} else {
-					ByteBuf payload = channel.alloc().ioBuffer();
-					payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.SERVER_MESSAGE_INFO));
-					payload.writeBytes("Something went wrong while trying accept chat request!".getBytes());
-					channel.writeAndFlush(payload);
-				}
-			}
-			case DECLINE_CHAT_REQUEST -> {
-				
-				int senderClientID = args.readInt();
-				int receiverClientID = clientInfo.getClientID();
-				
-				int resultUpdate;
-				try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
-					resultUpdate = conn.deleteChatRequest(receiverClientID, senderClientID);
-				}
-				
-				boolean isSuccessfull = resultUpdate == 1;
-				
-				if (!isSuccessfull) {
-					ByteBuf payload = channel.alloc().ioBuffer();
-					payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.SERVER_MESSAGE_INFO));
-					payload.writeBytes("Something went wrong while trying to decline chat request!".getBytes());
-					channel.writeAndFlush(payload);
-				} else {
-					clientInfo.getChatRequests().remove(Integer.valueOf(senderClientID));
-				}
-			}
-			case DELETE_CHAT_SESSION -> {
-				
-				int chatSessionID;
-				
-				{
-					int chatSessionIndex = args.readInt();
-					chatSessionID = clientInfo.getChatSessions().get(chatSessionIndex).getChatSessionID();
-				}
-				
-				int resultUpdate;
-				try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
-					resultUpdate = conn.deleteChatSession(chatSessionID);
-				}
-				
-				boolean isSuccessfull = resultUpdate == 1;
-
-				if (!isSuccessfull) {
-					ByteBuf payload = channel.alloc().ioBuffer();
-					payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.SERVER_MESSAGE_INFO));
-					payload.writeBytes("Something went wrong while trying delete chat session!".getBytes());
-					channel.writeAndFlush(payload);
-				} else {
-					
-					ChatSession chatSession = ActiveChatSessions.getChatSession(chatSessionID);
-					
-					if (chatSession != null) {
-						
-						List<ClientInfo> activeMembers = chatSession.getActiveMembers();
-						for (int i = 0; i < activeMembers.size(); i++) {
-							activeMembers.get(i).getChatSessions().remove(chatSession);
-						}
-						
-						ActiveChatSessions.removeChatSession(chatSessionID);
-					}
-				}
-			}
-			case DELETE_CHAT_MESSAGE -> {
-
-				int chatSessionID;
-
-				{
-					int chatSessionIndex = args.readInt();
-					chatSessionID = clientInfo.getChatSessions().get(chatSessionIndex).getChatSessionID();
-				}
-
-				int messageID = args.readInt();
-
-				int resultUpdate;
-				try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
-					resultUpdate = conn.deleteChatMessage(chatSessionID, messageID);
-				}
-
-				boolean isSuccesfull = resultUpdate == 1;
-
-				if (isSuccesfull) {
-
-					ByteBuf payload = channel.alloc().ioBuffer();
-					payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
-					payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.DELETE_CHAT_MESSAGE));
 					payload.writeInt(chatSessionID);
-					payload.writeInt(messageID);
 
-					broadcastMessageToChatSession(payload, ActiveChatSessions.getChatSession(chatSessionID));
-				}
-			}
-			case LOGOUT -> {
-				
-				try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
-					conn.logout(channel.remoteAddress().getAddress(), clientInfo.getClientID());
-				}
-				
-				channel.close();
-			}
-			case GET_USERNAME -> {
-				ByteBuf payload = channel.alloc().ioBuffer();
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_USERNAME));
-				payload.writeBytes(clientInfo.getUsername().getBytes());
-				channel.writeAndFlush(payload);
-			}
-			case GET_CLIENT_ID -> {
-				ByteBuf payload = channel.alloc().ioBuffer();
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_CLIENT_ID));
-				payload.writeInt(clientInfo.getClientID());
-				channel.writeAndFlush(payload);
-			}
-			case GET_WRITTEN_TEXT -> {
-				
-				int chatSessionIndex = args.readInt();
-				int chatSessionID = clientInfo.getChatSessions().get(chatSessionIndex).getChatSessionID();
+					// The one that is subtracted is attributed to the user inquring this command
+					payload.writeInt(membersClientIDS.size() - 1);
+					try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
+						for (int j = 0; j < membersClientIDS.size(); j++) {
 
-				int numOfMessagesAlreadySelected = args.readInt();
-				
-				Message[] messages;
-				
-				try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
-					messages = conn.selectMessages(chatSessionID, numOfMessagesAlreadySelected, ServerSettings.NUMBER_OF_MESSAGES_TO_READ_FROM_THE_DATABASE_AT_A_TIME);
-				}
-				
-				if (messages.length > 0) {
-					
-					ByteBuf payload = channel.alloc().ioBuffer();
-					payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
-					payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_WRITTEN_TEXT));
-					payload.writeInt(chatSessionIndex);
+							int clientID = membersClientIDS.get(j);
+							byte[] usernameBytes;
 
-					for (int i = 0; i < messages.length; i++) {
-
-						Message message = messages[i];
-						byte[] messageBytes = message.getText();
-						byte[] fileNameBytes = message.getFileName();
-						byte[] usernameBytes = message.getUsername().getBytes();
-						ContentType contentType = message.getContentType();
-						
-						payload.writeInt(EnumIntConverter.getEnumAsInt(contentType));
-						payload.writeInt(message.getClientID());
-						payload.writeInt(message.getMessageID());
-
-						payload.writeInt(usernameBytes.length);
-						payload.writeBytes(usernameBytes);
-
-						switch (contentType) {
-						case TEXT -> {
-							payload.writeInt(messageBytes.length);
-							payload.writeBytes(messageBytes);
-						}
-						case FILE -> {
-							payload.writeInt(fileNameBytes.length);
-							payload.writeBytes(fileNameBytes);
-						}
-						}
-					}
-
-					channel.writeAndFlush(payload);
-				}
-			}
-			case GET_CHAT_REQUESTS -> {
-				
-				List<Integer> chatRequests = clientInfo.getChatRequests();
-				
-				ByteBuf payload = channel.alloc().ioBuffer(Integer.BYTES * 3 + Integer.BYTES * chatRequests.size());
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_CHAT_REQUESTS));
-				payload.writeInt(chatRequests.size());
-				
-				if (!chatRequests.isEmpty()) {
-					for (int i = 0; i < chatRequests.size(); i++) {
-						int clientID = chatRequests.get(i);
-						payload.writeInt(clientID);
-					}
-				}
-				
-				channel.writeAndFlush(payload);
-			}
-			case GET_CHAT_SESSIONS -> {
-				
-				ByteBuf payload = channel.alloc().ioBuffer();
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_CHAT_SESSIONS));
-				
-				List<ChatSession> chatSessions = clientInfo.getChatSessions();
-
-				payload.writeInt(chatSessions.size());
-				if (!chatSessions.isEmpty()) {
-					for (int i = 0; i < chatSessions.size(); i++) {
-
-						ChatSession chatSession = chatSessions.get(i);
-						int chatSessionID = chatSession.getChatSessionID();
-						List<Integer> membersClientIDS = chatSession.getMembers();
-
-						payload.writeInt(chatSessionID);
-
-						// The one that is subtracted is attributed to the user inquring this command
-						payload.writeInt(membersClientIDS.size() - 1);
-						try (ChatAppDatabase.GeneralPurposeDBConnection conn = ChatAppDatabase.getGeneralPurposeConnection()) {
-							for (int j = 0; j < membersClientIDS.size(); j++) {
-
-								int clientID = membersClientIDS.get(j);
-								byte[] usernameBytes;
-
-								ClientInfo clientInfo = clientIDSToActiveClients.get(clientID);
-								
-								if (this.clientInfo.equals(clientInfo)) {
-									continue;
-								}
-								
-								if (clientInfo == null) {
-									usernameBytes = conn.getUsername(clientID).getBytes();
-								} else {
-									usernameBytes = clientInfo.getUsername().getBytes();
-								}
-
-								payload.writeInt(clientID);
-								payload.writeInt(usernameBytes.length);
-								payload.writeBytes(usernameBytes);
+							ClientInfo clientInfo = clientIDSToActiveClients.get(clientID);
+							
+							if (this.clientInfo.equals(clientInfo)) {
+								continue;
+							}
+							
+							if (clientInfo == null) {
+								usernameBytes = conn.getUsername(clientID).getBytes();
+							} else {
+								usernameBytes = clientInfo.getUsername().getBytes();
 							}
 
+							payload.writeInt(clientID);
+							payload.writeInt(usernameBytes.length);
+							payload.writeBytes(usernameBytes);
 						}
 
-						if (!chatSession.getActiveMembers().contains(clientInfo)) {
-							chatSession.getActiveMembers().add(clientInfo);
-						}
-						
 					}
+
+					if (!chatSession.getActiveMembers().contains(clientInfo)) {
+						chatSession.getActiveMembers().add(clientInfo);
+					}
+					
 				}
-				
-				channel.writeAndFlush(payload);
 			}
-			case GET_DONATION_PAGE -> {
-				
-				ByteBuf payload = channel.alloc().ioBuffer();
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_DONATION_PAGE));
-				payload.writeInt(ServerSettings.Donations.HTML_PAGE.length());
-				payload.writeBytes(ServerSettings.Donations.HTML_PAGE.getBytes());
-				payload.writeBytes(ServerSettings.Donations.HTML_FILE_NAME.getBytes());
-
-				channel.writeAndFlush(payload);
-			}
-			case GET_SOURCE_CODE_PAGE -> {
-
-				ByteBuf payload = channel.alloc().ioBuffer();
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_SOURCE_CODE_PAGE));
-				payload.writeBytes(ServerSettings.SOURCE_CODE_URL.getBytes());
-
-				channel.writeAndFlush(payload);
-			}
-			default -> {
-
-				ByteBuf payload = channel.alloc().ioBuffer();
-				payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.SERVER_MESSAGE_INFO));
-				payload.writeBytes(("Command:" + commandType.toString() + "not implemented!").getBytes());
-
-				channel.writeAndFlush(payload);
-			}
-			}
-		} finally {
-			System.out.println(args.refCnt());
-//			args.release();
+			
+			channel.writeAndFlush(payload);
 		}
+		case REQUEST_DONATION_PAGE -> {
+			
+			ByteBuf payload = channel.alloc().ioBuffer();
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_DONATION_PAGE));
+			payload.writeInt(ServerSettings.Donations.HTML_PAGE.length());
+			payload.writeBytes(ServerSettings.Donations.HTML_PAGE.getBytes());
+			payload.writeBytes(ServerSettings.Donations.HTML_FILE_NAME.getBytes());
 
+			channel.writeAndFlush(payload);
+		}
+		case REQUEST_SOURCE_CODE_PAGE -> {
+
+			ByteBuf payload = channel.alloc().ioBuffer();
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.COMMAND_RESULT));
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ClientCommandResultType.GET_SOURCE_CODE_PAGE));
+			payload.writeBytes(ServerSettings.SOURCE_CODE_URL.getBytes());
+
+			channel.writeAndFlush(payload);
+		}
+		default -> {
+
+			ByteBuf payload = channel.alloc().ioBuffer();
+			payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.SERVER_MESSAGE_INFO));
+			payload.writeBytes(("Command:" + commandType.toString() + "not implemented!").getBytes());
+
+			channel.writeAndFlush(payload);
+		}
+		
+		}
+		
 	}
 
 }

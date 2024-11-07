@@ -24,7 +24,7 @@ import javafx.stage.Stage;
  * @author Ilias Koukovinis
  *
  */
-public class LogoutDialog extends MFXActionDialog {
+public final class LogoutDialog extends MFXActionDialog {
 	
 	public LogoutDialog(Stage stage, Parent rootPane)	{
 
@@ -33,7 +33,7 @@ public class LogoutDialog extends MFXActionDialog {
 		dialogContent.setContentText("Are you sure you want to logout?");
 
 		MFXFontIcon infoIcon = new MFXFontIcon("mfx-info-circle-filled", 18);
-		dialogContent.setHeaderText("Logout Dialog");
+		dialogContent.setHeaderText("Logout");
 		dialogContent.setHeaderIcon(infoIcon);
 		dialogContent.getStyleClass().add("mfx-info-dialog");
 	}

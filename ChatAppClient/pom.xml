@@ -70,6 +70,12 @@
 			<artifactId>controlsfx</artifactId>
 			<version>11.2.0</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>de.jensd</groupId>
+			<artifactId>fontawesomefx</artifactId>
+			<version>8.9</version>
+		</dependency>
 
 		<!--OpenJFX-->
 		<dependency>

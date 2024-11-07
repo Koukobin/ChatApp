@@ -122,15 +122,22 @@ public class DatabaseChatMessage {
 		}
 
 		DatabaseChatMessage other = (DatabaseChatMessage) obj;
-		return chatSessionID == other.chatSessionID && clientID == other.clientID && contentType == other.contentType
-				&& Arrays.equals(fileBytes, other.fileBytes) && Arrays.equals(fileName, other.fileName)
+		return chatSessionID == other.chatSessionID 
+				&& clientID == other.clientID 
+				&& contentType == other.contentType
+				&& Arrays.equals(fileBytes, other.fileBytes) 
+				&& Arrays.equals(fileName, other.fileName)
 				&& Arrays.equals(text, other.text);
 	}
 
 	@Override
 	public String toString() {
-		return "DatabaseChatMessage [clientID=" + clientID + ", chatSessionID=" + chatSessionID + ", text="
-				+ Arrays.toString(text) + ", fileName=" + Arrays.toString(fileName) + ", fileBytes="
-				+ Arrays.toString(fileBytes) + ", contentType=" + contentType + "]";
+		return "DatabaseChatMessage [clientID=" + clientID 
+				+ ", chatSessionID=" + chatSessionID 
+				+ ", text=" + Arrays.toString(text) 
+				+ ", fileName=" + Arrays.toString(fileName) 
+				+ ", fileBytes=" + Arrays.toString(fileBytes) 
+				+ ", contentType=" 
+				+ contentType + "]";
 	}
 }

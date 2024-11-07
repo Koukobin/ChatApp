@@ -22,7 +22,7 @@ package github.chatapp.common.message_types;
 public enum ClientCommandResultType {
 	DELETE_CHAT_MESSAGE,
 	DOWNLOAD_FILE,
-	GET_USERNAME,
+	GET_DISPLAY_NAME,
 	GET_CLIENT_ID,
 	GET_CHAT_REQUESTS,
 	GET_CHAT_SESSIONS,

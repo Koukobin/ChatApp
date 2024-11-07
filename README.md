@@ -57,7 +57,9 @@ Moving forward, I do not have any particular plans regarding ChatApp's developme
 ### Choose Server Screen
 <img width="1000" alt="Choose Server Screen" src="https://github.com/Koukobin/ChatApp/blob/master/Images/choose_server-screen.png"/>
 
+## Wiki/Documentation
 
+You can find thorough documentation and a more in-depth analysis of ChatApp here: [Wiki](https://github.com/Koukobin/ChatApp/wiki/)
 
 ## Getting Started
 

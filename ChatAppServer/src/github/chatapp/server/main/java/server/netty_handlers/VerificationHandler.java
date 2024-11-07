@@ -39,9 +39,9 @@ abstract non-sealed class VerificationHandler extends EntryHandler {
 	private static final SecureRandom secureRandom = new SecureRandom();
 
 	private static final int ATTEMPTS = 3;
-	private int attemptsRemaining = ATTEMPTS;
-	
 	private static final int generatedVerificationCodeLength = 9;
+
+	private int attemptsRemaining = ATTEMPTS;
 	private final byte[] generatedVerificationCode;
 	
 	private final String emailAddress;

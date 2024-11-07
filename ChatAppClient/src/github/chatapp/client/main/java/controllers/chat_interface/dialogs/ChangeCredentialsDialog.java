@@ -25,12 +25,12 @@ import javafx.stage.Stage;
  * @author Ilias Koukovinis
  *
  */
-public class ChangeCredentialsDialog extends MFXActionDialog {
+public final class ChangeCredentialsDialog extends MFXActionDialog {
 
 	private MFXTextField newCredentialTextField;
 
 	public enum ChangeCredentialType {
-		USERNAME, PASSWORD
+		DISPLAY_NAME, PASSWORD
 	}
 
 	public ChangeCredentialsDialog(Stage stage, Parent rootPane, ChangeCredentialType credential) {
@@ -43,11 +43,11 @@ public class ChangeCredentialsDialog extends MFXActionDialog {
 
 		dialogContent.setContent(newCredentialTextField);
 
-		if (credential == ChangeCredentialType.USERNAME) {
+		if (credential == ChangeCredentialType.DISPLAY_NAME) {
 			newCredentialTextField.setPromptText("New Username");
-			dialogContent.setHeaderText("Change Username Dialog");
+			dialogContent.setHeaderText("Change Username");
 		} else {
-			dialogContent.setHeaderText("Change Password Dialog");
+			dialogContent.setHeaderText("Change Password");
 			newCredentialTextField.setPromptText("New Password");
 		}
 	}

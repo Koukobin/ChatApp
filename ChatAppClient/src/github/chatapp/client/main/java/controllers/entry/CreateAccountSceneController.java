@@ -23,15 +23,13 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 import github.chatapp.client.main.java.info.entry.EntryInfo;
+import github.chatapp.client.main.java.util.UITransitions;
 import github.chatapp.common.entry.EntryType;
 
 import com.jfoenix.controls.JFXButton;
 
 import io.github.palexdev.materialfx.controls.MFXProgressBar;
 import javafx.animation.Interpolator;
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.animation.Timeline;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -159,19 +157,16 @@ public final class CreateAccountSceneController extends GeneralEntryController {
 
 		scene.getStylesheets().add(EntryInfo.Login.CSS_LOCATION);
 
-		root.translateYProperty().set(scene.getHeight());
+		Runnable transition = new UITransitions.Builder()
+				.setDirection(UITransitions.Direction.YAxis.BOTTOM_TO_TOP)
+				.setDuration(Duration.seconds(1))
+				.setInterpolator(Interpolator.EASE_OUT)
+				.setNewComponent(root)
+				.setOldComponent(createAccountAnchorPane)
+				.setParentContainer((StackPane) scene.getRoot())
+				.build();
 
-		StackPane parentContainer = (StackPane) scene.getRoot();
-		parentContainer.getChildren().add(root);
-
-		Timeline timeline = new Timeline();
-		KeyValue kv = new KeyValue(root.translateYProperty(), 0, Interpolator.EASE_OUT);
-		KeyFrame kf = new KeyFrame(Duration.seconds(1), kv);
-		timeline.getKeyFrames().add(kf);
-
-		// remove create account scene
-		timeline.setOnFinished(event2 -> parentContainer.getChildren().remove(createAccountAnchorPane));
-		timeline.play();
+		transition.run();
 	}
 	
 	public String getUsername() {

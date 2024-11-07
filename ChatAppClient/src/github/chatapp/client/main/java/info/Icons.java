@@ -1,0 +1,56 @@
+/* Copyright (C) 2023 Ilias Koukovinis <ilias.koukovinis@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+package github.chatapp.client.main.java.info;
+
+import javafx.scene.image.Image;
+
+/**
+ * @author Ilias Koukovinis
+ *
+ */
+public final class Icons {
+
+	public static final String ICONS_PATH = GeneralAppInfo.MAIN_PROJECT_PATH + "resources/material-design-icons-4.0.0/";
+	
+	public static final Image PRIMARY_APPLICATION_ICON = new Image(Icons.class.getResource(ICONS_PATH + "ChatApp-Client.png").toExternalForm());
+	
+	public static final Image ACCOUNT = new Image(Icons.class.getResource(ICONS_PATH + "account.png").toExternalForm());
+	public static final Image CHATS = new Image(Icons.class.getResource(ICONS_PATH + "chats.png").toExternalForm());
+	public static final Image CHAT_REQUESTS = new Image(Icons.class.getResource(ICONS_PATH + "chat-requests.png").toExternalForm());
+
+	public static final Image EDIT = new Image(Icons.class.getResource(ICONS_PATH + "edit.png").toExternalForm());
+	public static final Image CHECK = new Image(Icons.class.getResource(ICONS_PATH + "check.png").toExternalForm());
+	public static final Image BACK_ARROW = new Image(Icons.class.getResource(ICONS_PATH + "account.png").toExternalForm());
+
+	public static final Image ADD = new Image(Icons.class.getResource(ICONS_PATH + "add.png").toExternalForm());
+	public static final Image ADD_CIRCLE = new Image(Icons.class.getResource(ICONS_PATH + "add-circle.png").toExternalForm());
+	public static final Image ATTACH = new Image(Icons.class.getResource(ICONS_PATH + "attach1.png").toExternalForm());
+	public static final Image DOWNLOAD = new Image(Icons.class.getResource(ICONS_PATH + "download.png").toExternalForm());
+	
+	public static final Image CODE = new Image(Icons.class.getResource(ICONS_PATH + "code.png").toExternalForm());
+	public static final Image PASSWORD = new Image(Icons.class.getResource(ICONS_PATH + "password.png").toExternalForm());
+
+	public static final Image HELP = new Image(Icons.class.getResource(ICONS_PATH + "help.png").toExternalForm());
+	public static final Image LOGOUT = new Image(Icons.class.getResource(ICONS_PATH + "logout.png").toExternalForm());
+
+	public static final Image REFRESH = new Image(Icons.class.getResource(ICONS_PATH + "refresh.png").toExternalForm());
+	public static final Image SEARCH = new Image(Icons.class.getResource(ICONS_PATH + "search.png").toExternalForm());
+
+	public static final Image SEND = new Image(Icons.class.getResource(ICONS_PATH + "send.png").toExternalForm());
+	public static final Image SETTINGS = new Image(Icons.class.getResource(ICONS_PATH + "settings.png").toExternalForm());
+	
+	private Icons() {}
+}

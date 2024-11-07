@@ -73,7 +73,7 @@ public class Client {
 		throw new IllegalAccessException("Client cannot be constructed since it is statically initialized!");
 	}
 	
-	public static void initialize(InetAddress remoteAddress, int remotePort, ServerCertificateVerification serverCertificateVerification) throws IOException {
+	public static void initialize(InetAddress remoteAddress, int remotePort, ServerCertificateVerification serverCertificateVerification) throws ClientInitializationException {
 		
 		if (remotePort <= 0) {
 			throw new IllegalArgumentException("Port cannot be below zero");
@@ -82,36 +82,40 @@ public class Client {
 		try {
 			KeyStore ks = KeyStore.getInstance("JKS");
 			ks.load(null, null);
-
+			
 			KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
 			kmf.init(ks, null);
-
+			
 			TrustManager[] trustManagers = null;
 			
 			switch (serverCertificateVerification) {
 			case VERIFY -> {
 				
-				TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509"); 
+				TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
 				tmf.init(ks);
 				
 				trustManagers = tmf.getTrustManagers();
 			}
 			case IGNORE -> {
 				trustManagers = new TrustManager[] { new X509TrustManager() {
-					public java.security.cert.X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
-
+					public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+						return new X509Certificate[0];
+					}
+					
 					@Override
-					public void checkClientTrusted(X509Certificate[] certs, String authType) {}
-
+					public void checkClientTrusted(X509Certificate[] certs, String authType) {
+					}
+					
 					@Override
-					public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+					public void checkServerTrusted(X509Certificate[] certs, String authType) {
+					}
 				} };
 			}
 			}
-
+			
 			SSLContext sc = SSLContext.getInstance("TLSv1.3");
-			sc.init(kmf.getKeyManagers(), trustManagers, new SecureRandom()); 
-
+			sc.init(kmf.getKeyManagers(), trustManagers, new SecureRandom());
+			
 			SSLSocketFactory ssf = sc.getSocketFactory();
 			sslSocket = (SSLSocket) ssf.createSocket(remoteAddress, remotePort);
 			sslSocket.startHandshake();
@@ -120,8 +124,9 @@ public class Client {
 			out = new ByteBufOutputStream(sslSocket.getOutputStream());
 
 			isLoggedIn.set(in.read().readBoolean());
-		} catch (KeyManagementException | NoSuchAlgorithmException | UnrecoverableKeyException | KeyStoreException | CertificateException e) {
-			e.printStackTrace();
+		} catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException
+				| UnrecoverableKeyException | KeyManagementException e) {
+			throw new ClientInitializationException(e.getMessage());
 		}
 	}
 	
@@ -313,7 +318,7 @@ public class Client {
 		return messageHandler.isClientListeningToMessages();
 	}
 
-	public static String getUsername() {
+	public static String getDisplayName() {
 		return messageHandler.getUsername();
 	}
 	

@@ -18,6 +18,7 @@ package github.chatapp.client.main.java.general_dialogs;
 import java.util.Map;
 
 import github.chatapp.client.main.java.info.GeneralAppInfo;
+import github.chatapp.client.main.java.info.Icons;
 import io.github.palexdev.materialfx.dialogs.MFXGenericDialog;
 import io.github.palexdev.materialfx.dialogs.MFXGenericDialogBuilder;
 import io.github.palexdev.materialfx.dialogs.MFXStageDialog;
@@ -47,7 +48,8 @@ public class MFXDialog extends MFXStageDialog {
 	public MFXDialog(Stage stage, Parent rootPane) {
 		
 		dialogContent = MFXGenericDialogBuilder.build()
-				.makeScrollable(true).get();
+				.makeScrollable(true)
+				.get();
 
 		super.initModality(Modality.APPLICATION_MODAL);
 		super.setDraggable(true);
@@ -62,9 +64,9 @@ public class MFXDialog extends MFXStageDialog {
 			super.setOnShown(e -> rootPane.setEffect(blur));
 		}
 
+		super.setOnCloseRequest((e) -> this.close());
 		super.setContent(dialogContent);
-		super.getIcons().add(GeneralAppInfo.MAIN_ICON);
-        super.getContent().getStylesheets().add(GeneralAppInfo.DARK_THEME_CSS);
+		super.getIcons().add(Icons.PRIMARY_APPLICATION_ICON);
 	}
 
 	@SafeVarargs

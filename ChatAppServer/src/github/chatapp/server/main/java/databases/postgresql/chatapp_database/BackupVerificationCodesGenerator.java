@@ -16,8 +16,7 @@
 package github.chatapp.server.main.java.databases.postgresql.chatapp_database;
 
 import java.security.SecureRandom;
-
-import github.chatapp.server.main.java.configs.DatabaseSettings;
+import github.chatapp.server.main.java.configs.DatabaseSettings.Client.BackupVerificationCodes;
 
 /**
  * @author Ilias Koukovinis
@@ -31,20 +30,20 @@ final class BackupVerificationCodesGenerator {
 	
 	public static String[] generateHashedBackupVerificationCodes(String salt) {
 		
-		String[] hashedBackupVerificationCodes = new String[DatabaseSettings.Client.BackupVerificationCodes.AMOUNT_OF_CODES];
+		String[] hashedBackupVerificationCodes = new String[BackupVerificationCodes.AMOUNT_OF_CODES];
 		
 		for (int i = 0; i < hashedBackupVerificationCodes.length; i++) {
 
-			byte[] backupVerificationCodesByte = new byte[DatabaseSettings.Client.BackupVerificationCodes.AMOUNT_OF_CHARACTERS];
+			byte[] backupVerificationCodesByte = new byte[BackupVerificationCodes.AMOUNT_OF_CHARACTERS];
 			
 			secureRandom.nextBytes(backupVerificationCodesByte);
 
-			SimpleHash hash = HashUtil.createHash(new String(backupVerificationCodesByte), salt,
-					DatabaseSettings.Client.BackupVerificationCodes.Hashing.HASHING_ALGORITHM);
+			SimpleHash hash = HashUtil.createHash(
+					new String(backupVerificationCodesByte),
+					salt,
+					BackupVerificationCodes.Hashing.HASHING_ALGORITHM);
 
-			String backupVerificationCode = hash.getHashString();
-
-			hashedBackupVerificationCodes[i] = backupVerificationCode;
+			hashedBackupVerificationCodes[i] = hash.getHashString();
 		}
 		
 		return hashedBackupVerificationCodes;

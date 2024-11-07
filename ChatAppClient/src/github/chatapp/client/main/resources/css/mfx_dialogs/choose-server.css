@@ -17,14 +17,14 @@
 * {
     -mfx-main: green;
     -mfx-secondary: grey;
-    -fx-background-color: #171717;
+    -fx-background-color: rgb(23, 23, 23);
     -fx-text-fill: white;
     -fx-prompt-text-fill: white;
 }
 
 .mfx-dialog {
     -fx-background-radius: 10;
-    -fx-border-color: #0a0a0a;
+    -fx-border-color: rgb(10, 10, 10);
     -fx-border-radius: 10;
     -fx-padding: 10;
 }
@@ -41,11 +41,6 @@
     -mfx-ripple-radius: 10;
     -mfx-ripple-color: -mfx-main;
     -mfx-ripple-opacity: 0.4;
-}
-
-.mfx-toggle-button .circle {
-    -fx-stroke: transparent;
-    -fx-fill: -mfx-secondary;
 }
 
 .mfx-toggle-button .line {
@@ -69,14 +64,28 @@
 
 /* COMBO BOX */
 .mfx-combo-box .caret .mfx-ripple-generator {
-    -mfx-ripple-color: white;
+    -mfx-ripple-color: black;
     -mfx-ripple-radius: 14;
+}
+
+.mfx-text-field {
+	-fx-border-color: -mfx-main;
+}
+
+.mfx-combo-box .combo-popup .virtual-flow {
+	-fx-border-color: rgb(15, 15, 15);
 }
 
 .mfx-combo-box .combo-popup .virtual-flow .mfx-combo-box-cell,
 .mfx-combo-box .combo-popup .virtual-flow .data-label {
     -fx-background-color: rgb(15, 15, 15); /* Color for selected item */
-    -fx-text-fill: #00e326; /* Text color for selected item */
+    -fx-text-fill: rgb(0, 227, 38); /* Text color for selected item */
+}
+
+.mfx-combo-box .combo-popup .virtual-flow .mfx-combo-box-cell {
+    -fx-border-color: rgb(10,10,10);
+    -fx-border-radius: 1;
+	
 }
 /* COMBO BOX */
 

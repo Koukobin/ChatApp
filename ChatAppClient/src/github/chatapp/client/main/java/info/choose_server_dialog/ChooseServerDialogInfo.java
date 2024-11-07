@@ -15,6 +15,8 @@
  */
 package github.chatapp.client.main.java.info.choose_server_dialog;
 
+import github.chatapp.client.main.java.info.GeneralAppInfo;
+
 /**
  * @author Ilias Koukovinis
  *
@@ -24,5 +26,9 @@ public final class ChooseServerDialogInfo {
 	public static final int STAGE_HEIGHT = 225;
 	public static final int STAGE_WIDTH = 450;
 
+	public static final String CHOOSE_SERSVER_DIALOG_CSS = GeneralAppInfo.class
+			.getResource(GeneralAppInfo.MAIN_PROJECT_PATH + "resources/css/mfx_dialogs/choose-server.css")
+			.toExternalForm();
+	
 	private ChooseServerDialogInfo() {}
 }

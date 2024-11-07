@@ -10,7 +10,7 @@
 
 - **Real-time Messaging**: Chat with friends, family, or colleagues instantly.
 - **Media Sharing**: Easily share images, videos, and documents within your chats.
-- **Secure Connections**: Integrated with end-to-end encryption in order to ensure privacy and security.
+- **Secure Connections**: Integrated with TLS in order to ensure privacy and security.
 
 ## Requirements
 
@@ -22,11 +22,11 @@ For contribution guidelines, please refer to the main ChatApp README file.
 
 ## Authors
 
-* Ilias Koukovinis (2023) [ilias.koukovinis@gmail.com]*
+* Ilias Koukovinis (2023) [ilias.koukovinis@gmail.com]
 
 ## License
 
 ChatApp-Client is distributed under the GNU Affero General Public License Version 3.0 which can be found in the `LICENSE` file.
 
-By using this software, you agree to the terms outlined in the license agreement, which is available in the LICENSE file.
+By using this software, you agree to the terms outlined in the license agreement.
 

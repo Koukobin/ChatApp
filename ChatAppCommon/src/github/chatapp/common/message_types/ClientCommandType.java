@@ -21,26 +21,30 @@ package github.chatapp.common.message_types;
  */
 public enum ClientCommandType {
 
+	// Account Management 
 	CHANGE_USERNAME(CommandLevel.HEAVY),
 	CHANGE_PASSWORD(CommandLevel.HEAVY),
+	LOGOUT(CommandLevel.LIGHT),
 
-	DOWNLOAD_FILE(CommandLevel.HEAVY),
-	GET_USERNAME(CommandLevel.LIGHT),
-	GET_CLIENT_ID(CommandLevel.LIGHT),
-	GET_CHAT_REQUESTS(CommandLevel.LIGHT),
-	GET_CHAT_SESSIONS(CommandLevel.LIGHT),
-	GET_WRITTEN_TEXT(CommandLevel.HEAVY),
-	
-	GET_DONATION_PAGE(CommandLevel.LIGHT),
-	GET_SOURCE_CODE_PAGE(CommandLevel.LIGHT),
+	// User Information Requests
+	FETCH_USERNAME(CommandLevel.LIGHT),
+	FETCH_CLIENT_ID(CommandLevel.LIGHT),
 
+	// Chat Management
+	FETCH_CHAT_REQUESTS(CommandLevel.LIGHT),
+	FETCH_CHAT_SESSIONS(CommandLevel.LIGHT),
 	SEND_CHAT_REQUEST(CommandLevel.HEAVY),
 	ACCEPT_CHAT_REQUEST(CommandLevel.HEAVY),
 	DECLINE_CHAT_REQUEST(CommandLevel.HEAVY),
 	DELETE_CHAT_SESSION(CommandLevel.HEAVY),
 	DELETE_CHAT_MESSAGE(CommandLevel.HEAVY),
+	FETCH_WRITTEN_TEXT(CommandLevel.HEAVY),
+	DOWNLOAD_FILE(CommandLevel.HEAVY),
 
-	LOGOUT(CommandLevel.LIGHT);
+	// External Pages
+	REQUEST_DONATION_PAGE(CommandLevel.LIGHT),
+	REQUEST_SOURCE_CODE_PAGE(CommandLevel.LIGHT);
+
 	
 	/*
 	 * This enum determines whether the command requested by the client is "Heavy" or "Light."

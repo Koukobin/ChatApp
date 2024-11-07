@@ -14,12 +14,19 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+@import url("../chat_interface/dark-theme.css");
+
 * {
-   -fx-default-background-color: rgb(255, 255, 255);
 }
 
 #loginAnchorPane {
 	-fx-background-color: -fx-default-background-color;
+}
+
+.text-field {
+	-fx-background-color: -fx-default-background-color;
+	-fx-border-color: white;
+	-fx-background-radius: 3;
 }
 
 .jfx-check-box {
@@ -27,24 +34,19 @@
 }
 
 .jfx-button {
+	-fx-background-color: -fx-default-background-color;
 	-fx-background-radius: 3;
 	-fx-cursor: HAND;
-}
-
-#forgotPasswordButton, #forgotUsernameButton {
-	-fx-text-fill: rgb(3, 219, 252);
-	-fx-underline: true;
-	-fx-font-style: italic;
 }
 
 #loginButton {
 	-fx-background-color: rgb(15, 157, 88);
 	-fx-text-fill: white;
-	-fx-background-radius: 3;
 }
 
 #switchToCreateAccountSceneButton {
-	-fx-border-color: black;
+	-fx-background-color: rgb(10,10,10);
+	-fx-border-color: white;
 	transition: 5s;
 }
 
