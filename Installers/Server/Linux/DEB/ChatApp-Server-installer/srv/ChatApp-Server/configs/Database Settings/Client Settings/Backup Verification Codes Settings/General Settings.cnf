@@ -1,0 +1,21 @@
+amountOfCodes=3
+amountOfCharacters=9
+
+=-=-=-=-=-=-=-=-=-=-=-=Hashing=-=-=-=-=-=-=-=-=-=-=-=-=
+
+    hashLength=9
+
+    =-=-=-=-=-=-=-=-=-=-=-=availableAlgorithms-=-=-=-=-=-=-=-=-=-=-=-=-=
+        Argon2: Resistant to GPU/ASIC attacks, TMTO attacks and side channel attacks but may require a lot of resources.
+                OWASP recommends using it with minimum configuration of 15 MiB of memory, an iteration count of 2,
+                and 1 degree of parallelism
+        Scrypt: Gains an arbitrary level of parallelism over bcrypt. When slow enough, can resist to GPU/ASIC attacks
+                but it is weak to TMTO attacks. OWAPS recommends using it (if Argon2's adoption is not feasible)
+                with a minimum CPU/memory cost parameter of (2^16), a minimum block size of 8 (1024 bytes),
+                and a parallelization parameter of 1
+        Bcrypt: A general better choice than PBKDF2. It suffers against GPU/ASIC attacks but it is resistant to TMTO attacks.
+                OWAPS recommends using it (if scrypt's adoption is not feasible) with a work factor of 10 or more and
+                with a password limit of 72 bytes
+
+    algorithmType=Argon2
+

@@ -1,0 +1,19 @@
+isProductionReady=false
+
+sourceCodeURL=https://github.com/Koukobin/ChatApp
+
+address= ------
+port= ------
+backlog= ------
+
+# in millis (1 min = 60,000)
+connectTimeoutMillis=900000
+
+# the amount of threads that are gonna handle clients
+workerThreads=50
+
+# max bytes a client message can be which only consists of a file can be
+maxClientMessageFileBytes=1048576
+
+# max amount of bytes a client message can be which only consists of text
+maxClientMessageTextBytes=600

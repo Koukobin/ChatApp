@@ -1,0 +1,8 @@
+# Defines the CPU/memory cost. Must be a power of 2
+workFactor=65536
+
+# Defines the size of memory blocks
+resources=8
+
+# Defines the cost of parallelisation for an attacker
+parallelization=1

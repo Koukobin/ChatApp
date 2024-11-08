@@ -1,0 +1,3 @@
+=-=-=-=-=-=-=-=-=-=-=-=Requirements=-=-=-=-=-=-=-=-=-=-=-=-=
+    usernameMaxLength=16
+    usernameInvalidCharacters=!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~

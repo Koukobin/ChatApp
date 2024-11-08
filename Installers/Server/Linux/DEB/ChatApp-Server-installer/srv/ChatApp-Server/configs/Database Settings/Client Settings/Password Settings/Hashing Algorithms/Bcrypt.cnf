@@ -1,0 +1,7 @@
+# Defines the minor version of bcrypt. The suggested version of the algorithm is B, the latest one. 
+# The other versions should be used only for backward compatibility reasons and we recommend to update 
+# your hashes as soon as possible
+version=B
+
+# Defines the number of rounds in logarithmic form (e.g. cost factor of 10 means 210 = 1024 rounds)
+costFactor=10

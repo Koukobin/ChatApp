@@ -1,0 +1,8 @@
+
+# Sets the minimum number of idle connections in the pool.
+generalPurposePoolMinIdle=10
+writeChatMessagesPoolMinIdle=10
+
+# Sets the maximum number of connections in the pool. 
+generalPurposePoolMaxPoolSize=50
+writeChatMessagesPoolMaxPoolSize=50

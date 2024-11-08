@@ -1,0 +1,70 @@
+<!-- 
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="refresh" content="0; url=http://example.com/" />
+    <title>Redirecting...</title> <!-- Optional title -->
+    <!-- You can redirect users to your donation website here -->
+<!-- </head>
+<body>
+    <p>If you are not redirected, <a href="http://example.com/">click here</a>.</p>
+</body>
+</html>
+-->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+    <!-- Replace "test" with your own sandbox Business account app client ID -->
+    <script src="https://www.paypal.com/sdk/js?client-id=test&currency=USD"></script>
+    <!-- Set up a container element for the button -->
+   
+    <div style="text-align:center">
+    <p>BITCOIN: ---------</p>
+    <p>MANARO: ---------</p>
+    <hr style="width: 760px;">
+    <input type="number" id="amount" style="width: 740px;">
+    </div>
+
+    <div id="paypal-button-container" style="
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;">
+    </div>
+
+    <script type="text/javascript">
+
+    const element = document.getElementById('amount')
+
+    paypal.Buttons({
+      // Sets up the transaction when a payment button is clicked
+      createOrder: (data, actions) => {
+        return actions.order.create({
+          purchase_units: [{
+            amount: {
+              value: element.value
+            }
+          }]
+        });
+      },
+      // Finalize the transaction after payer approval
+      onApprove: (data, actions) => {
+        return actions.order.capture().then(function(orderData) {
+          // Successful capture! For dev/demo purposes:
+          console.log('Capture result', orderData, JSON.stringify(orderData, null, 2));
+          const transaction = orderData.purchase_units[0].payments.captures[0];
+          alert(`Transaction ${transaction.status}: ${transaction.id}\n\nSee console for all available details`);
+
+          alert("Thank you for your payment!")
+        });
+      }
+    }).render('#paypal-button-container');
+
+    </script>
+
+  </head>
+</html>
