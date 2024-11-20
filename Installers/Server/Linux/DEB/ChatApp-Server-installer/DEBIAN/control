@@ -1,8 +1,0 @@
-Package: chatapp-server
-Version: 1.0-rc
-Architecture: all
-Essential: no
-Priority: optional
-Maintainer: Ilias Koukovinis
-Depends: default-jre (>= 2:1.11) | java17-runtime-headless, postgresql-14
-Description: SERVER FOR CHAT

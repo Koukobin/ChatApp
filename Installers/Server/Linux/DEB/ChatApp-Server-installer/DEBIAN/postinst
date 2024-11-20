@@ -1,3 +1,0 @@
-#!/bin/sh
-echo "You can read how to setup the server in the README FILE IN /srv/ChatApp-Server/"
-echo "Keep in mind that chatapp-server by itself doesn't prevent DDOS attacks; I recommended to use something like IPTables to configure the IP packet filter rules of the Linux kernel firewall."

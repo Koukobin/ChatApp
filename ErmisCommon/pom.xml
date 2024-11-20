@@ -1,0 +1,64 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>github.ermis.common</groupId>
+	<artifactId>ermis.common</artifactId>
+	<version>1.0-rc</version>
+	<name>ErmisCommon</name>
+	<packaging>jar</packaging>
+
+	<parent>
+		<groupId>github.ermis</groupId>
+		<artifactId>ermis-parent</artifactId>
+		<version>1.0-rc</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<licenses>
+		<license>
+			<name>GNU Affero General Public Licence, Version 3.0</name>
+			<url>https://www.gnu.org/licenses/agpl-3.0.en.html</url>
+		</license>
+	</licenses>
+	<inceptionYear>2023</inceptionYear>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-codec</artifactId>
+			<version>4.1.84.Final</version>
+		</dependency>
+
+		<dependency>
+			<groupId>me.gosimple</groupId>
+			<artifactId>nbvcxz</artifactId>
+			<version>1.5.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>33.3.0-jre</version>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+
+		<sourceDirectory>src</sourceDirectory>
+
+		<plugins>
+
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.1</version>
+				<configuration>
+					<release>17</release>
+				</configuration>
+			</plugin>
+
+		</plugins>
+
+	</build>
+
+</project>

@@ -1,8 +1,8 @@
-Generation of ChatApp-Client installer:
+Generation of Ermis-Client installer:
 
-    Replace ChatAppClient.jar with the new jar
-    Replace ChatApp-Client/lib/ with the new lib file
+    Replace ErmisClient.jar with the new jar
+    Replace Ermis-Client/lib/ with the new lib file
 
     Use launch4j.xml with launch4j to generate exe file
 
-    Compile ChatApp-Client.iss with Inno Setup
+    Compile Ermis-Client.iss with Inno Setup

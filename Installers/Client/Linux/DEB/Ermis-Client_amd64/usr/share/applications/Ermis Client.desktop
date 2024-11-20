@@ -1,0 +1,12 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Name=Ermis Client
+Comment=Chating application
+GenericName=Internet Messenger
+Terminal=false
+Exec=/opt/Ermis-Client/Ermis-Client.sh
+Icon=/opt/Ermis-Client/icons/Ermis-Client.png
+Type=Application
+Categories=Network;InstantMessaging;
+Name[en_US]=Ermis Client.desktop
