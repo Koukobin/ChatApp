@@ -18,6 +18,8 @@ package github.koukobin.ermis.server.main.java.server;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import io.netty.channel.Channel;
 import io.netty.channel.epoll.EpollSocketChannel;
 
 /**
@@ -69,8 +71,8 @@ public final class ClientInfo {
 		this.chatRequestsClientIDS = chatRequests;
 	}
 
-	public void setChannel(EpollSocketChannel channel) {
-		this.channel = channel;
+	public void setChannel(Channel channel) {
+		this.channel = (EpollSocketChannel) channel;
 	}
 	
 	public String getUsername() {
@@ -126,8 +128,6 @@ public final class ClientInfo {
 
 	@Override
 	public String toString() {
-		return "ClientInfo [username=" + username + ", email=" + email + ", clientID="
-				+ clientID + ", chatSessions=" + chatSessions
-				+ ", chatRequests=" + chatRequestsClientIDS + ", channel=" + channel + "]";
+		return username + clientID;
 	}
 }

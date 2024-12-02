@@ -16,7 +16,6 @@
 package github.koukobin.ermis.server.main.java.server.util;
 
 import github.koukobin.ermis.common.message_types.ServerMessageType;
-import github.koukobin.ermis.common.util.EnumIntConverter;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -32,7 +31,7 @@ public final class MessageByteBufCreator {
 	
 	public static void sendMessageInfo(ChannelHandlerContext ctx, String text) {
 		ByteBuf payload = ctx.alloc().ioBuffer();
-		payload.writeInt(EnumIntConverter.getEnumAsInt(ServerMessageType.SERVER_MESSAGE_INFO));
+		payload.writeInt(ServerMessageType.SERVER_MESSAGE_INFO.id);
 		payload.writeBytes(text.getBytes());
 		ctx.channel().writeAndFlush(payload);
 	}

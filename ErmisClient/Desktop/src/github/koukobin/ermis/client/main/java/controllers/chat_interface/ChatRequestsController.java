@@ -169,6 +169,9 @@ public class ChatRequestsController extends GeneralController {
 		refreshButton.setDisable(true);
 		getRoot().getChildren().remove(chatRequestsListView);
 		getRoot().getChildren().add(progressSpinner);
+		
+		// Just like in the ChatsController, set a timer of 1 second and subsequently remove progress spinner
+		// Very lazy but works perfectly fine
 		Platform.runLater(() -> {
 			Threads.delay(1000, () -> {
 				refreshButton.setDisable(false);

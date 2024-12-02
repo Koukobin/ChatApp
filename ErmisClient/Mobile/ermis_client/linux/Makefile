@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /opt/flutter-apps/chatapp_client/linux
+CMAKE_SOURCE_DIR = /opt/flutter-apps/ermis_client/linux
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /opt/flutter-apps/chatapp_client/linux
+CMAKE_BINARY_DIR = /opt/flutter-apps/ermis_client/linux
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -132,9 +132,9 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /opt/flutter-apps/chatapp_client/linux/CMakeFiles /opt/flutter-apps/chatapp_client/linux//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /opt/flutter-apps/ermis_client/linux/CMakeFiles /opt/flutter-apps/ermis_client/linux//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /opt/flutter-apps/chatapp_client/linux/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /opt/flutter-apps/ermis_client/linux/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -162,17 +162,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named chatapp_client
+# Target rules for targets named ermis_client
 
 # Build rule for target.
-chatapp_client: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 chatapp_client
-.PHONY : chatapp_client
+ermis_client: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ermis_client
+.PHONY : ermis_client
 
 # fast build rule for target.
-chatapp_client/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/chatapp_client.dir/build.make CMakeFiles/chatapp_client.dir/build
-.PHONY : chatapp_client/fast
+ermis_client/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ermis_client.dir/build.make CMakeFiles/ermis_client.dir/build
+.PHONY : ermis_client/fast
 
 #=============================================================================
 # Target rules for targets named flutter_assemble
@@ -192,7 +192,7 @@ flutter/generated_plugin_registrant.o: flutter/generated_plugin_registrant.cc.o
 
 # target to build an object file
 flutter/generated_plugin_registrant.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/chatapp_client.dir/build.make CMakeFiles/chatapp_client.dir/flutter/generated_plugin_registrant.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ermis_client.dir/build.make CMakeFiles/ermis_client.dir/flutter/generated_plugin_registrant.cc.o
 .PHONY : flutter/generated_plugin_registrant.cc.o
 
 flutter/generated_plugin_registrant.i: flutter/generated_plugin_registrant.cc.i
@@ -200,7 +200,7 @@ flutter/generated_plugin_registrant.i: flutter/generated_plugin_registrant.cc.i
 
 # target to preprocess a source file
 flutter/generated_plugin_registrant.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/chatapp_client.dir/build.make CMakeFiles/chatapp_client.dir/flutter/generated_plugin_registrant.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ermis_client.dir/build.make CMakeFiles/ermis_client.dir/flutter/generated_plugin_registrant.cc.i
 .PHONY : flutter/generated_plugin_registrant.cc.i
 
 flutter/generated_plugin_registrant.s: flutter/generated_plugin_registrant.cc.s
@@ -208,7 +208,7 @@ flutter/generated_plugin_registrant.s: flutter/generated_plugin_registrant.cc.s
 
 # target to generate assembly for a file
 flutter/generated_plugin_registrant.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/chatapp_client.dir/build.make CMakeFiles/chatapp_client.dir/flutter/generated_plugin_registrant.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ermis_client.dir/build.make CMakeFiles/ermis_client.dir/flutter/generated_plugin_registrant.cc.s
 .PHONY : flutter/generated_plugin_registrant.cc.s
 
 main.o: main.cc.o
@@ -216,7 +216,7 @@ main.o: main.cc.o
 
 # target to build an object file
 main.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/chatapp_client.dir/build.make CMakeFiles/chatapp_client.dir/main.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ermis_client.dir/build.make CMakeFiles/ermis_client.dir/main.cc.o
 .PHONY : main.cc.o
 
 main.i: main.cc.i
@@ -224,7 +224,7 @@ main.i: main.cc.i
 
 # target to preprocess a source file
 main.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/chatapp_client.dir/build.make CMakeFiles/chatapp_client.dir/main.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ermis_client.dir/build.make CMakeFiles/ermis_client.dir/main.cc.i
 .PHONY : main.cc.i
 
 main.s: main.cc.s
@@ -232,7 +232,7 @@ main.s: main.cc.s
 
 # target to generate assembly for a file
 main.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/chatapp_client.dir/build.make CMakeFiles/chatapp_client.dir/main.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ermis_client.dir/build.make CMakeFiles/ermis_client.dir/main.cc.s
 .PHONY : main.cc.s
 
 my_application.o: my_application.cc.o
@@ -240,7 +240,7 @@ my_application.o: my_application.cc.o
 
 # target to build an object file
 my_application.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/chatapp_client.dir/build.make CMakeFiles/chatapp_client.dir/my_application.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ermis_client.dir/build.make CMakeFiles/ermis_client.dir/my_application.cc.o
 .PHONY : my_application.cc.o
 
 my_application.i: my_application.cc.i
@@ -248,7 +248,7 @@ my_application.i: my_application.cc.i
 
 # target to preprocess a source file
 my_application.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/chatapp_client.dir/build.make CMakeFiles/chatapp_client.dir/my_application.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ermis_client.dir/build.make CMakeFiles/ermis_client.dir/my_application.cc.i
 .PHONY : my_application.cc.i
 
 my_application.s: my_application.cc.s
@@ -256,7 +256,7 @@ my_application.s: my_application.cc.s
 
 # target to generate assembly for a file
 my_application.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/chatapp_client.dir/build.make CMakeFiles/chatapp_client.dir/my_application.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ermis_client.dir/build.make CMakeFiles/ermis_client.dir/my_application.cc.s
 .PHONY : my_application.cc.s
 
 # Help Target
@@ -272,7 +272,7 @@ help:
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
 	@echo "... flutter_assemble"
-	@echo "... chatapp_client"
+	@echo "... ermis_client"
 	@echo "... flutter/generated_plugin_registrant.o"
 	@echo "... flutter/generated_plugin_registrant.i"
 	@echo "... flutter/generated_plugin_registrant.s"

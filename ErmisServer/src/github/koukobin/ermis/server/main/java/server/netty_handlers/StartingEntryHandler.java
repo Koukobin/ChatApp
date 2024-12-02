@@ -18,7 +18,6 @@ package github.koukobin.ermis.server.main.java.server.netty_handlers;
 import java.io.IOException;
 
 import github.koukobin.ermis.common.entry.EntryType;
-import github.koukobin.ermis.common.util.EnumIntConverter;
 import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.ErmisDatabase;
 import github.koukobin.ermis.server.main.java.server.ClientInfo;
 import io.netty.buffer.ByteBuf;
@@ -47,7 +46,8 @@ public final class StartingEntryHandler extends ParentHandler {
 	}
 	
 	@Override
-	public void channelActive(ChannelHandlerContext ctx) {
+	public void handlerAdded(ChannelHandlerContext ctx) {
+		
 		ctx.channel().writeAndFlush(Unpooled.copyBoolean(isLoggedIn));
 
 		// If the user is logged in, remove this handler and start the messaging
@@ -61,7 +61,7 @@ public final class StartingEntryHandler extends ParentHandler {
 	@Override
 	public void channelRead1(ChannelHandlerContext ctx, ByteBuf msg) throws IOException {
 		
-		EntryType entryType = EnumIntConverter.getIntAsEnum(msg.readInt(), EntryType.class);
+		EntryType entryType = EntryType.fromId(msg.readInt());
 
 		if (entryType == EntryType.LOGIN) {
 			ctx.pipeline().replace(this, LoginHandler.class.getName(), new LoginHandler(clientInfo));

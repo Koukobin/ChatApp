@@ -22,7 +22,6 @@ import github.koukobin.ermis.common.entry.LoginInfo.Action;
 import github.koukobin.ermis.common.entry.LoginInfo.Credential;
 import github.koukobin.ermis.common.entry.LoginInfo.PasswordType;
 import github.koukobin.ermis.common.results.ResultHolder;
-import github.koukobin.ermis.common.util.EnumIntConverter;
 import github.koukobin.ermis.server.main.java.configs.ServerSettings;
 import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.ErmisDatabase;
 import github.koukobin.ermis.server.main.java.server.ClientInfo;
@@ -48,7 +47,7 @@ final class LoginHandler extends EntryHandler {
 
 		int readerIndex = msg.readerIndex();
 
-		Action action = EnumIntConverter.getIntAsEnum(msg.readInt(), Action.class);
+		Action action = Action.fromId(msg.readInt());
 
 		switch (action) {
 		case TOGGLE_PASSWORD_TYPE -> {
@@ -68,7 +67,7 @@ final class LoginHandler extends EntryHandler {
 	public void channelRead2(ChannelHandlerContext ctx, ByteBuf msg) {
 		
 		{
-			Credential credential = EnumIntConverter.getIntAsEnum(msg.readInt(), Credential.class);
+			Credential credential = Credential.fromId(msg.readInt());
 			
 			byte[] msgBytes = new byte[msg.readableBytes()];
 			msg.readBytes(msgBytes);
@@ -86,9 +85,9 @@ final class LoginHandler extends EntryHandler {
 			}
 			
 			ByteBuf payload = ctx.alloc().ioBuffer();
-			payload.writeBoolean(resultHolder.isSuccesfull());
+			payload.writeBoolean(resultHolder.isSuccessful());
 
-			if (resultHolder.isSuccesfull()) {
+			if (resultHolder.isSuccessful()) {
 				success(ctx);
 			} else {
 				failed(ctx);
@@ -120,7 +119,7 @@ final class LoginHandler extends EntryHandler {
 						entryResult = conn.loginUsingBackupVerificationCode(clientInfo.getChannel().remoteAddress().getAddress(), email, password);
 					}
 					
-					if (entryResult.isSuccesfull()) {
+					if (entryResult.isSuccessful()) {
 						login(ctx, clientInfo);
 					} else {
 						registerFailed(ctx, clientInfo);
@@ -129,7 +128,7 @@ final class LoginHandler extends EntryHandler {
 					byte[] resultMessageBytes = entryResult.getResultMessage().getBytes();
 					
 					ByteBuf payload = ctx.alloc().ioBuffer();
-					payload.writeBoolean(entryResult.isSuccesfull());
+					payload.writeBoolean(entryResult.isSuccessful());
 					payload.writeBytes(resultMessageBytes);
 					
 					ctx.channel().writeAndFlush(payload);
@@ -147,8 +146,8 @@ final class LoginHandler extends EntryHandler {
 						}
 						
 						@Override
-						public String createEmailMessage(String generatedVerificationCode) {
-							return ServerSettings.EmailCreator.Verification.Login.createEmail(email, generatedVerificationCode);
+						public String createEmailMessage(String account, String generatedVerificationCode) {
+							return ServerSettings.EmailCreator.Verification.Login.createEmail(email, account, generatedVerificationCode);
 						}
 					};
 					

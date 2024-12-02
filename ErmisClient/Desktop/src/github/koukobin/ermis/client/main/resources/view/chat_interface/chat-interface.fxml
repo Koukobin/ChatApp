@@ -38,7 +38,7 @@
                      <children>
                         <ImageView fitHeight="50.0" fitWidth="66.0" pickOnBounds="true" preserveRatio="true">
                            <image>
-                              <Image url="@../../icons/primary-application-icon.png" />
+                              <Image url="@../../icons/primary-application-icon-256.png" />
                            </image>
                            <VBox.margin>
                               <Insets top="10.0" />
@@ -62,7 +62,7 @@
                               </ImageView>
                            </graphic>
                         </JFXButton>
-                        <JFXButton fx:id="logout1" layoutX="20.0" layoutY="10.0" onAction="#logout" prefWidth="60.0" text="">
+                        <JFXButton fx:id="logout" layoutX="20.0" layoutY="10.0" onAction="#logout" prefWidth="60.0" text="">
                            <graphic>
                               <ImageView fitHeight="31.0" fitWidth="31.0" pickOnBounds="true" preserveRatio="true">
                                  <image>

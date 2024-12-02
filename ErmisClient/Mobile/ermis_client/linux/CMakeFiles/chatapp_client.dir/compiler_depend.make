@@ -1,2 +1,2 @@
-# Empty compiler generated dependencies file for chatapp_client.
+# Empty compiler generated dependencies file for ermis_client.
 # This may be replaced when dependencies are built.

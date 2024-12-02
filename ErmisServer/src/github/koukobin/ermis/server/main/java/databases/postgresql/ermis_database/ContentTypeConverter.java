@@ -32,6 +32,8 @@ final class ContentTypeConverter {
 
 	private static final int TEXT = 117;
 	private static final int FILE = 64;
+	private static final int PHOTO = 343;
+	
 	
 	private static final Map<ContentType, Integer> contentTypesToDatabaseInts = new EnumMap<>(ContentType.class);
 	private static final Map<Integer, ContentType> databaseIntsToContentTypes = new HashMap<>();
@@ -39,12 +41,13 @@ final class ContentTypeConverter {
 	private ContentTypeConverter() {}
 	
 	static {
-		
 		contentTypesToDatabaseInts.put(ContentType.TEXT, TEXT);
 		contentTypesToDatabaseInts.put(ContentType.FILE, FILE);
+		contentTypesToDatabaseInts.put(ContentType.IMAGE, PHOTO);
 		
 		databaseIntsToContentTypes.put(TEXT, ContentType.TEXT);
 		databaseIntsToContentTypes.put(FILE, ContentType.FILE);
+		databaseIntsToContentTypes.put(PHOTO, ContentType.IMAGE);
 	}
 
 	static int getContentTypeAsDatabaseInt(ContentType contentType) {

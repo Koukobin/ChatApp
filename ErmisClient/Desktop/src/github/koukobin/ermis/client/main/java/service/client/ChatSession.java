@@ -38,9 +38,10 @@ public class ChatSession {
 
 		public Member() {}
 		
-		public Member(String username, int clientID) {
+		public Member(String username, int clientID, byte[] icon) {
 			this.username = username;
 			this.clientID = clientID;
+			this.icon = icon.clone();
 		}
 
 		public void setUsername(String username) {
@@ -49,6 +50,10 @@ public class ChatSession {
 
 		public void setClientID(int clientID) {
 			this.clientID = clientID;
+		}
+		
+		public void setIcon(byte[] icon) {
+			this.icon = icon.clone();
 		}
 		
 		public String getUsername() {
@@ -60,7 +65,7 @@ public class ChatSession {
 		}
 		
 		public byte[] getIcon() {
-			return icon;
+			return icon.clone();
 		}
 
 		@Override
@@ -182,7 +187,7 @@ public class ChatSession {
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(", ");
 		for (int i = 0; i < members.size(); i++) {
-			joiner.add(members.get(i).getUsername() + "@" + members.get(i).getClientID());
+			joiner.add(members.get(i).toString());
 		}
 		return joiner.toString();
 	}

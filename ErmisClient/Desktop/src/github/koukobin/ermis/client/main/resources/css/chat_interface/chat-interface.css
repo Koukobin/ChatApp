@@ -152,7 +152,6 @@
     -fx-font-size: 16px;
     -fx-text-fill: black;
     -fx-alignment: center;
-    -fx-background-color: linear-gradient(to top, rgb(2, 201, 61), rgb(67, 255, 54));
     -fx-padding: 0 5 0 5;
     -fx-background-radius: 15px;
 }
@@ -162,7 +161,7 @@
 }
 
 #otherMessageLabel {
-    -fx-background-color: linear-gradient(to top, rgb(100, 100, 100), rgb(130, 130, 130));
+    -fx-background-color: rgb(130, 130, 130);
 }
 
 #downloadFileButton {

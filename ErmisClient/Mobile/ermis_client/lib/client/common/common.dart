@@ -1,3 +1,19 @@
+/* Copyright (C) 2024 Ilias Koukovinis <ilias.koukovinis@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 
 
 class EnumNotFoundException implements Exception {
@@ -12,14 +28,15 @@ class EnumNotFoundException implements Exception {
 enum ClientCommandResultType {
   deleteChatMessage(1),
   downloadFile(2),
-  getDisplayName(3),
-  fetchAccountIcon(4),
-  getClientId(5),
-  getChatRequests(6),
-  getChatSessions(7),
-  getWrittenText(8),
-  getDonationPage(9),
-  getSourceCodePage(10);
+  downloadImage(3),
+  getDisplayName(4),
+  fetchAccountIcon(5),
+  getClientId(6),
+  getChatRequests(7),
+  getChatSessions(8),
+  getWrittenText(9),
+  getDonationPage(10),
+  getServerSourceCodePage(11);
 
   final int id;
   const ClientCommandResultType(this.id);
@@ -58,10 +75,11 @@ enum ClientCommandType {
   deleteChatMessage(CommandLevel.heavy, 13),
   fetchWrittenText(CommandLevel.heavy, 14),
   downloadFile(CommandLevel.heavy, 15),
+  downloadImage(CommandLevel.heavy, 16),
 
   // External Pages
-  requestDonationPage(CommandLevel.light, 16),
-  requestSourceCodePage(CommandLevel.light, 17);
+  requestDonationPage(CommandLevel.light, 17),
+  requestSourceCodePage(CommandLevel.light, 18);
 
   final CommandLevel commandLevel;
   final int id;
@@ -70,8 +88,7 @@ enum ClientCommandType {
   // This function mimics the fromId functionality and throws an exception when no match is found.
   static ClientCommandType fromId(int id) {
     try {
-      return ClientCommandType.values
-          .firstWhere((type) => type.id == id);
+      return ClientCommandType.values.firstWhere((type) => type.id == id);
     } catch (e) {
       throw EnumNotFoundException('No ClientCommandType found for id $id');
     }
@@ -100,7 +117,8 @@ enum ClientMessageType {
 
 enum ContentType {
   text(0),
-  file(1);
+  file(1),
+  image(2);
 
   final int id;
   const ContentType(this.id);
@@ -247,3 +265,184 @@ enum RegenerateBackupVerificationCodesResult {
     }
   }
 }
+
+enum EntryType {
+  createAccount(1),
+  login(2);
+
+  final int id;
+  const EntryType(this.id);
+
+  static final Map<int, EntryType> _valuesById = {
+    for (var entry in EntryType.values) entry.id: entry,
+  };
+
+  static EntryType? fromId(int id) => _valuesById[id];
+}
+
+abstract class CredentialInterface {
+  int get id;
+}
+
+enum CreateAccountCredential implements CredentialInterface {
+  username(0),
+  password(1),
+  email(2);
+
+  @override
+  final int id;
+  const CreateAccountCredential(this.id);
+
+  static final Map<int, CreateAccountCredential> _valuesById = {
+    for (var credential in CreateAccountCredential.values) credential.id: credential,
+  };
+
+  static CreateAccountCredential? fromId(int id) => _valuesById[id];
+}
+
+enum AuthenticationStage {
+  credentialsValidation(1),
+  createAccount(2);
+
+  final int id;
+  const AuthenticationStage(this.id);
+
+  static final Map<int, AuthenticationStage> _valuesById = {
+    for (var stage in AuthenticationStage.values) stage.id: stage,
+  };
+
+  static AuthenticationStage? fromId(int id) => _valuesById[id];
+}
+
+enum CredentialValidationResult {
+  successfullyExchangedCredentials(1, ResultHolder(true, "Successfully exchanged credentials!")),
+  unableToGenerateClientId(2, ResultHolder(false, "Unable to generate client id!")),
+  emailAlreadyUsed(3, ResultHolder(false, "Email is already used!")),
+  usernameRequirementsNotMet(4, ResultHolder(false, "Username requirements not met!")),
+  passwordRequirementsNotMet(5, ResultHolder(false, "Password requirements not met!")),
+  invalidEmailAddress(6, ResultHolder(false, "Invalid email address"));
+
+  final int id;
+  final ResultHolder resultHolder;
+
+  const CredentialValidationResult(this.id, this.resultHolder);
+
+  static final Map<int, CredentialValidationResult> _valuesById = {
+    for (var result in CredentialValidationResult.values) result.id: result,
+  };
+
+  static CredentialValidationResult? fromId(int id) => _valuesById[id];
+}
+
+enum LoginCredential implements CredentialInterface {
+  email(1),
+  password(2);
+
+  @override
+  final int id;
+  const LoginCredential(this.id);
+
+  static final Map<int, LoginCredential> _valuesById = {
+    for (var credential in LoginCredential.values) credential.id: credential,
+  };
+
+  static LoginCredential? fromId(int id) => _valuesById[id];
+}
+
+enum PasswordType {
+  password(1),
+  backupVerificationCode(2);
+
+  final int id;
+  const PasswordType(this.id);
+
+  static final Map<int, PasswordType> _valuesById = {
+    for (var type in PasswordType.values) type.id: type,
+  };
+
+  static PasswordType? fromId(int id) => _valuesById[id];
+}
+
+enum LoginAction {
+  togglePasswordType(1);
+
+  final int id;
+  const LoginAction(this.id);
+
+  static final Map<int, LoginAction> _valuesById = {
+    for (var action in LoginAction.values) action.id: action,
+  };
+
+  static LoginAction? fromId(int id) => _valuesById[id];
+}
+
+enum LoginResult {
+  successfullyLoggedIn(1, ResultHolder(true, "Successfully logged into your account!")),
+  errorWhileLoggingIn(2, ResultHolder(false, "An error occurred while logging into your account! Please contact the server administrator.")),
+  incorrectPassword(3, ResultHolder(false, "Incorrect password.")),
+  incorrectBackupVerificationCode(4, ResultHolder(false, "Incorrect backup verification code"));
+
+  final int id;
+  final ResultHolder resultHolder;
+
+  const LoginResult(this.id, this.resultHolder);
+
+  static final Map<int, LoginResult> _valuesById = {
+    for (var result in LoginResult.values) result.id: result,
+  };
+
+  static LoginResult? fromId(int id) => _valuesById[id];
+}
+
+// Verification Action
+enum VerificationAction {
+  resendCode(1);
+
+  final int id;
+  static final Map<int, VerificationAction> _valuesById = {
+    for (var action in VerificationAction.values) action.id: action
+  };
+
+  const VerificationAction(this.id);
+
+  static VerificationAction? fromId(int id) => _valuesById[id];
+}
+
+// Verification Result
+class VerificationResult {
+  final int id;
+  final ResultHolder resultHolder;
+
+  const VerificationResult._(this.id, this.resultHolder);
+
+  static const successfullyVerified = VerificationResult._(
+    1,
+    ResultHolder(true, "Successfully verified!"),
+  );
+  static const wrongCode = VerificationResult._(
+    2,
+    ResultHolder(false, "Incorrect code!"),
+  );
+  static const runOutOfAttempts = VerificationResult._(
+    3,
+    ResultHolder(false, "Run out of attempts!"),
+  );
+  static const invalidEmailAddress = VerificationResult._(
+    4,
+    ResultHolder(false, "Invalid email address"),
+  );
+
+  static const List<VerificationResult> values = [
+    successfullyVerified,
+    wrongCode,
+    runOutOfAttempts,
+    invalidEmailAddress,
+  ];
+
+  static final Map<int, VerificationResult> _valuesById = {
+    for (var result in values) result.id: result
+  };
+
+  static VerificationResult? fromId(int id) => _valuesById[id];
+}
+

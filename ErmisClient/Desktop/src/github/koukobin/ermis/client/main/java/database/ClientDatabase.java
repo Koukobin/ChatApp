@@ -53,7 +53,7 @@ public class ClientDatabase {
 
 		private final Connection conn;
 		
-		public DBConnection() {
+		private DBConnection() {
 			try {
 				conn = createConnection();
 			} catch (SQLException sqle) {
@@ -145,5 +145,7 @@ public class ClientDatabase {
 				throw new RuntimeException(sqle);
 			}
 		}
+		
 	}
+	
 }

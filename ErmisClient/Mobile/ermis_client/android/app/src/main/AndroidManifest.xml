@@ -1,6 +1,25 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Adds the Internet permission here -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Adds the Camera permission here -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Adds File IO permission here (Android 13 (API level 33))-->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
+    
+    <!-- Adds File IO permission here (Android 11 (API level 30))-->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+
+    <!-- Adds File IO permission here (Android 9 (API level 28))-->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <application
-        android:label="chatapp_client"
+        android:label="Ermis"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

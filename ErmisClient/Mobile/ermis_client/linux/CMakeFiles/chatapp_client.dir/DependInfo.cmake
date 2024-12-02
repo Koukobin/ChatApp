@@ -8,9 +8,9 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/opt/flutter-apps/chatapp_client/linux/flutter/generated_plugin_registrant.cc" "CMakeFiles/chatapp_client.dir/flutter/generated_plugin_registrant.cc.o" "gcc" "CMakeFiles/chatapp_client.dir/flutter/generated_plugin_registrant.cc.o.d"
-  "/opt/flutter-apps/chatapp_client/linux/main.cc" "CMakeFiles/chatapp_client.dir/main.cc.o" "gcc" "CMakeFiles/chatapp_client.dir/main.cc.o.d"
-  "/opt/flutter-apps/chatapp_client/linux/my_application.cc" "CMakeFiles/chatapp_client.dir/my_application.cc.o" "gcc" "CMakeFiles/chatapp_client.dir/my_application.cc.o.d"
+  "/opt/flutter-apps/ermis_client/linux/flutter/generated_plugin_registrant.cc" "CMakeFiles/ermis_client.dir/flutter/generated_plugin_registrant.cc.o" "gcc" "CMakeFiles/ermis_client.dir/flutter/generated_plugin_registrant.cc.o.d"
+  "/opt/flutter-apps/ermis_client/linux/main.cc" "CMakeFiles/ermis_client.dir/main.cc.o" "gcc" "CMakeFiles/ermis_client.dir/main.cc.o.d"
+  "/opt/flutter-apps/ermis_client/linux/my_application.cc" "CMakeFiles/ermis_client.dir/my_application.cc.o" "gcc" "CMakeFiles/ermis_client.dir/my_application.cc.o.d"
   )
 
 # Targets to which this target links.

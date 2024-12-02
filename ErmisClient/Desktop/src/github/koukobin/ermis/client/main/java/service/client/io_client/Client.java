@@ -45,7 +45,6 @@ import github.koukobin.ermis.common.entry.EntryType;
 import github.koukobin.ermis.common.entry.LoginInfo;
 import github.koukobin.ermis.common.entry.Verification;
 import github.koukobin.ermis.common.results.ResultHolder;
-import github.koukobin.ermis.common.util.EnumIntConverter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -68,9 +67,8 @@ public class Client {
 		VERIFY, IGNORE
 	}
 	
-	private Client() throws IllegalAccessException {
-		throw new IllegalAccessException("Client cannot be constructed since it is statically initialized!");
-	}
+    /** Don't let anyone else instantiate this class */
+    private Client() {}
 	
 	public static void initialize(InetAddress remoteAddress, int remotePort, ServerCertificateVerification scv) throws ClientInitializationException {
 		
@@ -113,9 +111,6 @@ public class Client {
 			default -> throw new IllegalArgumentException("Unknown type: " + scv);
 			}
 
-			// The TLS version is automatically negotiated with the server. In case this
-			// does not suffice, instead use "SSLContext.getInstance("TLSv1.3");"
-			// SSLContext sc = SSLContext.getDefault();
 			SSLContext sc = SSLContext.getInstance("TLSv1.3");
 			sc.init(kmf.getKeyManagers(), trustManagers, new SecureRandom());
 
@@ -126,6 +121,8 @@ public class Client {
 			in = new ByteBufInputStream(sslSocket.getInputStream());
 			out = new ByteBufOutputStream(sslSocket.getOutputStream());
 
+			// This message helps the server distinguish between a normal message and an http request
+			out.write(Unpooled.EMPTY_BUFFER);
 			isLoggedIn.set(in.read().readBoolean());
 		} catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException
 				| UnrecoverableKeyException | KeyManagementException e) {
@@ -146,7 +143,7 @@ public class Client {
 			this.entryType = entryType;
 		}
 		
-		public ResultHolder getCredentialsExchangeResult() throws IOException {
+		public ResultHolder getResult() throws IOException {
 
 			ByteBuf msg = in.read();
 
@@ -162,7 +159,7 @@ public class Client {
 			for (Map.Entry<T, String> credential : credentials.entrySet()) {
 
 				boolean isAction = false;
-				int credentialInt = EnumIntConverter.getEnumAsInt((Enum<?>) credential.getKey());
+				int credentialInt = credential.getKey().id();
 				byte[] credentialValueBytes = credential.getValue().getBytes();
 
 				ByteBuf payload = Unpooled.buffer(1 /* boolean */ + Integer.BYTES + credentialValueBytes.length);
@@ -175,7 +172,7 @@ public class Client {
 		}
 		
 		public void sendEntryType() throws IOException {
-			out.write(Unpooled.copyInt(EnumIntConverter.getEnumAsInt(entryType)));
+			out.write(Unpooled.copyInt(entryType.id));
 		}
 	}
 
@@ -196,11 +193,11 @@ public class Client {
 		public void togglePasswordType() throws IOException {
 
 			boolean isAction = true;
-			int actionInt = EnumIntConverter.getEnumAsInt(LoginInfo.Action.TOGGLE_PASSWORD_TYPE);
+			int actionId = LoginInfo.Action.TOGGLE_PASSWORD_TYPE.id;
 
 			ByteBuf payload = Unpooled.buffer();
 			payload.writeBoolean(isAction);
-			payload.writeInt(actionInt);
+			payload.writeInt(actionId);
 
 			out.write(payload);
 		}
@@ -263,7 +260,7 @@ public class Client {
 			
 			ByteBuf payload = Unpooled.buffer(1 + Integer.BYTES);
 			payload.writeBoolean(isAction);
-			payload.writeInt(EnumIntConverter.getEnumAsInt(Verification.Action.RESEND_CODE));
+			payload.writeInt(Verification.Action.RESEND_CODE.id);
 			
 			out.write(payload);
 		}

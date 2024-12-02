@@ -25,16 +25,16 @@ public final class EntryInfo {
 
 	public static class Login {
 		
-		public static final URL FXML_LOCATION = EntryInfo.class.getResource("/github/ermis/client/main/resources/view/entry/login-scene.fxml");
-		public static final String CSS_LOCATION = EntryInfo.class.getResource("/github/ermis/client/main/resources/css/entry/login-scene.css").toExternalForm();
+		public static final URL FXML_LOCATION = EntryInfo.class.getResource("/github/koukobin/ermis/client/main/resources/view/entry/login-scene.fxml");
+		public static final String CSS_LOCATION = EntryInfo.class.getResource("/github/koukobin/ermis/client/main/resources/css/entry/login-scene.css").toExternalForm();
 		
 		private Login() {}
 	}
 	
 	public static class CreateAccount {
 		
-		public static final URL FXML_LOCATION = EntryInfo.class.getResource("/github/ermis/client/main/resources/view/entry/create-account-scene.fxml");
-		public static final String CSS_LOCATION = EntryInfo.class.getResource("/github/ermis/client/main/resources/css/entry/create-account-scene.css").toExternalForm();
+		public static final URL FXML_LOCATION = EntryInfo.class.getResource("/github/koukobin/ermis/client/main/resources/view/entry/create-account-scene.fxml");
+		public static final String CSS_LOCATION = EntryInfo.class.getResource("/github/koukobin/ermis/client/main/resources/css/entry/create-account-scene.css").toExternalForm();
 		
 		private CreateAccount() {}
 	}

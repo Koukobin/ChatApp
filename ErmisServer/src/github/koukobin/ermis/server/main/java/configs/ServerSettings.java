@@ -117,8 +117,15 @@ public final class ServerSettings {
 
 			private Verification() {}
 
-			private static String createEmail(String verificationEmailBody, String email, String verificationCode) {
-				return verificationEmailBody.replace("USER_EMAIL", email).replace("VERIFICATION_CODE", verificationCode).replace("SERVER_ADDRESS", SERVER_ADDRESS);
+			private static String createEmail(
+					String verificationEmailBody,
+					String email,
+					String account,
+					String verificationCode) {
+				return verificationEmailBody.replace("USER_EMAIL", email)
+						.replace("USER_ACCOUNT", account)
+						.replace("VERIFICATION_CODE", verificationCode)
+						.replace("SERVER_ADDRESS", SERVER_ADDRESS);
 			}
 
 			public static class Login {
@@ -137,8 +144,8 @@ public final class ServerSettings {
 				
 				private Login() {}
 
-				public static String createEmail(String email, String verificationCode) {
-					return Verification.createEmail(VERIFICATION_EMAIL_BODY, email, verificationCode);
+				public static String createEmail(String email, String account, String verificationCode) {
+					return Verification.createEmail(VERIFICATION_EMAIL_BODY, email, account, verificationCode);
 				}
 			}
 
@@ -158,8 +165,8 @@ public final class ServerSettings {
 
 				private CreateAccount() {}
 				
-				public static String createEmail(String email, String verificationCode) {
-					return Verification.createEmail(VERIFICATION_EMAIL_BODY, email, verificationCode);
+				public static String createEmail(String email, String account, String verificationCode) {
+					return Verification.createEmail(VERIFICATION_EMAIL_BODY, email, account, verificationCode);
 				}
 			}
 			

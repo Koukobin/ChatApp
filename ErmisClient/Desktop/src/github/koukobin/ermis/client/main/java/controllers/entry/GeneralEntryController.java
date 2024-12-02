@@ -95,8 +95,8 @@ public abstract sealed class GeneralEntryController implements Initializable per
 			MemoryUtil.freeStringFromMemory(entry.getValue());
 		}
 
-		ResultHolder entryResult = clientEntry.getCredentialsExchangeResult();
-		boolean isSuccessful = entryResult.isSuccesfull();
+		ResultHolder entryResult = clientEntry.getResult();
+		boolean isSuccessful = entryResult.isSuccessful();
 		String resultMessage = entryResult.getResultMessage();
 
 		if (!isSuccessful) {
@@ -112,7 +112,7 @@ public abstract sealed class GeneralEntryController implements Initializable per
 		VerificationDialog verificationDialog = new VerificationDialog(verificationEntry);
 		ResultHolder entryResult = null;
 		
-		boolean isSuccesfull = false;
+		boolean isSuccessful = false;
 		
 		while (!verificationEntry.isVerificationComplete()) {
 
@@ -120,10 +120,10 @@ public abstract sealed class GeneralEntryController implements Initializable per
 			verificationEntry.sendVerificationCode(verificationDialog.getVerificationCode());
 
 			entryResult = verificationEntry.getResult();
-			isSuccesfull = entryResult.isSuccesfull();
+			isSuccessful = entryResult.isSuccessful();
 			String resultMessage = entryResult.getResultMessage();
 
-			if (isSuccesfull) {
+			if (isSuccessful) {
 				DialogsUtil.showSuccessDialog(resultMessage);
 				break;
 			}
@@ -131,7 +131,7 @@ public abstract sealed class GeneralEntryController implements Initializable per
 			DialogsUtil.showErrorDialog(resultMessage);
 		}
 
-		return isSuccesfull;
+		return isSuccessful;
 	}
 	
 	public void setFXMLLoader(FXMLLoader loader) {

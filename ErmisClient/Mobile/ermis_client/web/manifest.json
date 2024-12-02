@@ -1,6 +1,6 @@
 {
-    "name": "chatapp_client",
-    "short_name": "chatapp_client",
+    "name": "ermis_client",
+    "short_name": "ermis_client",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

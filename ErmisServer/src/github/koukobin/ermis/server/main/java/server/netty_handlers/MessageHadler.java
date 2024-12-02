@@ -41,6 +41,7 @@ import github.koukobin.ermis.server.main.java.server.ChatSession;
 import github.koukobin.ermis.server.main.java.server.ClientInfo;
 import github.koukobin.ermis.server.main.java.server.codec.MessageHandlerDecoder;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.epoll.EpollSocketChannel;
 
@@ -120,7 +121,7 @@ final class MessageHadler extends ParentHandler {
 	}
 
 	@Override
-	public void handlerRemoved(ChannelHandlerContext ctx) {
+	public void handlerRemoved(ChannelHandlerContext ctx) throws IOException {
 		clientIDSToActiveClients.remove(clientInfo.getClientID());
 		
 		List<ChatSession> userChatSessions = clientInfo.getChatSessions();
@@ -131,7 +132,10 @@ final class MessageHadler extends ParentHandler {
 
 			if (chatSession.getActiveMembers().isEmpty()) {
 				ActiveChatSessions.removeChatSession(chatSession.getChatSessionID());
+			} else {
+				refreshChatSession(chatSession);
 			}
+			
 		}
 		
 	}
@@ -183,7 +187,7 @@ final class MessageHadler extends ParentHandler {
 				payload.writeInt(textLength);
 				payload.writeBytes(textBytes);
 			}
-			case FILE -> {
+			case FILE, IMAGE -> {
 				
 				int fileNameLength = msg.readInt();
 				fileNameBytes = new byte[fileNameLength];
@@ -229,7 +233,13 @@ final class MessageHadler extends ParentHandler {
 			switch (commandType.getCommandLevel()) {
 			case HEAVY -> {
 				msg.retain(); // increase reference count by 1 for executeCommand
-				commandsToBeExecutedQueue = commandsToBeExecutedQueue.thenRunAsync(() -> executeCommand(commandType, msg));
+				commandsToBeExecutedQueue.thenRunAsync(() -> {
+					try {
+						executeCommand(commandType, msg);
+					} catch (Exception e) {
+						exceptionCaught(ctx, e);
+					}
+				});
 			}
 			case LIGHT -> {
 				executeCommand(commandType, msg);
@@ -267,12 +277,16 @@ final class MessageHadler extends ParentHandler {
 		}
 	}
 
+	private void executeCommand(ClientCommandType commandType, ByteBuf args) {
+		executeCommand(clientInfo, commandType, args);
+	}
+	
 	/**
 	 * This method can be used by the client to execute various commands, such as to
 	 * change his username or to get his clientID
 	 * 
 	 */
-	private void executeCommand(ClientCommandType commandType, ByteBuf args) {
+	private static void executeCommand(ClientInfo clientInfo, ClientCommandType commandType, ByteBuf args) {
 		
 		EpollSocketChannel channel = clientInfo.getChannel();
 		
@@ -299,7 +313,7 @@ final class MessageHadler extends ParentHandler {
 
 				payload.writeBytes(resultHolder.getResultMessage().getBytes());
 				
-				if (resultHolder.isSuccesfull()) {
+				if (resultHolder.isSuccessful()) {
 					clientInfo.setUsername(newUsername);
 				}
 			}
@@ -341,6 +355,29 @@ final class MessageHadler extends ParentHandler {
 			ByteBuf payload = channel.alloc().ioBuffer();
 			payload.writeInt(ServerMessageType.COMMAND_RESULT.id);
 			payload.writeInt(ClientCommandResultType.DOWNLOAD_FILE.id);
+			payload.writeInt(fileNameBytes.length);
+			payload.writeBytes(fileNameBytes);
+			payload.writeBytes(fileBytes);
+			
+			channel.writeAndFlush(payload);
+		}
+		case DOWNLOAD_IMAGE -> {
+			
+			int chatSessionIndex = args.readInt();
+			int messageID = args.readInt();
+			
+			LoadedInMemoryFile file;
+			try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
+				file = conn.getFile(messageID, clientInfo.getChatSessions().get(chatSessionIndex).getChatSessionID());
+			}
+
+			byte[] fileBytes = file.getFileBytes();
+			byte[] fileNameBytes = file.getFileName().getBytes();
+
+			ByteBuf payload = channel.alloc().ioBuffer();
+			payload.writeInt(ServerMessageType.COMMAND_RESULT.id);
+			payload.writeInt(ClientCommandResultType.DOWNLOAD_IMAGE.id);
+			payload.writeInt(messageID);
 			payload.writeInt(fileNameBytes.length);
 			payload.writeBytes(fileNameBytes);
 			payload.writeBytes(fileBytes);
@@ -541,7 +578,9 @@ final class MessageHadler extends ParentHandler {
 			ByteBuf payload = channel.alloc().ioBuffer();
 			payload.writeInt(ServerMessageType.COMMAND_RESULT.id);
 			payload.writeInt(ClientCommandResultType.FETCH_ACCOUNT_ICON.id);
-			payload.writeBytes(accountIcon);
+			if (accountIcon != null) {
+				payload.writeBytes(accountIcon);
+			}
 			
 			channel.writeAndFlush(payload);
 		}
@@ -558,45 +597,42 @@ final class MessageHadler extends ParentHandler {
 				messages = conn.selectMessages(chatSessionID, numOfMessagesAlreadySelected, ServerSettings.NUMBER_OF_MESSAGES_TO_READ_FROM_THE_DATABASE_AT_A_TIME);
 			}
 			
-			if (messages.length > 0) {
+			ByteBuf payload = channel.alloc().ioBuffer();
+			payload.writeInt(ServerMessageType.COMMAND_RESULT.id);
+			payload.writeInt(ClientCommandResultType.GET_WRITTEN_TEXT.id);
+			payload.writeInt(chatSessionIndex);
+
+			for (int i = 0; i < messages.length; i++) {
+
+				Message message = messages[i];
+				byte[] messageBytes = message.getText();
+				byte[] fileNameBytes = message.getFileName();
+				byte[] usernameBytes = message.getUsername().getBytes();
+				long timeWritten = message.getTimeWritten();
+				ContentType contentType = message.getContentType();
 				
-				ByteBuf payload = channel.alloc().ioBuffer();
-				payload.writeInt(ServerMessageType.COMMAND_RESULT.id);
-				payload.writeInt(ClientCommandResultType.GET_WRITTEN_TEXT.id);
-				payload.writeInt(chatSessionIndex);
+				payload.writeInt((contentType.id));
+				payload.writeInt(message.getClientID());
+				payload.writeInt(message.getMessageID());
 
-				for (int i = 0; i < messages.length; i++) {
+				payload.writeInt(usernameBytes.length);
+				payload.writeBytes(usernameBytes);
 
-					Message message = messages[i];
-					byte[] messageBytes = message.getText();
-					byte[] fileNameBytes = message.getFileName();
-					byte[] usernameBytes = message.getUsername().getBytes();
-					long timeWritten = message.getTimeWritten();
-					ContentType contentType = message.getContentType();
-					
-					payload.writeInt((contentType.id));
-					payload.writeInt(message.getClientID());
-					payload.writeInt(message.getMessageID());
-
-					payload.writeInt(usernameBytes.length);
-					payload.writeBytes(usernameBytes);
-
-					payload.writeLong(timeWritten);
-					
-					switch (contentType) {
-					case TEXT -> {
-						payload.writeInt(messageBytes.length);
-						payload.writeBytes(messageBytes);
-					}
-					case FILE -> {
-						payload.writeInt(fileNameBytes.length);
-						payload.writeBytes(fileNameBytes);
-					}
-					}
+				payload.writeLong(timeWritten);
+				
+				switch (contentType) {
+				case TEXT -> {
+					payload.writeInt(messageBytes.length);
+					payload.writeBytes(messageBytes);
 				}
-
-				channel.writeAndFlush(payload);
+				case FILE, IMAGE -> {
+					payload.writeInt(fileNameBytes.length);
+					payload.writeBytes(fileNameBytes);
+				}
+				}
 			}
+
+			channel.writeAndFlush(payload);
 		}
 		case FETCH_CHAT_REQUESTS -> {
 			
@@ -640,31 +676,39 @@ final class MessageHadler extends ParentHandler {
 						for (int j = 0; j < membersClientIDS.size(); j++) {
 
 							int clientID = membersClientIDS.get(j);
-							byte[] usernameBytes;
 
-							ClientInfo clientInfo = clientIDSToActiveClients.get(clientID);
-							
-							if (this.clientInfo.equals(clientInfo)) {
+							boolean isActive;
+							ClientInfo memberClientInfo = clientIDSToActiveClients.get(clientID);
+							if (clientInfo.equals(memberClientInfo)) {
 								continue;
 							}
+
+							byte[] usernameBytes;
+							byte[] iconBytes = conn.selectUserIcon(clientID);
 							
-							if (clientInfo == null) {
+							if (memberClientInfo == null) {
 								usernameBytes = conn.getUsername(clientID).getBytes();
+								isActive = false;
 							} else {
-								usernameBytes = clientInfo.getUsername().getBytes();
+								usernameBytes = memberClientInfo.getUsername().getBytes();
+								isActive = true;
 							}
 
 							payload.writeInt(clientID);
+							payload.writeBoolean(isActive);
 							payload.writeInt(usernameBytes.length);
 							payload.writeBytes(usernameBytes);
+							payload.writeInt(iconBytes.length);
+							payload.writeBytes(iconBytes);
 						}
 
 					}
 
 					if (!chatSession.getActiveMembers().contains(clientInfo)) {
 						chatSession.getActiveMembers().add(clientInfo);
+						refreshChatSession(chatSession);
 					}
-					
+
 				}
 			}
 			
@@ -698,9 +742,15 @@ final class MessageHadler extends ParentHandler {
 
 			channel.writeAndFlush(payload);
 		}
-		
 		}
 		
+	}
+	
+	private static void refreshChatSession(ChatSession chatSession) {
+		List<ClientInfo> activeMembers = chatSession.getActiveMembers();
+		for (int i = 0; i < activeMembers.size(); i++) {
+			executeCommand(activeMembers.get(i), ClientCommandType.FETCH_CHAT_SESSIONS, Unpooled.EMPTY_BUFFER);
+		}
 	}
 
 }

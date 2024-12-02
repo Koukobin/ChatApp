@@ -175,7 +175,7 @@ public class MessagingController extends GeneralController {
 		case TEXT -> {
 			messageLabel.setText(messageLabel.getText() + new String(message.getText()));
 		}
-		case FILE ->{
+		case FILE, IMAGE -> {
 			
 			String fileName = new String(message.getFileName());
 			messageLabel.setText(messageLabel.getText() + fileName);
@@ -193,10 +193,10 @@ public class MessagingController extends GeneralController {
 					ioe.printStackTrace();
 				}
 	        });
-	        var a = new ImageView(Icons.DOWNLOAD);
-	        a.setFitWidth(31);
-	        a.setFitHeight(31);
-	        downloadButton.setGraphic(a);
+	        ImageView downloadImage = new ImageView(Icons.DOWNLOAD);
+	        downloadImage.setFitWidth(31);
+	        downloadImage.setFitHeight(31);
+	        downloadButton.setGraphic(downloadImage);
 	        
 	        messageLabel.setGraphic(downloadButton);
 	        messageLabel.setContentDisplay(ContentDisplay.RIGHT);

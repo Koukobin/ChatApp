@@ -22,7 +22,6 @@ import java.util.Map;
 import github.koukobin.ermis.common.entry.CreateAccountInfo;
 import github.koukobin.ermis.common.entry.CreateAccountInfo.Credential;
 import github.koukobin.ermis.common.results.ResultHolder;
-import github.koukobin.ermis.common.util.EnumIntConverter;
 import github.koukobin.ermis.server.main.java.configs.ServerSettings;
 import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.ErmisDatabase;
 import github.koukobin.ermis.server.main.java.server.ClientInfo;
@@ -51,7 +50,7 @@ final class CreateAccountHandler extends EntryHandler {
 	public void channelRead2(ChannelHandlerContext ctx, ByteBuf msg) throws IOException {
 		
 		{
-			Credential credential = EnumIntConverter.getIntAsEnum(msg.readInt(), Credential.class);
+			Credential credential = Credential.fromId(msg.readInt());
 
 			byte[] payloadBytes = new byte[msg.readableBytes()];
 			msg.readBytes(payloadBytes);
@@ -76,9 +75,9 @@ final class CreateAccountHandler extends EntryHandler {
 			}
 			
 			ByteBuf payload = ctx.alloc().ioBuffer();
-			payload.writeBoolean(resultHolder.isSuccesfull());
+			payload.writeBoolean(resultHolder.isSuccessful());
 			
-			if (resultHolder.isSuccesfull()) {
+			if (resultHolder.isSuccessful()) {
 				success(ctx);
 			} else {
 				failed(ctx);
@@ -116,8 +115,8 @@ final class CreateAccountHandler extends EntryHandler {
 					}
 
 					@Override
-					public String createEmailMessage(String generatedVerificationCode) {
-						return ServerSettings.EmailCreator.Verification.CreateAccount.createEmail(email, generatedVerificationCode);
+					public String createEmailMessage(String account, String generatedVerificationCode) {
+						return ServerSettings.EmailCreator.Verification.CreateAccount.createEmail(email, account, generatedVerificationCode);
 					}
 				};
 

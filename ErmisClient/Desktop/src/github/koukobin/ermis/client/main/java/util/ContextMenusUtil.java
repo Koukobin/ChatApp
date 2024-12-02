@@ -18,8 +18,10 @@ package github.koukobin.ermis.client.main.java.util;
 import github.koukobin.ermis.client.main.java.context_menu.MyContextMenuItem;
 import io.github.palexdev.materialfx.controls.MFXContextMenu;
 import io.github.palexdev.materialfx.controls.MFXTooltip;
+import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
 
 /**
@@ -40,7 +42,9 @@ public final class ContextMenusUtil {
 
 		MFXTooltip tooltip = setupTooltip(owner);
 		
-		owner.setOnMouseClicked((e) -> {
+		EventHandler<? super MouseEvent> previousMouseEventHandler = owner.getOnMouseClicked();
+		owner.setOnMouseClicked((MouseEvent e) -> {
+			previousMouseEventHandler.handle(e);
             if (e.getButton() == MouseButton.SECONDARY) {
                 contextMenu.show((Node) e.getSource(), e.getScreenX(), e.getScreenY());
                 tooltip.uninstall();

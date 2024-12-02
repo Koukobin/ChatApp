@@ -21,6 +21,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
 
 <VBox fx:id="root" alignment="TOP_CENTER" minWidth="335.0" prefHeight="800.0" stylesheets="@../../../css/chat_interface/settings/account-settings.css" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="github.koukobin.ermis.client.main.java.controllers.chat_interface.AccountSettingsController">
 	<children>
@@ -86,16 +87,8 @@
 						<Insets left="10.0" />
 					</padding>
 				</HBox>
-				<JFXButton fx:id="addAccountIconButton" layoutX="66.0" layoutY="57.0" onAction="#addAccountIcon" prefHeight="160.0" prefWidth="200.0" text="">
-					<graphic>
-						<ImageView fx:id="addAccountIconImage" fitHeight="155.0" fitWidth="155.0" pickOnBounds="true" preserveRatio="true">
-							<image>
-								<Image url="@../../../icons/material_design_icons/account-filled.png" />
-							</image>
-						</ImageView>
-					</graphic>
-				</JFXButton>
 				<Label layoutX="97.0" layoutY="217.0" text="Add profile photo" />
+            <Circle fx:id="addProfilePhotoIcon" fill="#1f93ff" layoutX="166.0" layoutY="107.0" onMouseClicked="#addAccountIcon" radius="100.0" stroke="BLACK" strokeType="INSIDE" />
 			</children>
 		</Pane>
 	</children>

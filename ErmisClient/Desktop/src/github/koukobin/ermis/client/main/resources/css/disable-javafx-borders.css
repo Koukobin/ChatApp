@@ -14,6 +14,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/* This css file helps disable the ugly borders JavaFX applies to Nodes by default */
+
 .button:focused,
 .toggle-button:focused,
 .radio-button:focused > .radio,

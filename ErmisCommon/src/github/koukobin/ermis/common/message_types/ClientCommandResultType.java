@@ -28,14 +28,15 @@ import github.koukobin.ermis.common.util.EnumIntConverter;
 public enum ClientCommandResultType {
     DELETE_CHAT_MESSAGE(1),
     DOWNLOAD_FILE(2),
-    GET_DISPLAY_NAME(3),
-    FETCH_ACCOUNT_ICON(4),
-    GET_CLIENT_ID(5),
-    GET_CHAT_REQUESTS(6),
-    GET_CHAT_SESSIONS(7),
-    GET_WRITTEN_TEXT(8),
-    GET_DONATION_PAGE(9),
-    GET_SOURCE_CODE_PAGE(10);
+    DOWNLOAD_IMAGE(3),
+    GET_DISPLAY_NAME(4),
+    FETCH_ACCOUNT_ICON(5),
+    GET_CLIENT_ID(6),
+    GET_CHAT_REQUESTS(7),
+    GET_CHAT_SESSIONS(8),
+    GET_WRITTEN_TEXT(9),
+    GET_DONATION_PAGE(10),
+    GET_SOURCE_CODE_PAGE(11);
 	
 	private static final HashMap<Integer, ClientCommandResultType> values;
 

@@ -26,7 +26,7 @@ import github.koukobin.ermis.common.util.EnumIntConverter;
 *
 */
 public enum ContentType {
-	TEXT(0), FILE(1);
+	TEXT(0), FILE(1), IMAGE(2);
 	
 	private static final HashMap<Integer, ContentType> values;
 	

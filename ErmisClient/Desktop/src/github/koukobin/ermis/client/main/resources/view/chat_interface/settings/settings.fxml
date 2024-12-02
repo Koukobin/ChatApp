@@ -42,7 +42,7 @@
 					pickOnBounds="true" preserveRatio="true">
 					<image>
 						<Image
-							url="@../../../icons/material_design_icons/account.png" />
+							url="@../../../icons/material_design_icons/account_low_res.png" />
 					</image>
 				</ImageView>
 			</graphic>

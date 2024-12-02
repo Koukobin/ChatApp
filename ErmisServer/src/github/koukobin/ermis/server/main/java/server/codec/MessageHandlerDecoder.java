@@ -15,8 +15,6 @@
  */
 package github.koukobin.ermis.server.main.java.server.codec;
 
-import java.nio.charset.Charset;
-
 import github.koukobin.ermis.common.message_types.ClientCommandType;
 import github.koukobin.ermis.common.message_types.ClientMessageType;
 import github.koukobin.ermis.common.message_types.ContentType;
@@ -40,7 +38,7 @@ public class MessageHandlerDecoder extends Decoder {
 
 	@Override
 	public boolean handleMessage(ChannelHandlerContext ctx, int length, ByteBuf in) {
-			
+		
 		boolean isSuccesfull = false;
 		
 		ClientMessageType messageType;
@@ -73,7 +71,7 @@ public class MessageHandlerDecoder extends Decoder {
 			}
 			
 			switch (contentType) {
-			case FILE:
+			case FILE, IMAGE:
 				maxLength = maxMessageFileLength;
 				break;
 			case TEXT:

@@ -1,8 +1,8 @@
-# Install script for directory: /opt/flutter-apps/chatapp_client/linux/flutter
+# Install script for directory: /opt/flutter-apps/ermis_client/linux/flutter
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/opt/flutter-apps/chatapp_client/linux/bundle")
+  set(CMAKE_INSTALL_PREFIX "/opt/flutter-apps/ermis_client/linux/bundle")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 

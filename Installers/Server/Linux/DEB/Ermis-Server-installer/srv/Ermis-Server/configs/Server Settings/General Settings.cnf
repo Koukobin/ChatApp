@@ -1,19 +1,19 @@
-isProductionReady=false
+isProductionReady=true
 
-sourceCodeURL=https://github.com/Koukobin/ChatApp
+sourceCodeURL=https://github.com/Koukobin/Ermis
 
 address= ------
 port= ------
 backlog= ------
 
 # in millis (1 min = 60,000)
-connectTimeoutMillis=900000
+connectTimeoutMillis=90000
 
 # the amount of threads that are gonna handle clients
-workerThreads=50
+workerThreads=5
 
-# max bytes a client message can be which only consists of a file can be
+# max number bytes a file sent by client can be
 maxClientMessageFileBytes=1048576
 
-# max amount of bytes a client message can be which only consists of text
+# max amount of bytes a simple client text message can be
 maxClientMessageTextBytes=600

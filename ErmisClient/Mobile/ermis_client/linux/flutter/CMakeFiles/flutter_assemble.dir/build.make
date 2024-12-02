@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /opt/flutter-apps/chatapp_client/linux
+CMAKE_SOURCE_DIR = /opt/flutter-apps/ermis_client/linux
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /opt/flutter-apps/chatapp_client/linux
+CMAKE_BINARY_DIR = /opt/flutter-apps/ermis_client/linux
 
 # Utility rule file for flutter_assemble.
 
@@ -89,8 +89,8 @@ flutter/CMakeFiles/flutter_assemble: flutter/ephemeral/flutter_linux/fl_view.h
 flutter/CMakeFiles/flutter_assemble: flutter/ephemeral/flutter_linux/flutter_linux.h
 
 flutter/ephemeral/libflutter_linux_gtk.so:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/opt/flutter-apps/chatapp_client/linux/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating ephemeral/libflutter_linux_gtk.so, ephemeral/flutter_linux/fl_basic_message_channel.h, ephemeral/flutter_linux/fl_binary_codec.h, ephemeral/flutter_linux/fl_binary_messenger.h, ephemeral/flutter_linux/fl_dart_project.h, ephemeral/flutter_linux/fl_engine.h, ephemeral/flutter_linux/fl_json_message_codec.h, ephemeral/flutter_linux/fl_json_method_codec.h, ephemeral/flutter_linux/fl_message_codec.h, ephemeral/flutter_linux/fl_method_call.h, ephemeral/flutter_linux/fl_method_channel.h, ephemeral/flutter_linux/fl_method_codec.h, ephemeral/flutter_linux/fl_method_response.h, ephemeral/flutter_linux/fl_plugin_registrar.h, ephemeral/flutter_linux/fl_plugin_registry.h, ephemeral/flutter_linux/fl_standard_message_codec.h, ephemeral/flutter_linux/fl_standard_method_codec.h, ephemeral/flutter_linux/fl_string_codec.h, ephemeral/flutter_linux/fl_value.h, ephemeral/flutter_linux/fl_view.h, ephemeral/flutter_linux/flutter_linux.h, _phony_"
-	cd /opt/flutter-apps/chatapp_client/linux/flutter && /usr/bin/cmake -E env FLUTTER_ROOT=/opt/flutter PROJECT_DIR=/opt/flutter-apps/chatapp_client DART_OBFUSCATION=false TRACK_WIDGET_CREATION=true TREE_SHAKE_ICONS=false PACKAGE_CONFIG=/opt/flutter-apps/chatapp_client/.dart_tool/package_config.json FLUTTER_TARGET=/opt/flutter-apps/chatapp_client/lib/main.dart /opt/flutter/packages/flutter_tools/bin/tool_backend.sh Debug
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/opt/flutter-apps/ermis_client/linux/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating ephemeral/libflutter_linux_gtk.so, ephemeral/flutter_linux/fl_basic_message_channel.h, ephemeral/flutter_linux/fl_binary_codec.h, ephemeral/flutter_linux/fl_binary_messenger.h, ephemeral/flutter_linux/fl_dart_project.h, ephemeral/flutter_linux/fl_engine.h, ephemeral/flutter_linux/fl_json_message_codec.h, ephemeral/flutter_linux/fl_json_method_codec.h, ephemeral/flutter_linux/fl_message_codec.h, ephemeral/flutter_linux/fl_method_call.h, ephemeral/flutter_linux/fl_method_channel.h, ephemeral/flutter_linux/fl_method_codec.h, ephemeral/flutter_linux/fl_method_response.h, ephemeral/flutter_linux/fl_plugin_registrar.h, ephemeral/flutter_linux/fl_plugin_registry.h, ephemeral/flutter_linux/fl_standard_message_codec.h, ephemeral/flutter_linux/fl_standard_method_codec.h, ephemeral/flutter_linux/fl_string_codec.h, ephemeral/flutter_linux/fl_value.h, ephemeral/flutter_linux/fl_view.h, ephemeral/flutter_linux/flutter_linux.h, _phony_"
+	cd /opt/flutter-apps/ermis_client/linux/flutter && /usr/bin/cmake -E env FLUTTER_ROOT=/opt/flutter PROJECT_DIR=/opt/flutter-apps/ermis_client DART_OBFUSCATION=false TRACK_WIDGET_CREATION=true TREE_SHAKE_ICONS=false PACKAGE_CONFIG=/opt/flutter-apps/ermis_client/.dart_tool/package_config.json FLUTTER_TARGET=/opt/flutter-apps/ermis_client/lib/main.dart /opt/flutter/packages/flutter_tools/bin/tool_backend.sh Debug
 
 flutter/ephemeral/flutter_linux/fl_basic_message_channel.h: flutter/ephemeral/libflutter_linux_gtk.so
 	@$(CMAKE_COMMAND) -E touch_nocreate flutter/ephemeral/flutter_linux/fl_basic_message_channel.h
@@ -186,10 +186,10 @@ flutter/CMakeFiles/flutter_assemble.dir/build: flutter_assemble
 .PHONY : flutter/CMakeFiles/flutter_assemble.dir/build
 
 flutter/CMakeFiles/flutter_assemble.dir/clean:
-	cd /opt/flutter-apps/chatapp_client/linux/flutter && $(CMAKE_COMMAND) -P CMakeFiles/flutter_assemble.dir/cmake_clean.cmake
+	cd /opt/flutter-apps/ermis_client/linux/flutter && $(CMAKE_COMMAND) -P CMakeFiles/flutter_assemble.dir/cmake_clean.cmake
 .PHONY : flutter/CMakeFiles/flutter_assemble.dir/clean
 
 flutter/CMakeFiles/flutter_assemble.dir/depend:
-	cd /opt/flutter-apps/chatapp_client/linux && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /opt/flutter-apps/chatapp_client/linux /opt/flutter-apps/chatapp_client/linux/flutter /opt/flutter-apps/chatapp_client/linux /opt/flutter-apps/chatapp_client/linux/flutter /opt/flutter-apps/chatapp_client/linux/flutter/CMakeFiles/flutter_assemble.dir/DependInfo.cmake --color=$(COLOR)
+	cd /opt/flutter-apps/ermis_client/linux && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /opt/flutter-apps/ermis_client/linux /opt/flutter-apps/ermis_client/linux/flutter /opt/flutter-apps/ermis_client/linux /opt/flutter-apps/ermis_client/linux/flutter /opt/flutter-apps/ermis_client/linux/flutter/CMakeFiles/flutter_assemble.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : flutter/CMakeFiles/flutter_assemble.dir/depend
 

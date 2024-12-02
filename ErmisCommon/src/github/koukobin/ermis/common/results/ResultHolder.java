@@ -23,16 +23,16 @@ import java.util.Objects;
  */
 public class ResultHolder {
 
-	private boolean isSuccesfull;
+	private boolean isSuccessful;
 	private String resultMessage;
 
 	public ResultHolder(boolean isSuccesfull, String resultMessage) {
-		this.isSuccesfull = isSuccesfull;
+		this.isSuccessful = isSuccesfull;
 		this.resultMessage = resultMessage;
 	}
 
 	public void setIsSuccesfull(boolean isSuccesfull) {
-		this.isSuccesfull = isSuccesfull;
+		this.isSuccessful = isSuccesfull;
 	}
 	
 	public void setResultMessage(String resultMessage) {
@@ -43,8 +43,8 @@ public class ResultHolder {
 		resultMessage = resultMessage + "\n\n" + text;
 	}
 	
-	public boolean isSuccesfull() {
-		return isSuccesfull;
+	public boolean isSuccessful() {
+		return isSuccessful;
 	}
 
 	public String getResultMessage() {
@@ -53,7 +53,7 @@ public class ResultHolder {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(isSuccesfull, resultMessage);
+		return Objects.hash(isSuccessful, resultMessage);
 	}
 
 	@Override
@@ -72,11 +72,11 @@ public class ResultHolder {
 		}
 
 		ResultHolder other = (ResultHolder) obj;
-		return isSuccesfull == other.isSuccesfull && Objects.equals(resultMessage, other.resultMessage);
+		return isSuccessful == other.isSuccessful && Objects.equals(resultMessage, other.resultMessage);
 	}
 
 	@Override
 	public String toString() {
-		return "ResultHolder [isSuccesfull=" + isSuccesfull + ", resultMessage=" + resultMessage + "]";
+		return "ResultHolder [isSuccesfull=" + isSuccessful + ", resultMessage=" + resultMessage + "]";
 	}
 }

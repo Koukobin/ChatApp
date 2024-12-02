@@ -46,6 +46,7 @@ import github.koukobin.ermis.server.main.java.configs.DatabaseSettings;
 import github.koukobin.ermis.server.main.java.databases.postgresql.PostgresqlDatabase;
 import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.complexity_checker.PasswordComplexityChecker;
 import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.complexity_checker.UsernameComplexityChecker;
+import io.netty.util.internal.EmptyArrays;
 
 /**
  * @author Ilias Koukovinis
@@ -115,7 +116,7 @@ public final class ErmisDatabase {
 									+ "password_hash CHAR(%d) NOT NULL, " 
 									+ "client_id INT PRIMARY KEY NOT NULL, "
 									+ "email TEXT NOT NULL UNIQUE, "
-									+ "user_icon BYTEA NOT NULL,"
+									+ "user_icon BYTEA,"
 									+ "ips_logged_into TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[], "
 									+ "chat_session_ids INTEGER[] NOT NULL DEFAULT ARRAY[]::INTEGER[], "
 									+ "chat_requests INTEGER[] NOT NULL DEFAULT ARRAY[]::INTEGER[], "
@@ -201,7 +202,8 @@ public final class ErmisDatabase {
 			int messageID = -1;
 
 			try (PreparedStatement addMessage = conn.prepareStatement(
-					"INSERT INTO chat_messages (chat_session_id, message_id, sender_client_id, text, file_name, file_bytes, content_type) VALUES(?, ?, ?, ?, ?, ?, ?) RETURNING message_id;")) {
+					"INSERT INTO chat_messages (chat_session_id, message_id, sender_client_id, text, file_name, file_bytes, content_type) "
+					+ "VALUES(?, ?, ?, ?, ?, ?, ?) RETURNING message_id;")) {
 
 				int chatSessionID = message.getChatSessionID();
 
@@ -266,7 +268,7 @@ public final class ErmisDatabase {
 
 			ResultHolder resultHolder = checkIfUserMeetsRequirementsToCreateAccount(username, password, emailAddress);
 
-			if (!resultHolder.isSuccesfull()) {
+			if (!resultHolder.isSuccessful()) {
 				return resultHolder;
 			}
 
@@ -327,7 +329,7 @@ public final class ErmisDatabase {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
 
-			return CreateAccountInfo.CreateAccount.Result.ERROR_WHILE_CREATING_ACOUNT.resultHolder;
+			return CreateAccountInfo.CreateAccount.Result.ERROR_WHILE_CREATING_ACCOUNT.resultHolder;
 		}
 
 		public int deleteAccount(String email, String password) {
@@ -372,7 +374,7 @@ public final class ErmisDatabase {
 
 			ResultHolder resultHolder = checkIfUserMeetsRequirementsToLogin(email);
 
-			if (!resultHolder.isSuccesfull()) {
+			if (!resultHolder.isSuccessful()) {
 				return resultHolder;
 			}
 
@@ -440,7 +442,7 @@ public final class ErmisDatabase {
 			return LoginInfo.Login.Result.ERROR_WHILE_LOGGING_IN.resultHolder;
 		}
 		
-		private int addIpAddressLoggedInto(InetAddress inetAddress, String email) {
+		public int addIpAddressLoggedInto(InetAddress inetAddress, String email) {
 			
 			int resultUpdate = 0;
 			
@@ -1172,6 +1174,10 @@ public final class ErmisDatabase {
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
+			
+			if (icon == null) {
+				icon = EmptyArrays.EMPTY_BYTES;
+			}
 
 			return icon;
 		}
@@ -1216,7 +1222,6 @@ public final class ErmisDatabase {
 												 */)) {
 
 				int messageIDOfLatestMessage = MessageIDGenerator.getMessageIDCount(chatSessionID, conn);
-
 				int messageIDToReadFrom = messageIDOfLatestMessage - numOfMessagesAlreadySelected;
 				
 				selectMessages.setInt(1, chatSessionID);

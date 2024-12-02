@@ -53,7 +53,7 @@
 			pickOnBounds="true" preserveRatio="true">
 			<image>
 				<Image
-					url="@../../../icons/primary-application-icon.png" />
+					url="@../../../icons/primary-application-icon-256.png" />
 			</image>
 			<VBox.margin>
 				<Insets top="30.0" />

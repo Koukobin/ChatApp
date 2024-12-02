@@ -70,6 +70,10 @@ public abstract class MessageHandler implements AutoCloseable {
 	
 	public void sendMessageToClient(String text, int chatSessionIndex) throws IOException {
 
+		if (chatSessionIndex < 0) {
+			return;
+		}
+		
 		byte[] textBytes = text.getBytes();
 		
 		ByteBuf payload = Unpooled.buffer();
@@ -84,6 +88,10 @@ public abstract class MessageHandler implements AutoCloseable {
 	
 	public void sendFile(File file, int chatSessionIndex) throws IOException {
 
+		if (chatSessionIndex < 0) {
+			return;
+		}
+		
 		byte[] fileNameBytes = file.getName().getBytes();
 		byte[] fileBytes = Files.toByteArray(file);
 
@@ -347,8 +355,7 @@ public abstract class MessageHandler implements AutoCloseable {
 								text = new byte[msg.readInt()];
 								msg.readBytes(text);
 							}
-							case FILE -> {
-								
+							case FILE, IMAGE -> {
 								fileNameBytes = new byte[msg.readInt()];
 								msg.readBytes(fileNameBytes);
 							}
@@ -357,7 +364,7 @@ public abstract class MessageHandler implements AutoCloseable {
 							byte[] usernameBytes = new byte[msg.readInt()];
 							msg.readBytes(usernameBytes);
 							
-							String username = String.valueOf(usernameBytes);
+							String username = new String(usernameBytes);
 							int clientID = msg.readInt();
 							int messageID = msg.readInt();
 							int chatSessionID = msg.readInt();
@@ -384,7 +391,7 @@ public abstract class MessageHandler implements AutoCloseable {
 							ClientCommandResultType commandResult = ClientCommandResultType.fromId(msg.readInt());
 
 							switch (commandResult) {
-							case DOWNLOAD_FILE -> {
+							case DOWNLOAD_FILE, DOWNLOAD_IMAGE -> {
 								
 								byte[] fileNameBytes = new byte[msg.readInt()];
 								msg.readBytes(fileNameBytes);
@@ -426,11 +433,16 @@ public abstract class MessageHandler implements AutoCloseable {
 									for (int j = 0; j < membersSize; j++) {
 
 										int clientID = msg.readInt();
+										@SuppressWarnings("unused")
+										boolean isActive = msg.readBoolean();
 
 										byte[] usernameBytes = new byte[msg.readInt()];
 										msg.readBytes(usernameBytes);
+										
+										byte[] iconBytes = new byte[msg.readInt()];
+										msg.readBytes(iconBytes);
 
-										members.add(new ChatSession.Member(new String(usernameBytes), clientID));
+										members.add(new ChatSession.Member(new String(usernameBytes), clientID, iconBytes));
 									}
 
 									chatSession.setMembers(members);
@@ -491,7 +503,7 @@ public abstract class MessageHandler implements AutoCloseable {
 										messageBytes = new byte[msg.readInt()];
 										msg.readBytes(messageBytes);
 									}
-									case FILE -> {
+									case FILE, IMAGE -> {
 										fileNameBytes = new byte[msg.readInt()];
 										msg.readBytes(fileNameBytes);
 									}

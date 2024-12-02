@@ -48,10 +48,11 @@ public enum ClientCommandType {
 	DELETE_CHAT_MESSAGE(CommandLevel.HEAVY, 13),
 	FETCH_WRITTEN_TEXT(CommandLevel.HEAVY, 14),
 	DOWNLOAD_FILE(CommandLevel.HEAVY, 15),
+	DOWNLOAD_IMAGE(CommandLevel.HEAVY, 16),
 
 	// External Pages
-	REQUEST_DONATION_PAGE(CommandLevel.LIGHT, 16),
-	REQUEST_SOURCE_CODE_PAGE(CommandLevel.LIGHT, 17);
+	REQUEST_DONATION_PAGE(CommandLevel.LIGHT, 17),
+	REQUEST_SOURCE_CODE_PAGE(CommandLevel.LIGHT, 18);
 
 	
 	/*

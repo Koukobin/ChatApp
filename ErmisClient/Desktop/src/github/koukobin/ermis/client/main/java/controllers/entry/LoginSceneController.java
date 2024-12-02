@@ -114,7 +114,7 @@ public final class LoginSceneController extends GeneralEntryController {
 			BackupVerificationEntry backupVerificationEntry = Client.createNewBackupVerificationEntry();
 			
 			ResultHolder entryResult = backupVerificationEntry.getResult();
-			isSuccesfull = entryResult.isSuccesfull();
+			isSuccesfull = entryResult.isSuccessful();
 			String resultMessage = entryResult.getResultMessage();
 			
 			if (isSuccesfull) {

@@ -35,12 +35,18 @@ import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.scene.Cursor;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
+import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
@@ -51,41 +57,33 @@ import javafx.util.Duration;
 public class AccountSettingsController extends GeneralController {
 
 	@FXML
-	private ImageView addAccountIconImage;
+	private Circle addProfilePhotoIcon;
 	
 	@FXML
 	private Label clientIDLabel;
 	
-	@FXML
-	private TextField changeDisplayNameTextField;
-	
-	@FXML
-	private JFXButton changeDisplayNameButton;
-	
-	@FXML
-	private ImageView displayNameButtonImageView;
-	
-	@FXML
-	private HBox changeDisplayNameHbox;
+	@FXML private TextField changeDisplayNameTextField;
+	@FXML private JFXButton changeDisplayNameButton;
+	@FXML private ImageView displayNameButtonImageView;
+	@FXML private HBox changeDisplayNameHbox;
 
-	@FXML
-	private MFXPasswordField changePasswordField;
-	
-	@FXML
-	private JFXButton changePasswordButton;
-	
-	@FXML
-	private ImageView passwordButtonImageView;
-	
-	@FXML
-	private HBox changePasswordHbox;
-	
-	private int count = 0;
-	
-	private int count1 = 0;
+	@FXML private MFXPasswordField changePasswordField;
+	@FXML private JFXButton changePasswordButton;
+	@FXML private ImageView passwordButtonImageView;
+	@FXML private HBox changePasswordHbox;
 	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
+		
+		{
+			// Change cursor when hovering over the button
+			addProfilePhotoIcon.setOnMouseEntered(event -> addProfilePhotoIcon.setCursor(Cursor.HAND));
+			addProfilePhotoIcon.setOnMouseExited(event -> addProfilePhotoIcon.setCursor(Cursor.DEFAULT));
+			
+			addProfilePhotoIcon.setFill(new ImagePattern(Icons.ACCOUNT_HIGH_RES));
+			addProfilePhotoIcon.setStroke(Color.SEAGREEN);
+			addProfilePhotoIcon.setEffect(new DropShadow(+10d, 0d, +2d, Color.DARKSEAGREEN));
+		}
 		
 		clientIDLabel.setText(String.valueOf(Client.getClientID()));
 		
@@ -94,6 +92,8 @@ public class AccountSettingsController extends GeneralController {
 		disablePasswordTextField();
 
 		EventHandler<ActionEvent> handler = new EventHandler<ActionEvent>() {
+			
+			private int count = 0;
 			
 			@Override
 			public void handle(ActionEvent event) {
@@ -178,6 +178,8 @@ public class AccountSettingsController extends GeneralController {
 		
 		EventHandler<ActionEvent> handler2 = new EventHandler<ActionEvent>() {
 			
+			private int count = 0;
+			
 			@Override
 			public void handle(ActionEvent event) {
 				
@@ -217,16 +219,16 @@ public class AccountSettingsController extends GeneralController {
 						}
 						
 						if (!set) {
-							count1++;
+							count++;
 							set = true;
 						}
 						
-						if (count1 == 2) {
+						if (count == 2) {
 							disablePasswordTextField();
 							changePasswordField.focusedProperty().removeListener(this);
 							changePasswordButton.focusedProperty().removeListener(this);
 							changePasswordButton.setOnAction((event) -> handle(event));
-							count1 = 0;
+							count = 0;
 						}
 					}
 				};
@@ -246,7 +248,7 @@ public class AccountSettingsController extends GeneralController {
 						}
 						
 						if (!set) {
-							count1++;
+							count++;
 							set = true;
 						}
 					}
@@ -293,12 +295,12 @@ public class AccountSettingsController extends GeneralController {
 		textFieldButtonImageView.setImage(Icons.EDIT);
 	}
 	
-	public void setIcon(byte[] icon) {
-		addAccountIconImage.setImage(new Image(new ByteArrayInputStream(icon)));
+	public void setIcon(byte[] iconBytes) {
+		addProfilePhotoIcon.setFill(new ImagePattern(new Image(new ByteArrayInputStream(iconBytes))));
 	}
 	
 	@FXML
-	public void addAccountIcon(ActionEvent event) throws IOException {
+	public void addAccountIcon(MouseEvent event) throws IOException {
 		
 		FileChooser fileChooser = new FileChooser();
 		fileChooser.setTitle("Add account icon");

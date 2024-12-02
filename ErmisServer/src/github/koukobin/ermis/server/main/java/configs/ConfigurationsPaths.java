@@ -19,9 +19,10 @@ package github.koukobin.ermis.server.main.java.configs;
  * @author Ilias Koukovinis
  *
  */
-final class ConfigurationsPaths {
+public final class ConfigurationsPaths {
 
-	public static final String CONFIGURATIONS_ROOT_FOLDER_PATH = "/srv/Ermis-Server/configs/";
+	public static final String ROOT_FOLDER = "/srv/Ermis-Server/";
+	public static final String CONFIGURATIONS_ROOT_FOLDER_PATH = ROOT_FOLDER + "configs/";
 	
 	public static class Server {
 		

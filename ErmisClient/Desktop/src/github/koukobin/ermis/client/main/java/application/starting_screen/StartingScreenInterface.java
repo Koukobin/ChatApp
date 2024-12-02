@@ -48,7 +48,7 @@ public class StartingScreenInterface {
 
 	public StartingScreenInterface() {
 
-		ImageView icon = new ImageView(Icons.PRIMARY_APPLICATION_ICON);
+		ImageView icon = new ImageView(Icons.PRIMARY_APPLICATION_ICON_512);
 		icon.setFitWidth(StartingScreenInfo.ICON_WITDH);
 		icon.setFitHeight(StartingScreenInfo.ICON_HEIGHT);
 		icon.setPreserveRatio(false);
@@ -57,7 +57,6 @@ public class StartingScreenInterface {
 		label.setGraphic(icon);
 		label.setContentDisplay(ContentDisplay.CENTER);
 
-//		MFXProgressSpinner spinner = new MFXProgressSpinner();
 		MFXProgressBar spinner = new MFXProgressBar();
 		BorderPane root = new BorderPane();
 
@@ -72,7 +71,7 @@ public class StartingScreenInterface {
 
 		stage = new Stage();
 		stage.initStyle(StageStyle.TRANSPARENT); // Removes window decorations
-		stage.getIcons().add(Icons.PRIMARY_APPLICATION_ICON);
+		stage.getIcons().add(Icons.PRIMARY_APPLICATION_ICON_92);
 		stage.setScene(scene);
 		stage.setOpacity(1.0f);
 	}

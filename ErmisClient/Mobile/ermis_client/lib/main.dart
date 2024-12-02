@@ -1,119 +1,201 @@
-import 'dart:io';
+/* Copyright (C) 2024 Ilias Koukovinis <ilias.koukovinis@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
+import 'package:ermis_client/splash_screen.dart';
+
+import 'theme/app_theme.dart';
 import 'chat_interface.dart';
-import 'i_dont_know_name.dart';
-import 'settings.dart';
+import 'settings_interface.dart';
 import 'package:flutter/material.dart';
 
 import 'client/client.dart';
 
 void main() async {
-  runApp(MaterialApp(
-    theme: ThemeData(
-      primarySwatch: Colors.orange, // Primary color
-      visualDensity:
-          VisualDensity.adaptivePlatformDensity, // Adapts to platform
-      textTheme: const TextTheme(
-        bodyMedium: TextStyle(color: Colors.black), // Customize text style
-      ),
-    ),
-    home: const ChooseServer(),
+  // Ensure that Flutter bindings are initialized before running the app
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Define light and dark color themes
+  const AppColors lightAppColors = AppColors(
+    primaryColor: Colors.green,
+    secondaryColor: Colors.white,
+    tertiaryColor: Color.fromARGB(255, 233, 233, 233),
+    inferiorColor: Colors.black,
+  );
+
+  const AppColors darkAppColors = AppColors(
+    primaryColor: Colors.green,
+    secondaryColor: Colors.black,
+    tertiaryColor: Color.fromARGB(221, 30, 30, 30),
+    inferiorColor: Colors.white,
+  );
+
+  // Run the app
+  runApp(MyApp(
+    lightAppColors: lightAppColors,
+    darkAppColors: darkAppColors,
   ));
 }
 
-AlertDialog createSimpleAlertDialog(
-    BuildContext context, String title, String content) {
-  return AlertDialog(
-    title: Text(title),
-    content: Text(content),
-    actions: <Widget>[
-      TextButton(
-        onPressed: () {
-          Navigator.pop(context);
-        },
-        child: const Text('OK'),
-      ),
-    ],
-  );
-}
+class MyApp extends StatelessWidget {
+  final AppColors lightAppColors;
+  final AppColors darkAppColors;
 
-class ChooseServer extends StatefulWidget {
-  const ChooseServer({super.key});
-
-  @override
-  State<ChooseServer> createState() => ChooseServerState();
-}
-
-class ChooseServerState extends State<ChooseServer> {
-  Uri? url;
+  const MyApp({
+    super.key,
+    required this.lightAppColors,
+    required this.darkAppColors,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const CustomAppBar(),
-      body: Center(
-        child: Row(
-          mainAxisAlignment:
-              MainAxisAlignment.spaceEvenly, // Align children horizontally
-          children: <Widget>[
-            SizedBox(
-              width: 250.0,
-              child: TextField(
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Choose Server',
-                ),
-                onSubmitted: (String value) async {
-                  await showDialog<void>(
-                    context: context,
-                    builder: (BuildContext context) {
-                      url = Uri.parse(value);
-
-                      // Check if url is valid
-                      if (url!.hasScheme && url!.hasAuthority) {
-                        return createSimpleAlertDialog(
-                            context, "Info", "Valid url: $value");
-                      }
-
-                      return createSimpleAlertDialog(
-                          context, "Info", "Invalid url: $value");
-                    },
-                  );
-                },
-              ),
+    return MaterialApp(
+      themeMode: ThemeMode.system, // Automatically switch between light and dark
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        extensions: [darkAppColors],
+        visualDensity: VisualDensity.adaptivePlatformDensity, // Adapts to platform
+        splashFactory: InkRipple.splashFactory, // Smooth ripple
+        primaryColor: darkAppColors.primaryColor,
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: darkAppColors.primaryColor,
+            textStyle: const TextStyle(fontSize: 15),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
-            TextButton(
-              onPressed: () async {
-                url = Uri.parse("https://192.168.10.103:8080/");
-                var remoteAddress = InternetAddress(url!.host);
-                var remotePort = url!.port;
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const Primary()),
-                );
-
-                bool isSuccessful = await Client.initialize(remoteAddress, remotePort, ServerCertificateVerification.ignore);
-                if (isSuccessful) {
-                  Client.startMessageHandler();
-                }
-              },
-              child: const Text("Connect"),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          hintStyle: const TextStyle(color: Colors.grey),
+          labelStyle: const TextStyle(color: Colors.green),
+          border: OutlineInputBorder(
+            borderSide: const BorderSide(color: Colors.green),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.green, width: 2),
+          ),
+          enabledBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.green),
+          ),
+        ),
+        dialogTheme: DialogTheme(
+          backgroundColor: darkAppColors.tertiaryColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          titleTextStyle: TextStyle(
+            color: darkAppColors.primaryColor,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+          contentTextStyle: TextStyle(
+            color: darkAppColors.inferiorColor,
+            fontSize: 16,
+          ),
+        ),
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: Colors.green, // Color of the blinking text cursor
+          selectionColor: Colors.greenAccent.withOpacity(0.5), // Color of the selected text background
+          selectionHandleColor: Colors.green, // Color of the selection handles
+        ),
+        checkboxTheme: CheckboxThemeData(
+          checkColor: WidgetStateProperty.all(Colors.white), // Checkmark color
+          splashRadius: 20,
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ButtonStyle(
+            foregroundColor: WidgetStateProperty.all(darkAppColors.secondaryColor),
+            backgroundColor: WidgetStateProperty.all(Colors.green),
+            overlayColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.pressed)) {
+                return Colors.green.withOpacity(0.2); // Splash effect color
+              }
+              return null; // Default for other states
+            }),
+          ))),
+      theme: ThemeData(
+        brightness: Brightness.light,
+        extensions: [lightAppColors],
+        visualDensity: VisualDensity.adaptivePlatformDensity, // Adapts to platform
+        splashFactory: InkRipple.splashFactory, // Smooth ripple
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.green,
+            textStyle: const TextStyle(fontSize: 15),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          hintStyle: TextStyle(color: lightAppColors.tertiaryColor),
+          labelStyle: TextStyle(color: lightAppColors.primaryColor),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: lightAppColors.primaryColor),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: lightAppColors.primaryColor, width: 2),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: lightAppColors.primaryColor),
+          ),
+        ),
+        dialogTheme: DialogTheme(
+          backgroundColor: lightAppColors.tertiaryColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          titleTextStyle: TextStyle(
+            color: lightAppColors.primaryColor,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+          contentTextStyle: TextStyle(
+            color: lightAppColors.inferiorColor,
+            fontSize: 16,
+          ),
+        ),
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: Colors.green, // Color of the blinking text cursor
+          selectionColor: Colors.greenAccent.withOpacity(0.5), // Color of the selected text background
+          selectionHandleColor: Colors.green, // Color of the selection handles
+        ),
+        checkboxTheme: CheckboxThemeData(
+          checkColor: WidgetStateProperty.all(Colors.white), // Checkmark color
+          splashRadius: 20,
         ),
       ),
+      home: SplashScreen(),
     );
   }
 }
 
-class Primary extends StatefulWidget {
-  const Primary({super.key});
+class MainInterface extends StatefulWidget {
+
+  const MainInterface({super.key}) ;
 
   @override
-  State<Primary> createState() => PrimaryState();
+  State<MainInterface> createState() => MainInterfaceState();
 }
 
-class PrimaryState extends State<Primary> {
+class MainInterfaceState extends State<MainInterface> {
   int _selectedIndex = 0;
 
   static const TextStyle optionStyle = TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
@@ -144,11 +226,24 @@ class PrimaryState extends State<Primary> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    
+    Client.getInstance().fetchUserInformation();
+    // Begin message handler once interface is initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Client.getInstance().startMessageHandler();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
+
     _barItems = <BottomNavigationBarItem>[
       _buildNavItem(Icons.chat, Icons.chat_outlined, "Chats", 0),
       _buildNavItem(Icons.person_add_alt_1, Icons.person_add_alt_1_outlined,
-          "Chat Requests", 1),
+          "Requests", 1),
       _buildNavItem(Icons.settings, Icons.settings_outlined, "Settings", 2),
       _buildNavItem(
           Icons.account_circle, Icons.account_circle_outlined, "Account", 3),
@@ -160,9 +255,9 @@ class PrimaryState extends State<Primary> {
         children: _widgetOptions,
       ),
       bottomNavigationBar: BottomNavigationBar(
-          fixedColor: Colors.green,
-          backgroundColor: Colors.black,
-          unselectedItemColor: Colors.white,
+          fixedColor: appColors.primaryColor,
+          backgroundColor: appColors.secondaryColor,
+          unselectedItemColor: appColors.inferiorColor,
           type: BottomNavigationBarType.fixed,
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,

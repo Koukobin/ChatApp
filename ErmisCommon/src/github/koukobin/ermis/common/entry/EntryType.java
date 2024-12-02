@@ -16,17 +16,41 @@
 
 package github.koukobin.ermis.common.entry;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author Ilias Koukovinis
  *
  */
 public enum EntryType {
-	CREATE_ACCOUNT, LOGIN;
+    CREATE_ACCOUNT(1),
+    LOGIN(2);
+
+    private static final Map<Integer, EntryType> valuesById = new HashMap<>();
+    
+    static {
+        for (EntryType entryType : EntryType.values()) {
+            valuesById.put(entryType.id, entryType);
+        }
+    }
+
+    public final int id;
+
+    EntryType(int id) {
+        this.id = id;
+    }
+
+    public static EntryType fromId(int id) {
+        return valuesById.get(id);
+    }
 	
 	/**
 	 * A tagging interface that all credential enums must extend.
+	 * @param <V>
 	 */
 	public sealed interface CredentialInterface permits CreateAccountInfo.Credential, LoginInfo.Credential {
 		
+		int id();
 	}
 }

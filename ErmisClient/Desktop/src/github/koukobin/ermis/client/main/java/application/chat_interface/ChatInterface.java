@@ -55,7 +55,7 @@ public class ChatInterface {
 
 		stage.setMinHeight(ChatInterfaceInfo.STAGE_MIN_HEIGHT);
 		stage.setMinWidth(ChatInterfaceInfo.STAGE_MIN_WIDTH);
-		stage.getIcons().add(Icons.PRIMARY_APPLICATION_ICON);
+		stage.getIcons().add(Icons.PRIMARY_APPLICATION_ICON_92);
 		stage.setTitle(GeneralAppInfo.TITLE);
 		stage.setMaximized(true);
 		stage.setScene(scene);

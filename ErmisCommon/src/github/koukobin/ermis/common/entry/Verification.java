@@ -15,6 +15,9 @@
  */
 package github.koukobin.ermis.common.entry;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import github.koukobin.ermis.common.results.ResultHolder;
 
 /**
@@ -23,25 +26,56 @@ import github.koukobin.ermis.common.results.ResultHolder;
  *
  */
 public final class Verification {
-	
-	private Verification() {}
-	
-	public enum Action {
-		RESEND_CODE;
-	}
-	
-	public enum Result {
-		SUCCESFULLY_VERIFIED(true, "Succesfully verified!"),
-		WRONG_CODE(false, "Incorrent code!"),
-		RUN_OUT_OF_ATTEMPTS(false, "Run out of attempts!"),
-		INVALID_EMAIL_ADDRESS(false, "Invalid email address");
+    
+    private Verification() {}
 
-		public final ResultHolder resultHolder;
-		
-		Result(boolean isSuccesfull, String message) {
-			resultHolder = new ResultHolder(isSuccesfull, message);
-		}
-	}
+    public enum Action {
+        RESEND_CODE(1);
+
+        private static final Map<Integer, Action> valuesById = new HashMap<>();
+        
+        static {
+            for (Action action : Action.values()) {
+                valuesById.put(action.id, action);
+            }
+        }
+
+        public final int id;
+
+        Action(int id) {
+            this.id = id;
+        }
+
+        public static Action fromId(int id) {
+            return valuesById.get(id);
+        }
+    }
+
+    public enum Result {
+        SUCCESFULLY_VERIFIED(1, true, "Succesfully verified!"),
+        WRONG_CODE(2, false, "Incorrect code!"),
+        RUN_OUT_OF_ATTEMPTS(3, false, "Run out of attempts!"),
+        INVALID_EMAIL_ADDRESS(4, false, "Invalid email address");
+
+        private static final Map<Integer, Result> valuesById = new HashMap<>();
+        static {
+            for (Result result : Result.values()) {
+                valuesById.put(result.id, result);
+            }
+        }
+
+        public final int id;
+        public final ResultHolder resultHolder;
+
+        Result(int id, boolean isSuccessful, String message) {
+            this.id = id;
+            this.resultHolder = new ResultHolder(isSuccessful, message);
+        }
+
+        public static Result fromId(int id) {
+            return valuesById.get(id);
+        }
+    }
 }
 
 

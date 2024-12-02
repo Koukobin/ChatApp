@@ -34,7 +34,7 @@ public final class EnumIntConverter {
 	 * @return the enum constant corresponding to the provided ID
 	 * @throws IllegalArgumentException if the ID does not exist in the map
 	 */
-	public static <T extends Enum<T>> T fromId(Map<Integer, T> map, int id) {
+	public static <V, T extends Enum<T>> T fromId(Map<V, T> map, int id) {
 		
 		T result = map.get(id);
 
@@ -46,34 +46,4 @@ public final class EnumIntConverter {
 		return result;
 	}
 
-	/**
-	 * 
-	 * @deprecatedThis This method will be removed in a future release. It is
-	 *                 currently used in some cases, primarily to retrieve the IDs
-	 *                 of enums in `ermis.common.entry`. It will be updated once the
-	 *                 remaining dependencies are refactored.
-	 */
-	@Deprecated(since = "1.0-rc", forRemoval = true)
-	public static int getEnumAsInt(Enum<?> enumm) {
-		return enumm.ordinal();
-	}
-
-	/**
-	 * 
-	 * @param <T>
-	 * @param enumIndex
-	 * @param clazz
-	 * @return
-	 * 
-	 * @throws IndexOutOfBoundsException if enum index doesn't exist in enum.
-	 * 
-	 * @deprecated This This method will be removed in a future release. It is
-	 *             currently used in some cases, primarily to retrieve the IDs of
-	 *             enums in `ermis.common.entry`. It will be updated once the
-	 *             remaining dependencies are refactored.
-	 */
-	@Deprecated(since = "1.0-rc", forRemoval = true)
-	public static <T extends Enum<T>> T getIntAsEnum(int enumIndex, Class<T> clazz) {
-		return clazz.getEnumConstants()[enumIndex];
-	}
 }

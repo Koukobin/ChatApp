@@ -1,4 +1,4 @@
-package com.example.chatapp_client
+package com.example.ermis_client
 
 import io.flutter.embedding.android.FlutterActivity
 

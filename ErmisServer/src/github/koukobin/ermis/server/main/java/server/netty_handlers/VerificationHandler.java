@@ -28,7 +28,6 @@ import com.google.common.base.Throwables;
 import github.koukobin.ermis.common.entry.Verification.Action;
 import github.koukobin.ermis.common.entry.Verification.Result;
 import github.koukobin.ermis.common.results.ResultHolder;
-import github.koukobin.ermis.common.util.EnumIntConverter;
 import github.koukobin.ermis.server.main.java.server.ClientInfo;
 import github.koukobin.ermis.server.main.java.server.util.EmailerService;
 import io.netty.buffer.ByteBuf;
@@ -73,7 +72,7 @@ abstract non-sealed class VerificationHandler extends EntryHandler {
 		String generatedVerificationCodeEncoded = Base64.getEncoder().encodeToString(generatedVerificationCode);
 		pendingEmailsQueue.thenRunAsync(() -> {
 			try {
-				EmailerService.sendEmail("Security Alert", createEmailMessage(generatedVerificationCodeEncoded), emailAddress);
+				EmailerService.sendEmailWithHTML("Security Alert", createEmailMessage(clientInfo.toString(), generatedVerificationCodeEncoded), emailAddress);
 			} catch (MessagingException me) {
 				logger.debug(Throwables.getStackTraceAsString(me));
 			}
@@ -83,7 +82,7 @@ abstract non-sealed class VerificationHandler extends EntryHandler {
 	@Override
 	public void doEntryAction(ChannelHandlerContext ctx, ByteBuf msg) {
 		
-		Action action = EnumIntConverter.getIntAsEnum(msg.readInt(), Action.class);
+		Action action = Action.fromId(msg.readInt());
 
 		switch (action) {
 		case RESEND_CODE -> {
@@ -117,7 +116,7 @@ abstract non-sealed class VerificationHandler extends EntryHandler {
 		}
 
 		if (isVerificationComplete) {
-			if (entryResult.isSuccesfull()) {
+			if (entryResult.isSuccessful()) {
 				success(ctx);
 			} else {
 				failed(ctx);
@@ -134,13 +133,13 @@ abstract non-sealed class VerificationHandler extends EntryHandler {
 		
 		ByteBuf payload = ctx.alloc().ioBuffer();
 		payload.writeBoolean(isVerificationComplete);
-		payload.writeBoolean(entryResult.isSuccesfull());
+		payload.writeBoolean(entryResult.isSuccessful());
 		payload.writeBytes(resultMessageBytes);
 		
 		ctx.channel().writeAndFlush(payload);
 	}
 
-	public abstract String createEmailMessage(String generatedVerificationCode);
+	public abstract String createEmailMessage(String account, String generatedVerificationCode);
 	public abstract ResultHolder executeWhenVerificationSuccesfull() throws IOException;
 	
 	protected Runnable onSuccess(ChannelHandlerContext ctx) {

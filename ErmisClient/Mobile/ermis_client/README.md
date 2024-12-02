@@ -18,6 +18,13 @@
     - **Android**: Tested on API level 33  
     - **iOS**: Not tested yet  
 
+# Building
+
+Before building installer for a specific platform such as.
+    * ```flutter build apk --release```
+    * ```flutter build ios --release```
+First run build.sh to create built correctly
+
 ## Contributing
 
 For contribution guidelines, please refer to the main Ermis README file.

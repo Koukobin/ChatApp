@@ -3,7 +3,6 @@ description: "Flutter client for secure communication with the Ermis server, des
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
 # followed by an optional build number separated by a +.
@@ -30,12 +29,25 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  webview_flutter: ^4.10.0
+  sqflite: ^2.4.1
+  flutter_launcher_icons: ^0.14.1
+  url_launcher: ^6.3.1 
+  intl: ^0.20.0
+  path: ^1.8.3
+  path_provider: ^2.1.5
+  file_picker: ^8.0.7
+  photo_manager: ^3.6.3
+  permission_handler: ^11.3.1
+  device_info_plus: ^11.1.1
+  camera: ^0.11.0+2
+  image_picker: ^1.1.2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   dio: ^5.7.0
+  synchronized: ^3.3.0+3
 
 dev_dependencies:
   flutter_test:
@@ -46,21 +58,32 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
+
+# Note: Running "dart run flutter_launcher_icons" generates a folder named 
+# "mipmap-anydpi-v26" in android/app/src/main/res/. In order to ensure the app icon 
+# is correctly displayed in the application launcher, the aforementioned folder must be deleted.
+# I have no idea why, but it works.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/primary_application_icon.png"
+  remove_alpha_ios: true
+
 flutter:
+  assets:
+    - assets/primary_application_icon.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-  
-  assets:
-    - assets/primary_app_icon.png
+    
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

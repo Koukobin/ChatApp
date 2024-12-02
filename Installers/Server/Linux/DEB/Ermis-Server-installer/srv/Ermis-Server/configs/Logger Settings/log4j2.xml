@@ -2,8 +2,8 @@
 <Configuration xmlns="http://logging.apache.org/log4j/2.0/config">
 	
     <Properties>
-		<Property name="serverLogsPath">/srv/ChatApp-Server/logs/Server Logs/</Property>
-        <Property name="databaseLogsPath">/srv/ChatApp-Server/logs/Database Logs/</Property>
+		<Property name="serverLogsPath">/srv/Ermis-Server/logs/Server Logs/</Property>
+        <Property name="databaseLogsPath">/srv/Ermis-Server/logs/Database Logs/</Property>
 	</Properties>
 	
     <Appenders>

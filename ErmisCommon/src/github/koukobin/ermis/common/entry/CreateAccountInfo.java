@@ -15,6 +15,9 @@
  */
 package github.koukobin.ermis.common.entry;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import github.koukobin.ermis.common.results.ResultHolder;
 
 /**
@@ -27,44 +30,108 @@ public final class CreateAccountInfo {
 	private CreateAccountInfo() {}
 
 	public enum Credential implements EntryType.CredentialInterface {
-		USERNAME, PASSWORD, EMAIL;
+		USERNAME(0), PASSWORD(1), EMAIL(2);
+
+		private static final Map<Integer, Credential> valuesById = new HashMap<>();
+
+		static {
+			for (Credential credential : Credential.values()) {
+				valuesById.put(credential.id, credential);
+			}
+		}
+
+		public final int id;
+
+		Credential(int id) {
+			this.id = id;
+		}
+
+		public int id() {
+			return id;
+		}
+		
+		public static Credential fromId(int id) {
+			return valuesById.get(id);
+		}
 	}
 	
 	public enum AuthenticationStage {
-		CREDENTIALS_VALIDATION, CREATE_ACCOUNT
-		
+        CREDENTIALS_VALIDATION(1), CREATE_ACCOUNT(2);
+
+        private static final Map<Integer, AuthenticationStage> valuesById = new HashMap<>();
+        static {
+            for (AuthenticationStage stage : AuthenticationStage.values()) {
+                valuesById.put(stage.id, stage);
+            }
+        }
+
+        public final int id;
+
+        AuthenticationStage(int id) {
+            this.id = id;
+        }
+
+        public static AuthenticationStage fromId(int id) {
+            return valuesById.get(id);
+        }
 	}
 
 	public static class CredentialValidation {
 		public enum Result {
-			SUCCESFULLY_EXCHANGED_CREDENTIALS(true, "Succesfully exchanged credentials!"),
-			UNABLE_TO_GENERATE_CLIENT_ID(false, "Unable to generate client id!"),
-			EMAIL_ALREADY_USED(false, "Email is already used!"),
-			USERNAME_REQUIREMENTS_NOT_MET(false, "Username requirements not met!"),
-			PASSWORD_REQUIREMENTS_NOT_MET(false, "Password requirements not met!"),
-			INVALID_EMAIL_ADDRESS(false, "Invalid email address");
-	
+			SUCCESFULLY_EXCHANGED_CREDENTIALS(1, true, "Succesfully exchanged credentials!"),
+			UNABLE_TO_GENERATE_CLIENT_ID(2, false, "Unable to generate client id!"),
+			EMAIL_ALREADY_USED(3, false, "Email is already used!"),
+			USERNAME_REQUIREMENTS_NOT_MET(4, false, "Username requirements not met!"),
+			PASSWORD_REQUIREMENTS_NOT_MET(5, false, "Password requirements not met!"),
+			INVALID_EMAIL_ADDRESS(6, false, "Invalid email address");
+
+			private static final Map<Integer, Result> valuesById = new HashMap<>();
+			static {
+				for (Result result : Result.values()) {
+					valuesById.put(result.id, result);
+				}
+			}
+
+			public final int id;
 			public final ResultHolder resultHolder;
-			
-			Result(boolean isSuccesfull, String message) {
-				resultHolder = new ResultHolder(isSuccesfull, message);
+
+			Result(int id, boolean isSuccessful, String message) {
+				this.id = id;
+				this.resultHolder = new ResultHolder(isSuccessful, message);
+			}
+
+			public static Result fromId(int id) {
+				return valuesById.get(id);
 			}
 		}
 	}
 
 	public static class CreateAccount {
-		public enum Result {
-			SUCCESFULLY_CREATED_ACCOUNT(true, "Account successfully created!"),
-			ERROR_WHILE_CREATING_ACOUNT(false, "An error occured while creating your account!"), 
-			DATABASE_MAX_SIZE_REACHED(false, "Database maximum capacity reached! Unfortunately, your request could not be processed."), 
-			EMAIL_ALREADY_USED(false, "Email is already used!");
-			
-			public final ResultHolder resultHolder;
-			
-			Result(boolean isSuccesfull, String message) {
-				resultHolder = new ResultHolder(isSuccesfull, message);
-			}
-		}
+        public enum Result {
+            SUCCESFULLY_CREATED_ACCOUNT(1, true, "Account successfully created!"),
+            ERROR_WHILE_CREATING_ACCOUNT(2, false, "An error occurred while creating your account!"),
+            DATABASE_MAX_SIZE_REACHED(3, false, "Database maximum capacity reached! Unfortunately, your request could not be processed."),
+            EMAIL_ALREADY_USED(4, false, "Email is already used!");
+
+            private static final Map<Integer, Result> valuesById = new HashMap<>();
+            static {
+                for (Result result : Result.values()) {
+                    valuesById.put(result.id, result);
+                }
+            }
+
+            public final int id;
+            public final ResultHolder resultHolder;
+
+            Result(int id, boolean isSuccessful, String message) {
+                this.id = id;
+                this.resultHolder = new ResultHolder(isSuccessful, message);
+            }
+
+            public static Result fromId(int id) {
+                return valuesById.get(id);
+            }
+        }
 	}
 	
 }
