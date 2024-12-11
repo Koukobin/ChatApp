@@ -14,7 +14,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 import 'package:ermis_client/client/common/common.dart';
 import 'package:ermis_client/util/dialogs_utils.dart';
 import 'package:flutter/material.dart';
@@ -22,11 +21,14 @@ import 'package:flutter/material.dart';
 import 'constants/app_constants.dart';
 import 'theme/app_theme.dart';
 import 'main.dart';
+import 'util/database_service.dart';
 import 'util/top_app_bar_utils.dart';
 import 'client/client.dart';
+import 'util/transitions_util.dart';
 
 class RegistrationInterface extends StatefulWidget {
-  const RegistrationInterface({super.key});
+  final EntryType entryType;
+  const RegistrationInterface({this.entryType = EntryType.login, super.key});
 
   @override
   State<RegistrationInterface> createState() => RegistrationInterfaceState();
@@ -38,25 +40,60 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  EntryType _entryType = EntryType.login;
-  bool useBackupverificationCode = false;
+  bool _useBackupverificationCode = false;
+  bool _obscureText = true;
 
   Key key = UniqueKey();
 
-  // final List<Widget> loginWidgets = [];
-  // Widget? login;
-
-  // final List<Widget> createAccountWidgets = [];
-  // Widget? createAccount;
+  late List<Widget> loginWidgets;
+  late List<Widget> createAccountWidgets;
+  
+  late Widget switchToCreateAccount;
+  late Widget switchToLogin;
 
   @override
   void initState() {
     super.initState();
+    // Can't access context here, so use didChangeDependencies if necessary
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final appColors = Theme.of(context).extension<AppColors>()!;
+
+    // Buttons to switch
+    switchToCreateAccount = _buildButton(
+        label: "Create Account",
+        icon: Icons.account_circle,
+        backgroundColor: appColors.primaryColor,
+        textColor: appColors.secondaryColor,
+        onPressed: () {
+          Navigator.of(context).pushAndRemoveUntil(
+              createVerticalTransition(
+                  RegistrationInterface(entryType: EntryType.createAccount),
+                  DirectionYAxis.bottomToTop),
+              (route) => false);
+        });
+
+    switchToLogin = _buildButton(
+      label: "Login",
+      icon: Icons.login,
+      backgroundColor: appColors.primaryColor,
+      textColor: appColors.secondaryColor,
+      onPressed: () {
+        Navigator.of(context).pushAndRemoveUntil(
+            createVerticalTransition(
+                RegistrationInterface(entryType: EntryType.login),
+                DirectionYAxis.topToBottom),
+            (route) => false);
+      },
+    );
   }
 
   Future<bool> performVerification() async {
     Entry verificationEntry = Client.getInstance().createNewVerificationEntry();
-    ResultHolder entryResult;
+    EntryResult entryResult;
 
     bool isSuccessful = false;
 
@@ -74,7 +111,15 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
       String resultMessage = entryResult.message;
 
       if (isSuccessful) {
-        showSimpleAlertDialog(context: context, title: "Verification successful", content: resultMessage);
+        showSimpleAlertDialog(
+            context: context,
+            title: "Verification successful",
+            content: resultMessage);
+        Database.createDBConnection().setUserInformation(
+            UserInformation(
+                email: _emailController.text,
+                passwordHash: entryResult.addedInfo[AddedInfo.passwordHash]!),
+            Client.getInstance().serverInfo);
         break;
       }
 
@@ -90,7 +135,8 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
   @override
   Widget build(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColors>()!;
-    final List<Widget> loginWidgets = [];
+
+    loginWidgets = [];
     loginWidgets.addAll([
       _buildTextField(_emailController, "Email", false),
       SizedBox(height: 8),
@@ -105,7 +151,7 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
           LoginEntry loginEntry = Client.getInstance().createNewLoginEntry();
           loginEntry.sendEntryType();
 
-          if (useBackupverificationCode) {
+          if (_useBackupverificationCode) {
             loginEntry.togglePasswordType();
           }
 
@@ -124,11 +170,15 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
             return;
           }
 
-          if (!useBackupverificationCode) {
+          if (!_useBackupverificationCode) {
             isSuccessful = await performVerification();
           }
 
           if (isSuccessful) {
+            Client.getInstance().startMessageHandler();
+            await showLoadingDialog(
+                context, Client.getInstance().fetchUserInformation());
+            // Navigate to the main interface
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => MainInterface()),
@@ -140,18 +190,18 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
       ),
       SizedBox(height: 8),
       _buildTextButton(
-          label: "${useBackupverificationCode ? "Unuse" : "Use"} backup verification code",
+          label: "${_useBackupverificationCode ? "Unuse" : "Use"} backup verification code",
           icon: null,
           backgroundColor: appColors.tertiaryColor,
           textColor: appColors.primaryColor,
           onPressed: () {
             setState(() {
-              useBackupverificationCode = !useBackupverificationCode;
+              _useBackupverificationCode = !_useBackupverificationCode;
             });
           }),
     ]);
 
-    final List<Widget> createAccountWidgets = [];
+    createAccountWidgets = [];
     createAccountWidgets.addAll([
       _buildTextField(_emailController, "Email", false),
       SizedBox(height: 8),
@@ -186,40 +236,33 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
           isSuccessful = await performVerification();
 
           if (isSuccessful) {
+            Client.getInstance().startMessageHandler();
+            await showLoadingDialog(
+                context, Client.getInstance().fetchUserInformation());
+            // Navigate to the main interface
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => MainInterface()),
               (route) => false, // Removes all previous routes.
             );
           }
-
         },
       )
     ]);
 
-    Widget switchToCreateAccount = _buildButton(
-        label: "Create Account",
-        icon: Icons.account_circle,
-        backgroundColor: appColors.primaryColor,
-        textColor: appColors.secondaryColor,
-        onPressed: () {
-          setState(() {
-            _entryType = EntryType.createAccount;
-          });
-        });
+    return widget.entryType == EntryType.login ? _loginScaffold() : _createAccountScaffold();
+  }
 
-    Widget switchToLogin = _buildButton(
-      label: "Login",
-      icon: Icons.login,
-      backgroundColor: appColors.primaryColor,
-      textColor: appColors.secondaryColor,
-      onPressed: () {
-        setState(() {
-          _entryType = EntryType.login;
-        });
-      },
-    );
+  Scaffold _createAccountScaffold() {
+    return _mainScaffold(createAccountWidgets, switchToLogin);
+  }
 
+  Scaffold _loginScaffold() {
+    return _mainScaffold(loginWidgets, switchToCreateAccount);
+  }
+
+  Scaffold _mainScaffold(List<Widget> children, Widget switchButton) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
       appBar: const ErmisAppBar(),
       backgroundColor: appColors.tertiaryColor,
@@ -236,7 +279,7 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
               width: 100,
               height: 100,
             ),
-            
+
             // Form section for login
             Expanded(
               child: Padding(
@@ -244,19 +287,18 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: _entryType == EntryType.login ? loginWidgets : createAccountWidgets,
+                  children: children
                 ),
               ),
             ),
 
-            _entryType == EntryType.login ? switchToCreateAccount : switchToLogin
+            switchButton
           ],
         ),
       ),
     );
   }
 
-  bool obscureText = true;
   Widget _buildTextField(TextEditingController controller, String hint, bool obscureText) {
     final appColors = Theme.of(context).extension<AppColors>()!;
     return Row(
@@ -264,7 +306,7 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
         Expanded(
           child: TextField(
             controller: controller,
-            obscureText: obscureText ? this.obscureText : false,
+            obscureText: obscureText ? _obscureText : false,
             decoration: InputDecoration(
               hintText: hint,
               border: OutlineInputBorder(
@@ -274,12 +316,12 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
               fillColor: appColors.inferiorColor,
               suffixIcon: obscureText ? IconButton(
                 icon: Icon(
-                  this.obscureText ? Icons.visibility : Icons.visibility_off,
+                  _obscureText ? Icons.visibility : Icons.visibility_off,
                   color: Colors.black54,
                 ),
                 onPressed: () {
                   setState(() {
-                    this.obscureText = !this.obscureText;
+                    _obscureText = !_obscureText;
                   });
                 },
               ) : null,

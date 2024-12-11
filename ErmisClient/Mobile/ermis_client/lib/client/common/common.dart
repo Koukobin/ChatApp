@@ -31,12 +31,13 @@ enum ClientCommandResultType {
   downloadImage(3),
   getDisplayName(4),
   fetchAccountIcon(5),
-  getClientId(6),
-  getChatRequests(7),
-  getChatSessions(8),
-  getWrittenText(9),
-  getDonationPage(10),
-  getServerSourceCodePage(11);
+  setAccountIcon(6),
+  getClientId(7),
+  getChatRequests(8),
+  getChatSessions(9),
+  getWrittenText(10),
+  getDonationPage(11),
+  getServerSourceCodePage(12);
 
   final int id;
   const ClientCommandResultType(this.id);
@@ -76,10 +77,11 @@ enum ClientCommandType {
   fetchWrittenText(CommandLevel.heavy, 14),
   downloadFile(CommandLevel.heavy, 15),
   downloadImage(CommandLevel.heavy, 16),
+  startVoiceCall(CommandLevel.heavy, 17),
 
   // External Pages
-  requestDonationPage(CommandLevel.light, 17),
-  requestSourceCodePage(CommandLevel.light, 18);
+  requestDonationPage(CommandLevel.light, 18),
+  requestSourceCodePage(CommandLevel.light, 19);
 
   final CommandLevel commandLevel;
   final int id;
@@ -133,6 +135,31 @@ enum ContentType {
   }
 }
 
+class EntryResult {
+  final ResultHolder resultHolder;
+	final Map<AddedInfo, String> addedInfo;
+
+  const EntryResult(this.resultHolder, this.addedInfo);
+
+  bool get isSuccessful => resultHolder.isSuccessful;
+  String get message => resultHolder.message;
+}
+
+enum AddedInfo {
+  passwordHash(1);
+
+  final int id;
+  const AddedInfo(this.id);
+
+  static AddedInfo fromId(int id) {
+    try {
+      return AddedInfo.values.firstWhere((type) => type.id == id);
+    } catch (e) {
+      throw EnumNotFoundException('No AddedInfo found for id $id');
+    }
+  }
+}
+
 class ResultHolder {
   final bool isSuccessful;
   final String message;
@@ -142,8 +169,10 @@ class ResultHolder {
 
 enum ServerMessageType {
   clientContent(0),
-  serverMessageInfo(1),
-  commandResult(2);
+  messageSuccefullySent(1),
+  voiceCallIncoming(2),
+  serverMessageInfo(3),
+  commandResult(4);
 
   final int id;
   const ServerMessageType(this.id);

@@ -20,6 +20,7 @@ import java.io.InputStream;
 
 import com.google.common.primitives.Ints;
 
+import github.koukobin.ermis.common.util.CompressionDetector;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -41,9 +42,13 @@ class ByteBufInputStream implements AutoCloseable {
 		read(lengthOfMsgBytes);
 		
 		int lengthOfMsg = Ints.fromByteArray(lengthOfMsgBytes);
-		
+
 		byte[] msgBytes = new byte[lengthOfMsg];
 		read(msgBytes);
+
+		if (CompressionDetector.isZstdCompressed(msgBytes)) {
+			return ZstdDecompressor.decompress(msgBytes);
+		}
 
 		return Unpooled.wrappedBuffer(msgBytes);
 	}

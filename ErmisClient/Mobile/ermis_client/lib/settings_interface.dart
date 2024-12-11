@@ -14,14 +14,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import 'package:ermis_client/util/transitions_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:webview_flutter/webview_flutter.dart';
 import 'theme/app_theme.dart';
 import 'util/buttons_utils.dart';
-import 'client/common/html_page.dart';
 import 'client/client.dart';
 import 'util/dialogs_utils.dart';
 import 'util/top_app_bar_utils.dart';
@@ -33,7 +32,6 @@ class Settings extends StatefulWidget {
 
   @override
   State<Settings> createState() => SettingsState();
-
 }
 
 class SettingsState extends State<Settings> {
@@ -41,18 +39,95 @@ class SettingsState extends State<Settings> {
   @override
   Widget build(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColors>()!;
-
-    final List<SizedBox> settings = <SizedBox>[];
-    settings.add(createSimpleButton(context, "Help", Icons.help_outline, () {
-      Navigator.push(context,
-          MaterialPageRoute(builder: (context) => const HelpSettings()));
-    }));
-    
     return Scaffold(
-      backgroundColor: appColors.secondaryColor,
-      appBar: const ErmisAppBar(),
+      backgroundColor: appColors.tertiaryColor,
+      appBar: ErmisAppBar(
+        title: Text(
+          'Settings',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+        ),
+      ),
       body: ListView(
-        children: settings,
+        children: [
+          ListTile(
+            leading: const LoadingProfilePhoto(),
+            title: const LoadingDisplayName(),
+            subtitle: Text('Privacy, security, change number'),
+            onTap: () {
+              pushHorizontalTransition(context, const AccountSettings());
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.lock),
+            title: Text('Account'),
+            subtitle: Text('Privacy, security, change number'),
+            onTap: () {
+              // Navigate to Account settings
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.chat),
+            title: Text('Chats'),
+            subtitle: Text('Theme, wallpapers, chat history'),
+            onTap: () {
+              // Navigate to Chats settings
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.notifications),
+            title: Text('Notifications'),
+            subtitle: Text('Message, group, and call tones'),
+            onTap: () {
+              // Navigate to Notifications settings
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.data_usage),
+            title: Text('Storage and Data'),
+            subtitle: Text('Network usage, auto-download'),
+            onTap: () {
+              // Navigate to Storage and Data settings
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.help),
+            title: Text('Help'),
+            subtitle: Text('FAQ, contact us, terms and privacy policy'),
+            onTap: () {
+              pushHorizontalTransition(context, const HelpSettings());
+            },
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.link),
+            title: Text('Linked Devices'),
+            onTap: () {
+              // Navigate to Linked Devices
+            },
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.logout,
+              color: Colors.redAccent,
+            ),
+            title: Text(
+              "Logout From Account",
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            onTap: () {
+              confirmExitDialog(context, "Are you sure you want to logout?",
+                  () {
+                Client.getInstance().commands.logout();
+                SystemNavigator.pop();
+              });
+            },
+          )
+        ],
       ),
     );
   }
@@ -69,20 +144,11 @@ class HelpSettings extends StatefulWidget {
 
 class HelpSettingsState extends State<HelpSettings> {
 
-  late final WebViewController controller;
   String? htmlPage;
 
   @override
   void initState() {
     super.initState();
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted);
-
-    Client.getInstance().whenDonationPageReceived((DonationHtmlPage donationPage) {
-      setState(() {
-        htmlPage = donationPage.html;
-      });
-    });
   }
 
   @override
@@ -95,30 +161,21 @@ class HelpSettingsState extends State<HelpSettings> {
           showErrorDialog(context, "Unable to open the URL: $url");
         }
       }),
-      createReallyNiceButton(context, "Donation Page", Icons.attach_money_rounded,
-          () => Client.getInstance().getCommands.requestDonationHTMLPage()),
+      createReallyNiceButton(context, "Donation Page", Icons.attach_money_rounded, () {
+        // Do nothing
+      }),
     ];
 
     final appColors = Theme.of(context).extension<AppColors>()!;
-    Widget widget;
 
-    if (htmlPage != null) {
-      widget = WebViewWidget(
-        controller: controller,
-      );
-      controller.loadHtmlString(htmlPage!);
-    } else {
-      widget = ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        itemCount: settings.length,
-        itemBuilder: (context, index) => settings[index],
-      );
-    }
     return Scaffold(
         backgroundColor: appColors.secondaryColor,
         appBar: const GoBackBar(title: "Help & Settings"),
-        body: widget
-      );
+        body: ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          itemCount: settings.length,
+          itemBuilder: (context, index) => settings[index],
+        ));
   }
 
 }
@@ -146,7 +203,10 @@ abstract class LoadingState<T extends StatefulWidget> extends State<T> {
 }
 
 class LoadingProfilePhoto extends StatefulWidget {
-  const LoadingProfilePhoto({super.key});
+
+  final double? radius;
+
+  const LoadingProfilePhoto({this.radius, super.key});
 
   @override
   LoadingState<LoadingProfilePhoto> createState() => LoadingProfilePhotoState();
@@ -154,14 +214,18 @@ class LoadingProfilePhoto extends StatefulWidget {
 
 class LoadingProfilePhotoState extends LoadingState<LoadingProfilePhoto> {
 
-  MemoryImage? profileImage;
+  static MemoryImage? _profileImage = MemoryImage(Client.getInstance().profilePhoto!);
 
   @override
   void initState() {
     super.initState();
+    if (_profileImage != null) {
+      isLoading = false;
+    }
+
     Client.getInstance().whenProfilePhotoReceived((Uint8List photoBytes) {
       setState(() {
-        profileImage = MemoryImage(photoBytes);
+        _profileImage = MemoryImage(photoBytes);
         isLoading = false;
       });
     });
@@ -170,17 +234,15 @@ class LoadingProfilePhotoState extends LoadingState<LoadingProfilePhoto> {
   @override
   Widget build0(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColors>()!;
-    const double profileSize = 300;
-
     return CircleAvatar(
-      radius: profileSize / 2,
-      backgroundColor: appColors.primaryColor.withOpacity(0.1),
-      backgroundImage: profileImage,
-      child: profileImage == null
+      radius: widget.radius,
+      backgroundColor: appColors.secondaryColor,
+      backgroundImage: _profileImage,
+      child: _profileImage!.bytes.isEmpty
           ? Icon(
               Icons.account_circle_outlined,
               color: Colors.white,
-              size: profileSize,
+              size: widget.radius == null ? 40 : widget.radius! * 2,
             )
           : null,
     );
@@ -193,10 +255,40 @@ class LoadingProfilePhotoState extends LoadingState<LoadingProfilePhoto> {
 
 }
 
+class LoadingDisplayName extends StatefulWidget {
+  const LoadingDisplayName({super.key});
+
+  @override
+  State<LoadingDisplayName> createState() => LoadingDisplayNameState();
+}
+
+class LoadingDisplayNameState extends State<LoadingDisplayName> {
+  static String _displayName = Client.getInstance().displayName ?? "";
+
+  @override
+  void initState() {
+    super.initState();
+
+    Client.getInstance().whenUsernameReceived((String displayName) {
+      setState(() {
+        _displayName = displayName;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      _displayName,
+      style: TextStyle(fontSize: 18),
+    );
+  }
+  
+}
+
 class _AccountSettingsState extends State<AccountSettings> {
 
-  MemoryImage? profileImage;
-  int clientID = 0;
+  int _clientID = Client.getInstance().clientID;
 
   @override
   void initState() {
@@ -204,13 +296,7 @@ class _AccountSettingsState extends State<AccountSettings> {
 
     Client.getInstance().whenClientIDReceived((int id) {
       setState(() {
-        clientID = id;
-      });
-    });
-
-    Client.getInstance().whenProfilePhotoReceived((Uint8List photoBytes) {
-      setState(() {
-        profileImage = MemoryImage(photoBytes);
+        _clientID = id;
       });
     });
   }
@@ -220,51 +306,61 @@ class _AccountSettingsState extends State<AccountSettings> {
     final appColors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
       backgroundColor: appColors.secondaryColor,
-      appBar: const ErmisAppBar(),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 15),
+      appBar: const ErmisAppBar(
+          title: Text(
+        "Account Settings",
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+      )),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: SingleChildScrollView(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Profile Image Section
-              GestureDetector(
-                onTap: onChangeProfileImage,
-                child: LoadingProfilePhoto(),
-              ),
-              // Client ID Section
-              Text(
-                "ID: $clientID",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: appColors.primaryColor,
-                  fontWeight: FontWeight.w500,
+              Card(
+                elevation: 5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(100),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              TextButton.icon(
-                onPressed: () {
-                  confirmExitDialog(context, "Are you sure you want to logout?",
-                      () {
-                    Client.getInstance().getCommands.logout();
-                    SystemNavigator.pop();
-                  });
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: appColors.secondaryColor,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                child: GestureDetector(
+                  onTap: onChangeProfileImage,
+                  child: CircleAvatar(
+                    radius: 80,
+                    backgroundColor: appColors.primaryColor.withOpacity(0.1),
+                    child: LoadingProfilePhoto(radius: 80),
                   ),
                 ),
-                icon: Icon(Icons.logout),
-                label: Text(
-                  "Logout From Account",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    fontStyle: FontStyle.italic,
+              ),
+              SizedBox(height: 20),
+              // Client ID Section
+              Card(
+                elevation: 3,
+                margin: EdgeInsets.symmetric(vertical: 10),
+                child: Padding(
+                  padding: const EdgeInsets.all(15.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "ID: $_clientID",
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: appColors.primaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        "Your Name:",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      SizedBox(height: 5),
+                      LoadingDisplayName()
+                    ],
                   ),
                 ),
               ),
@@ -277,7 +373,7 @@ class _AccountSettingsState extends State<AccountSettings> {
 
   void onChangeProfileImage() {
     attachSingleFile(context, (String profilePhotoName, Uint8List photoBytes) {
-        Client.getInstance().getCommands.setAccountIcon(photoBytes);
+        Client.getInstance().commands.setAccountIcon(photoBytes);
       },
     );
   }

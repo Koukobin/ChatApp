@@ -20,12 +20,14 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color primaryColor;
   final Color secondaryColor;
   final Color tertiaryColor;
+  final Color quaternaryColor;
   final Color inferiorColor;
 
   const AppColors({
     required this.primaryColor,
     required this.secondaryColor,
     required this.tertiaryColor,
+    required this.quaternaryColor,
     required this.inferiorColor,
   });
 
@@ -34,12 +36,14 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? primaryColor,
     Color? secondaryColor,
     Color? tertiaryColor,
+    Color? quaternaryColor,
     Color? inferiorColor,
   }) {
     return AppColors(
       primaryColor: primaryColor ?? this.primaryColor,
       secondaryColor: secondaryColor ?? this.secondaryColor,
       tertiaryColor: tertiaryColor ?? this.tertiaryColor,
+      quaternaryColor: quaternaryColor ?? this.quaternaryColor,
       inferiorColor: inferiorColor ?? this.inferiorColor,
     );
   }
@@ -51,6 +55,7 @@ class AppColors extends ThemeExtension<AppColors> {
       primaryColor: Color.lerp(primaryColor, other.primaryColor, t)!,
       secondaryColor: Color.lerp(secondaryColor, other.secondaryColor, t)!,
       tertiaryColor: Color.lerp(tertiaryColor, other.tertiaryColor, t)!,
+      quaternaryColor: Color.lerp(quaternaryColor, other.quaternaryColor, t)!,
       inferiorColor: Color.lerp(inferiorColor, other.inferiorColor, t)!,
     );
   }

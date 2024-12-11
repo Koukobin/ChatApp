@@ -15,10 +15,16 @@
  */
 package github.koukobin.ermis.server.main.java.server.codec;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.github.luben.zstd.Zstd;
+import com.google.common.base.Throwables;
+
 import github.koukobin.ermis.common.message_types.ClientCommandType;
 import github.koukobin.ermis.common.message_types.ClientMessageType;
 import github.koukobin.ermis.common.message_types.ContentType;
-import github.koukobin.ermis.common.message_types.ServerMessageType;
+import github.koukobin.ermis.common.util.CompressionDetector;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -28,6 +34,8 @@ import io.netty.channel.ChannelHandlerContext;
  */
 public class MessageHandlerDecoder extends Decoder {
 
+	private static final Logger logger = LogManager.getLogger("server");
+	
 	private final int maxMessageTextLength;
 	private final int maxMessageFileLength;
 	
@@ -36,89 +44,99 @@ public class MessageHandlerDecoder extends Decoder {
 		this.maxMessageFileLength = maxMessageFileLength;
 	}
 
+	private static ByteBuf decompress(ChannelHandlerContext ctx, ByteBuf in) {
+        int compressedLength = in.readInt();
+        byte[] compressedData = new byte[compressedLength];
+        in.readBytes(compressedData);
+
+        try {
+            return ctx.alloc().ioBuffer()
+					.writeBytes(Zstd.decompress(compressedData, (int) Zstd.decompressedSize(compressedData)));
+		} catch (Exception e) {
+			logger.debug(Throwables.getStackTraceAsString(e));
+			createErrorResponse(ctx, "Decompression failed");
+			return null; // Indicate failure by returning null
+		}
+	}
+	
+
 	@Override
 	public boolean handleMessage(ChannelHandlerContext ctx, int length, ByteBuf in) {
-		
-		boolean isSuccesfull = false;
-		
-		ClientMessageType messageType;
-		
-		try {
-			messageType = ClientMessageType.fromId(in.readInt());
-		} catch (IndexOutOfBoundsException iobe) {
-			ByteBuf payload = ctx.alloc().ioBuffer();
-			payload.writeInt(ServerMessageType.SERVER_MESSAGE_INFO.id);
-			payload.writeBytes("Message type not known!".getBytes());
-			ctx.channel().writeAndFlush(payload);
-			return isSuccesfull;
-		}
-		
-		final int maxLength;
-		
-		switch (messageType) {
-		case CLIENT_CONTENT -> {
-			
-			ContentType contentType;
+		ByteBuf data = in;
 
-			try {
-				contentType = ContentType.fromId(in.readInt());
-			} catch (IndexOutOfBoundsException iobe) {
-				ByteBuf payload = ctx.alloc().ioBuffer();
-				payload.writeInt(ServerMessageType.SERVER_MESSAGE_INFO.id);
-				payload.writeBytes("Content type not known!".getBytes());
-				ctx.channel().writeAndFlush(payload);
-				return isSuccesfull;
-			}
-			
-			switch (contentType) {
-			case FILE, IMAGE:
-				maxLength = maxMessageFileLength;
-				break;
-			case TEXT:
-				maxLength = maxMessageTextLength;
-				break;
-			default:
-				ByteBuf payload = ctx.alloc().ioBuffer();
-				payload.writeInt(ServerMessageType.SERVER_MESSAGE_INFO.id);
-				payload.writeBytes("Content type not implemented!".getBytes());
-				ctx.channel().writeAndFlush(payload);
-				return isSuccesfull;
+		if (CompressionDetector.isZstdCompressed(data)) {
+			data = decompress(ctx, in);
+			if (data == null) {
+				return false; // Decompression failed, terminate the method early
 			}
 		}
-		case COMMAND -> {
-			try {
-				ClientCommandType commandType = ClientCommandType.fromId(in.readInt());
-				maxLength = switch (commandType) {
-				case ADD_ACCOUNT_ICON -> 
-					maxMessageFileLength;
-				default -> 
-					maxMessageTextLength;
-				};
-			} catch (IndexOutOfBoundsException iooe) {
-				System.out.println("command not known");
-				ByteBuf payload = ctx.alloc().ioBuffer();
-				payload.writeInt(ServerMessageType.SERVER_MESSAGE_INFO.id);
-				payload.writeBytes("Command not known!".getBytes());
-				ctx.channel().writeAndFlush(payload);
-				return isSuccesfull;
-			}
+
+		ClientMessageType messageType;
+		try {
+			messageType = ClientMessageType.fromId(data.readInt());
+		} catch (IndexOutOfBoundsException iobe) {
+			logger.debug(Throwables.getStackTraceAsString(iobe));
+			createErrorResponse(ctx, "Message type not known!");
+			return false;
 		}
-		default -> {
-			ByteBuf payload = ctx.alloc().ioBuffer();
-			payload.writeInt(ServerMessageType.SERVER_MESSAGE_INFO.id);
-			payload.writeBytes("Message type not implemented!".getBytes());
-			ctx.channel().writeAndFlush(payload);
-			return isSuccesfull;
+
+		int maxLength = determineMaxLength(ctx, data, messageType);
+		if (maxLength == -1) {
+			return false; // Invalid message type or content type
 		}
-		}
-		
+
 		if (maxLength < length) {
 			sendMessageExceedsMaximumMessageLength(ctx, maxLength);
-			return isSuccesfull;
+			return false;
 		}
-		
-		isSuccesfull = true;
-		return isSuccesfull;
+
+		return true;
+
+	}
+
+	private int determineMaxLength(ChannelHandlerContext ctx, ByteBuf data, ClientMessageType messageType) {
+		switch (messageType) {
+		case CLIENT_CONTENT:
+			ContentType contentType;
+			try {
+				contentType = ContentType.fromId(data.readInt());
+			} catch (IndexOutOfBoundsException iobe) {
+				logger.debug(Throwables.getStackTraceAsString(iobe));
+				createErrorResponse(ctx, "Content type not known!");
+				return -1;
+			}
+			return getMaxLengthForContentType(ctx, contentType);
+		case COMMAND:
+			return getMaxLengthForCommand(ctx, data);
+		default:
+			logger.debug("Message type not implemented!");
+			createErrorResponse(ctx, "Message type not implemented!");
+			return -1;
+		}
+	}
+
+	private int getMaxLengthForContentType(ChannelHandlerContext ctx, ContentType contentType) {
+		switch (contentType) {
+		case FILE, IMAGE:
+			return maxMessageFileLength;
+		case TEXT:
+			return maxMessageTextLength;
+		default:
+			logger.debug("Content type not implemented!");
+			createErrorResponse(ctx, "Content type not implemented!");
+			return -1;
+		}
+	}
+
+	private int getMaxLengthForCommand(ChannelHandlerContext ctx, ByteBuf data) {
+		try {
+			ClientCommandType commandType = ClientCommandType.fromId(data.readInt());
+			return (commandType == ClientCommandType.ADD_ACCOUNT_ICON) ? maxMessageFileLength : maxMessageTextLength;
+		} catch (IndexOutOfBoundsException iooe) {
+			logger.debug(Throwables.getStackTraceAsString(iooe));
+			createErrorResponse(ctx, "Command not known!");
+			return -1;
+		}
 	}
 	
 }

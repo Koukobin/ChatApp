@@ -24,28 +24,40 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.checkerframework.checker.index.qual.UpperBoundBottom;
 
 import com.google.common.base.Throwables;
 import com.zaxxer.hikari.HikariDataSource;
 
 import github.koukobin.ermis.common.LoadedInMemoryFile;
+import github.koukobin.ermis.common.entry.AddedInfo;
 import github.koukobin.ermis.common.entry.CreateAccountInfo;
 import github.koukobin.ermis.common.entry.LoginInfo;
 import github.koukobin.ermis.common.message_types.ContentType;
 import github.koukobin.ermis.common.message_types.Message;
 import github.koukobin.ermis.common.results.ChangePasswordResult;
 import github.koukobin.ermis.common.results.ChangeUsernameResult;
+import github.koukobin.ermis.common.results.EntryResult;
 import github.koukobin.ermis.common.results.ResultHolder;
+import github.koukobin.ermis.common.util.FileEditor;
+import github.koukobin.ermis.server.main.java.configs.ConfigurationsPaths.Database;
 import github.koukobin.ermis.server.main.java.configs.DatabaseSettings;
 import github.koukobin.ermis.server.main.java.databases.postgresql.PostgresqlDatabase;
 import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.complexity_checker.PasswordComplexityChecker;
 import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.complexity_checker.UsernameComplexityChecker;
+import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.generators.BackupVerificationCodesGenerator;
+import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.generators.ChatSessionIDGenerator;
+import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.generators.ClientIDGenerator;
+import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.generators.MessageIDGenerator;
+import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.hashing.HashUtil;
+import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.hashing.SimpleHash;
 import io.netty.util.internal.EmptyArrays;
 
 /**
@@ -100,60 +112,29 @@ public final class ErmisDatabase {
 			try (Connection conn = generalPurposeDataSource.getConnection(); Statement stmt = conn.createStatement()) {
 
 				// Create users table
-				{
-					/*
-					 * Since the hash and salt are encoded into base64 without padding we
-					 * calculate the base64 encoded data size using the formula (size * 8 + 5) / 6
-					 */
-					int hashLength = (DatabaseSettings.Client.Password.Hashing.HASH_LENGTH * 8 + 5) / 6;
-					int saltLength = (DatabaseSettings.Client.General.SaltForHashing.SALT_LENGTH * 8 + 5) / 6;
-					int backupVerificationCodesCharactersLength = (DatabaseSettings.Client.BackupVerificationCodes.Hashing.HASH_LENGTH * 8 + 5) / 6;
-					int usernameMaxLength = DatabaseSettings.Client.Username.REQUIREMENTS.getMaxLength();
+				/*
+				 * Since the hash and salt are encoded into base64 without padding we
+				 * calculate the base64 encoded data size using the formula (size * 8 + 5) / 6
+				 */
+				int hashLength = (DatabaseSettings.Client.Password.Hashing.HASH_LENGTH * 8 + 5) / 6;
+				int saltLength = (DatabaseSettings.Client.General.SaltForHashing.SALT_LENGTH * 8 + 5) / 6;
+				int backupVerificationCodesCharactersLength = (DatabaseSettings.Client.BackupVerificationCodes.Hashing.HASH_LENGTH * 8 + 5) / 6;
+				int usernameMaxLength = DatabaseSettings.Client.Username.REQUIREMENTS.getMaxLength();
 
-					String sql = String.format(
-							"CREATE TABLE IF NOT EXISTS users(" 
-									+ "username VARCHAR(%d) NOT NULL, "
-									+ "password_hash CHAR(%d) NOT NULL, " 
-									+ "client_id INT PRIMARY KEY NOT NULL, "
-									+ "email TEXT NOT NULL UNIQUE, "
-									+ "user_icon BYTEA,"
-									+ "ips_logged_into TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[], "
-									+ "chat_session_ids INTEGER[] NOT NULL DEFAULT ARRAY[]::INTEGER[], "
-									+ "chat_requests INTEGER[] NOT NULL DEFAULT ARRAY[]::INTEGER[], "
-									+ "backup_verification_codes CHAR(%d)[%d] NOT NULL, " 
-									+ "salt CHAR(%d) NOT NULL);",
-							usernameMaxLength, hashLength, backupVerificationCodesCharactersLength,
-							DatabaseSettings.Client.BackupVerificationCodes.AMOUNT_OF_CODES, saltLength);
+				String setupSQL = FileEditor.readFile(Database.DATABASE_SETUP_FILE)
+						.replace("USERNAME_LENGTH", Integer.toString(usernameMaxLength))
+						.replace("PASSWORD_HASH_LENGTH", Integer.toString(hashLength))
+						.replace("BACKUP_VERIFICATION_CODES_LENGTH", Integer.toString(DatabaseSettings.Client.BackupVerificationCodes.AMOUNT_OF_CODES))
+						.replace("BACKUP_VERIFICATION_CODES_AMOUNT", Integer.toString(backupVerificationCodesCharactersLength))
+						.replace("SALT_LENGTH", Integer.toString(saltLength));
 
-					stmt.execute(sql);
-
-					stmt.execute("CREATE INDEX IF NOT EXISTS client_id_index ON users (client_id);");
-				}
-
-				// Create chat sessions table
-				stmt.execute("CREATE TABLE IF NOT EXISTS chat_sessions(chat_session_id INTEGER NOT NULL PRIMARY KEY, members INTEGER[] NOT NULL);");
-				stmt.execute("CREATE INDEX IF NOT EXISTS chat_session_id_index ON chat_sessions (chat_session_id);");
-
-				// Create chat chat_messages table
-				stmt.execute(
-						"CREATE TABLE IF NOT EXISTS chat_messages(" 
-								+ "ts_entered TIMESTAMP NOT NULL DEFAULT now(), "
-								+ "message_id INTEGER GENERATED BY DEFAULT AS IDENTITY NOT NULL, "
-								+ "chat_session_id INTEGER REFERENCES chat_sessions (chat_session_id) NOT NULL, "
-								+ "sender_client_id INTEGER REFERENCES users (client_id) NOT NULL, "
-								+ "text BYTEA, " // Can be null if message only contains a file
-								+ "file_name BYTEA, " // Can be null if message only contains text
-								+ "file_bytes BYTEA," // Can be null if message only contains text
-								+ "content_type INTEGER NOT NULL, " 
-								+ "PRIMARY KEY (chat_session_id, message_id));");
-
-				stmt.execute("CREATE INDEX IF NOT EXISTS message_id_index ON chat_messages (message_id);");
+				stmt.execute(setupSQL);
 
 				ChatSessionIDGenerator.generateAvailableChatSessionIDS(conn);
 				ClientIDGenerator.generateAvailableClientIDS(conn);
 			}
-		} catch (SQLException sqle) {
-			throw new RuntimeException(sqle);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -195,6 +176,7 @@ public final class ErmisDatabase {
 
 		/**
 		 * 
+		 * @param message
 		 * @return the message's id in the database (if adding the message was unsuccesfull then returns -1)
 		 */
 		public int addMessage(DatabaseChatMessage message) {
@@ -202,7 +184,7 @@ public final class ErmisDatabase {
 			int messageID = -1;
 
 			try (PreparedStatement addMessage = conn.prepareStatement(
-					"INSERT INTO chat_messages (chat_session_id, message_id, sender_client_id, text, file_name, file_bytes, content_type) "
+					"INSERT INTO chat_messages (chat_session_id, message_id, client_id, text, file_name, file_bytes, content_type) "
 					+ "VALUES(?, ?, ?, ?, ?, ?, ?) RETURNING message_id;")) {
 
 				int chatSessionID = message.getChatSessionID();
@@ -332,13 +314,19 @@ public final class ErmisDatabase {
 			return CreateAccountInfo.CreateAccount.Result.ERROR_WHILE_CREATING_ACCOUNT.resultHolder;
 		}
 
+		@Deprecated
+		@UpperBoundBottom
 		public int deleteAccount(String email, String password) {
 
 			int resultUpdate = 0;
 
-			if (!checkAuthentication(email, password)) {
-				return resultUpdate;
-			}
+//			if (!checkAuthentication(email, password) ) {
+//				return resultUpdate;
+//			}
+			
+			if (checkAuthentication(email, password) != null ) {
+			return resultUpdate;
+		}
 
 			try (PreparedStatement deleteAccount = conn.prepareStatement("DELETE FROM users WHERE email=?;")) {
 
@@ -352,17 +340,23 @@ public final class ErmisDatabase {
 			return resultUpdate;
 		}
 
-		public boolean checkAuthentication(String email, String password) {
-
+		public boolean checkAuthenticationViaHash(String email, String enteredPasswordpasswordHash) {
 			String passwordHash = getPasswordHash(email);
-
-			SimpleHash guessPasswordHash = HashUtil.createHash(password, getSalt(email), DatabaseSettings.Client.Password.Hashing.HASHING_ALGORITHM);
-
-			return Arrays.equals(passwordHash.getBytes(), guessPasswordHash.getHashBytes());
+			
+			if (passwordHash != null) {
+				return passwordHash.equals(enteredPasswordpasswordHash);
+			}
+			
+			return false;
 		}
-
+		
+		public String checkAuthentication(String email, String enteredPassword) {
+			String passwordHash = getPasswordHash(email);
+			SimpleHash enteredPasswordHash = HashUtil.createHash(enteredPassword, getSalt(email), DatabaseSettings.Client.Password.Hashing.HASHING_ALGORITHM);
+			return Arrays.equals(passwordHash.getBytes(), enteredPasswordHash.getHashBytes()) ? passwordHash : null;
+		}
+		
 		public ResultHolder checkIfUserMeetsRequirementsToLogin(String emailAddress) {
-
 			if (!accountWithEmailExists(emailAddress)) {
 				return LoginInfo.CredentialsExchange.Result.ACCOUNT_DOESNT_EXIST.resultHolder;
 			}
@@ -370,12 +364,12 @@ public final class ErmisDatabase {
 			return LoginInfo.CredentialsExchange.Result.SUCCESFULLY_EXCHANGED_CREDENTIALS.resultHolder;
 		}
 
-		public ResultHolder checkRequirementsAndLogin(String email, String password, InetAddress inetAddress) {
+		public EntryResult checkRequirementsAndLogin(String email, String password, InetAddress inetAddress) {
 
 			ResultHolder resultHolder = checkIfUserMeetsRequirementsToLogin(email);
 
 			if (!resultHolder.isSuccessful()) {
-				return resultHolder;
+				return new EntryResult(resultHolder);
 			}
 
 			return loginUsingPassword(inetAddress, email, password);
@@ -426,20 +420,23 @@ public final class ErmisDatabase {
 			return LoginInfo.Login.Result.ERROR_WHILE_LOGGING_IN.resultHolder;
 		}
 		
-		public ResultHolder loginUsingPassword(InetAddress inetAddress, String email, String password) {
+		public EntryResult loginUsingPassword(InetAddress inetAddress, String email, String password) {
 
-			if (!checkAuthentication(email, password)) {
-				return LoginInfo.Login.Result.INCORRECT_PASSWORD.resultHolder;
+			String passwordHash = checkAuthentication(email, password);
+			if (passwordHash == null) {
+				return new EntryResult(LoginInfo.Login.Result.INCORRECT_PASSWORD.resultHolder);
 			}
 
 			// Add address to user logged in ip addresses
 			int resultUpdate = addIpAddressLoggedInto(inetAddress, email);
 
 			if (resultUpdate == 1) {
-				return LoginInfo.Login.Result.SUCCESFULLY_LOGGED_IN.resultHolder;
+				Map<AddedInfo, String> info = new EnumMap<>(AddedInfo.class);
+				info.put(AddedInfo.PASSWORD_HASH, passwordHash);
+				return new EntryResult(LoginInfo.Login.Result.SUCCESFULLY_LOGGED_IN.resultHolder, info);
 			}
 
-			return LoginInfo.Login.Result.ERROR_WHILE_LOGGING_IN.resultHolder;
+			return new EntryResult(LoginInfo.Login.Result.ERROR_WHILE_LOGGING_IN.resultHolder);
 		}
 		
 		public int addIpAddressLoggedInto(InetAddress inetAddress, String email) {
@@ -1211,7 +1208,7 @@ public final class ErmisDatabase {
 			Message[] messages = new Message[0];
 
 			try (PreparedStatement selectMessages = conn.prepareStatement(
-					"SELECT message_id, sender_client_id, convert_from(text, 'UTF8'), convert_from(file_name, 'UTF8'), ts_entered, content_type "
+					"SELECT message_id, client_id, convert_from(text, 'UTF8'), convert_from(file_name, 'UTF8'), ts_entered, content_type "
 							+ "FROM chat_messages "
 							+ "WHERE chat_session_id=? "
 							+ "AND message_id <= ? "

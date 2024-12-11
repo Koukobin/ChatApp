@@ -15,6 +15,8 @@
  */
 package github.koukobin.ermis.server.main.java.configs;
 
+import java.io.InputStream;
+
 /**
  * @author Ilias Koukovinis
  *
@@ -75,9 +77,12 @@ public final class ConfigurationsPaths {
 		
 		private Emailer() {}
 	}
-	
+
 	public static class Database {
-		
+
+		public static final InputStream DATABASE_SETUP_FILE = Database.class.getResourceAsStream(
+				"/github/koukobin/ermis/server/main/resources/sql/ermis_database/database_setup.sql");
+
 		public static final String DATABASE_SETTINGS_PATH = CONFIGURATIONS_ROOT_FOLDER_PATH + "Database Settings/";
 		
 		public static final String GENERAL_SETTINGS_PATH = DATABASE_SETTINGS_PATH + "GeneralSettings.cnf";

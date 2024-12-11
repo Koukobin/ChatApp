@@ -51,7 +51,7 @@ SizedBox createSimpleButton(BuildContext context, String text, IconData iconData
 
 Container createOutlinedButton({
   required BuildContext context,
-  required String text,
+  required Text text,
   required UserAvatar avatar,
   List<Widget>? otherWidgets,
   required GestureTapCallback onTap,
@@ -73,13 +73,7 @@ Container createOutlinedButton({
           children: <Widget>[
             avatar,
             const SizedBox(width: 5),
-            Text(
               text,
-              style: TextStyle(
-                color: appColors.primaryColor,
-                fontSize: 16.0,
-              ),
-            ),
             Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,

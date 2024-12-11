@@ -79,6 +79,11 @@ class ImplementedMessageHandler extends MessageHandler {
 			}
 		});
 	}
+	
+	@Override
+	public void messageSuccesfullySentReceived(ChatSession chatSession, int messageID) {
+		RootReferences.getMessagingController().succesfullySentMessage(chatSession, messageID);
+	}
 
 	@Override
 	public void alreadyWrittenTextReceived(ChatSession chatSession) {

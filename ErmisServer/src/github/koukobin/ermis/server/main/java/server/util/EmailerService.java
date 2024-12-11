@@ -42,6 +42,7 @@ import org.apache.logging.log4j.Logger;
 import com.google.common.base.Throwables;
 
 import github.koukobin.ermis.server.main.java.configs.EmailerSettings;
+import github.koukobin.ermis.server.main.java.configs.ServerSettings;
 
 /**
  * @author Ilias Koukovinis
@@ -71,6 +72,7 @@ public final class EmailerService {
 				return new PasswordAuthentication(EmailerSettings.EMAIL_USERNAME, EmailerSettings.EMAIL_PASSWORD);
 			}
 		});
+		session.setDebug(ServerSettings.IS_PRODUCTION_READY);
 	}
 	
 	public static void initialize() {
@@ -103,6 +105,7 @@ public final class EmailerService {
 		message.addRecipients(Message.RecipientType.TO, toAddress);
 		message.setSubject(subject);
 		message.setContent(text, "text/html");
+		
 		sendAsyncMessage(message);
 	}
 

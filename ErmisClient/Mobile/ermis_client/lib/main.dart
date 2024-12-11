@@ -15,49 +15,113 @@
  */
 
 import 'package:ermis_client/splash_screen.dart';
+import 'package:ermis_client/util/notifications_util.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import 'theme/app_theme.dart';
 import 'chat_interface.dart';
 import 'settings_interface.dart';
 import 'package:flutter/material.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
-import 'client/client.dart';
-
-void main() async {
+Future<void> main() async {
   // Ensure that Flutter bindings are initialized before running the app
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize the background service
+  // Initialize the foreground task
+  FlutterForegroundTask.init(
+    androidNotificationOptions: AndroidNotificationOptions(
+      channelId: 'foreground_service_channel',
+      channelName: 'Foreground Service Channel',
+      channelDescription: 'This channel is used for the foreground service notification.',
+      channelImportance: NotificationChannelImportance.LOW,
+      priority: NotificationPriority.LOW,
+    ),
+    iosNotificationOptions: IOSNotificationOptions(
+      showNotification: true,
+    ),
+    foregroundTaskOptions: ForegroundTaskOptions(eventAction: ForegroundTaskEventAction.once()),
+  );  
 
-  // Define light and dark color themes
+  // Start the foreground task when the app runs
+  FlutterForegroundTask.startService(
+    notificationTitle: 'App is running in the background',
+      notificationText: 'Your background task is active',
+      callback: () => debugPrint("Flutter foreground service callback"));
+
+  await NotificationService.init();
+  tz.initializeTimeZones();
+
+  // Defining themes
   const AppColors lightAppColors = AppColors(
-    primaryColor: Colors.green,
-    secondaryColor: Colors.white,
-    tertiaryColor: Color.fromARGB(255, 233, 233, 233),
-    inferiorColor: Colors.black,
-  );
+      primaryColor: Colors.green,
+      secondaryColor: Colors.white,
+      tertiaryColor: Color.fromARGB(255, 233, 233, 233),
+      quaternaryColor: Color.fromARGB(255, 150, 150, 150),
+      inferiorColor: Colors.black);
 
   const AppColors darkAppColors = AppColors(
     primaryColor: Colors.green,
-    secondaryColor: Colors.black,
+    secondaryColor: Color.fromARGB(255, 17, 17, 17),
     tertiaryColor: Color.fromARGB(221, 30, 30, 30),
+    quaternaryColor: Color.fromARGB(255, 46, 46, 46),
     inferiorColor: Colors.white,
   );
 
-  // Run the app
-  runApp(MyApp(
+  runApp(_MyApp(
     lightAppColors: lightAppColors,
     darkAppColors: darkAppColors,
   ));
 }
 
-class MyApp extends StatelessWidget {
+class _MyApp extends StatefulWidget {
   final AppColors lightAppColors;
   final AppColors darkAppColors;
 
-  const MyApp({
-    super.key,
+  const _MyApp({
     required this.lightAppColors,
     required this.darkAppColors,
   });
+  
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<_MyApp> with WidgetsBindingObserver { 
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+        // App is moved to the background
+        break;
+      case AppLifecycleState.resumed:
+        // App is moved to the foreground (resumed)
+        break;
+      case AppLifecycleState.detached:
+        // App is being terminated
+        break;
+      case AppLifecycleState.inactive:
+        // App is inactive (e.g., a phone call or overlay)
+        break;
+      case AppLifecycleState.hidden:
+        // App is hidden
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,13 +129,13 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.system, // Automatically switch between light and dark
       darkTheme: ThemeData(
         brightness: Brightness.dark,
-        extensions: [darkAppColors],
+        extensions: [widget.darkAppColors],
         visualDensity: VisualDensity.adaptivePlatformDensity, // Adapts to platform
         splashFactory: InkRipple.splashFactory, // Smooth ripple
-        primaryColor: darkAppColors.primaryColor,
+        primaryColor: widget.darkAppColors.primaryColor,
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
-            foregroundColor: darkAppColors.primaryColor,
+            foregroundColor: widget.darkAppColors.primaryColor,
             textStyle: const TextStyle(fontSize: 15),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
@@ -94,17 +158,17 @@ class MyApp extends StatelessWidget {
           ),
         ),
         dialogTheme: DialogTheme(
-          backgroundColor: darkAppColors.tertiaryColor,
+          backgroundColor: widget.darkAppColors.tertiaryColor.withOpacity(1.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
           titleTextStyle: TextStyle(
-            color: darkAppColors.primaryColor,
+            color: widget.darkAppColors.primaryColor,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
           contentTextStyle: TextStyle(
-            color: darkAppColors.inferiorColor,
+            color: widget.darkAppColors.inferiorColor,
             fontSize: 16,
           ),
         ),
@@ -119,7 +183,7 @@ class MyApp extends StatelessWidget {
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
               style: ButtonStyle(
-            foregroundColor: WidgetStateProperty.all(darkAppColors.secondaryColor),
+            foregroundColor: WidgetStateProperty.all(widget.darkAppColors.secondaryColor),
             backgroundColor: WidgetStateProperty.all(Colors.green),
             overlayColor: WidgetStateProperty.resolveWith((states) {
               if (states.contains(WidgetState.pressed)) {
@@ -127,10 +191,14 @@ class MyApp extends StatelessWidget {
               }
               return null; // Default for other states
             }),
-          ))),
+          )),
+          progressIndicatorTheme:
+              ProgressIndicatorThemeData(color: Colors.grey),
+          bottomSheetTheme:
+              BottomSheetThemeData(backgroundColor: widget.darkAppColors.tertiaryColor.withOpacity(1.0))),
       theme: ThemeData(
         brightness: Brightness.light,
-        extensions: [lightAppColors],
+        extensions: [widget.lightAppColors],
         visualDensity: VisualDensity.adaptivePlatformDensity, // Adapts to platform
         splashFactory: InkRipple.splashFactory, // Smooth ripple
         textButtonTheme: TextButtonThemeData(
@@ -144,31 +212,31 @@ class MyApp extends StatelessWidget {
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
-          hintStyle: TextStyle(color: lightAppColors.tertiaryColor),
-          labelStyle: TextStyle(color: lightAppColors.primaryColor),
+          hintStyle: TextStyle(color: widget.lightAppColors.tertiaryColor),
+          labelStyle: TextStyle(color: widget.lightAppColors.primaryColor),
           border: OutlineInputBorder(
-            borderSide: BorderSide(color: lightAppColors.primaryColor),
+            borderSide: BorderSide(color: widget.lightAppColors.primaryColor),
             borderRadius: BorderRadius.circular(8),
           ),
           focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: lightAppColors.primaryColor, width: 2),
+            borderSide: BorderSide(color: widget.lightAppColors.primaryColor, width: 2),
           ),
           enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: lightAppColors.primaryColor),
+            borderSide: BorderSide(color: widget.lightAppColors.primaryColor),
           ),
         ),
         dialogTheme: DialogTheme(
-          backgroundColor: lightAppColors.tertiaryColor,
+          backgroundColor: widget.lightAppColors.tertiaryColor.withOpacity(1.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
           titleTextStyle: TextStyle(
-            color: lightAppColors.primaryColor,
+            color: widget.lightAppColors.primaryColor,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
           contentTextStyle: TextStyle(
-            color: lightAppColors.inferiorColor,
+            color: widget.lightAppColors.inferiorColor,
             fontSize: 16,
           ),
         ),
@@ -181,6 +249,10 @@ class MyApp extends StatelessWidget {
           checkColor: WidgetStateProperty.all(Colors.white), // Checkmark color
           splashRadius: 20,
         ),
+        progressIndicatorTheme: ProgressIndicatorThemeData(color: Colors.grey),
+        bottomSheetTheme: BottomSheetThemeData(
+            backgroundColor:
+                widget.darkAppColors.tertiaryColor.withOpacity(1.0)),
       ),
       home: SplashScreen(),
     );
@@ -189,7 +261,7 @@ class MyApp extends StatelessWidget {
 
 class MainInterface extends StatefulWidget {
 
-  const MainInterface({super.key}) ;
+  const MainInterface({super.key});
 
   @override
   State<MainInterface> createState() => MainInterfaceState();
@@ -228,11 +300,8 @@ class MainInterfaceState extends State<MainInterface> {
   @override
   void initState() {
     super.initState();
-    
-    Client.getInstance().fetchUserInformation();
-    // Begin message handler once interface is initialized
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Client.getInstance().startMessageHandler();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+
     });
   }
 

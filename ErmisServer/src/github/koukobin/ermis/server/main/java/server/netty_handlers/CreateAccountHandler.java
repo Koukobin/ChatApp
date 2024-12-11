@@ -21,6 +21,7 @@ import java.util.Map;
 
 import github.koukobin.ermis.common.entry.CreateAccountInfo;
 import github.koukobin.ermis.common.entry.CreateAccountInfo.Credential;
+import github.koukobin.ermis.common.results.EntryResult;
 import github.koukobin.ermis.common.results.ResultHolder;
 import github.koukobin.ermis.server.main.java.configs.ServerSettings;
 import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.ErmisDatabase;
@@ -42,7 +43,7 @@ final class CreateAccountHandler extends EntryHandler {
 	}
 	
 	@Override
-	public void doEntryAction(ChannelHandlerContext ctx, ByteBuf msg) {
+	public void executeEntryAction(ChannelHandlerContext ctx, ByteBuf msg) {
 		// Do nothing
 	}
 	
@@ -104,13 +105,13 @@ final class CreateAccountHandler extends EntryHandler {
 						email) {
 
 					@Override
-					public ResultHolder executeWhenVerificationSuccesfull() {
+					public EntryResult executeWhenVerificationSuccesfull() {
 						
 						String username = credentials.get(Credential.USERNAME);
 						String password = credentials.get(Credential.PASSWORD);
 
 						try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
-							return conn.createAccount(username, password, clientInfo.getChannel().remoteAddress().getAddress(), email);
+							return new EntryResult(conn.createAccount(username, password, clientInfo.getChannel().remoteAddress().getAddress(), email));
 						}
 					}
 

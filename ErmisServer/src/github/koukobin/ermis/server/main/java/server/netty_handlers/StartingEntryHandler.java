@@ -30,47 +30,67 @@ import io.netty.channel.ChannelHandlerContext;
  */
 public final class StartingEntryHandler extends ParentHandler {
 	
-	private boolean isLoggedIn;
+	private boolean isIPVerified;
 	
 	public StartingEntryHandler(ClientInfo clientInfo, boolean isLoggedIn) {
 		super(clientInfo);
-		this.isLoggedIn = isLoggedIn;
+		this.isIPVerified = isLoggedIn;
 	}
 	
 	public StartingEntryHandler(ClientInfo clientInfo) {
 		super(clientInfo);
 
 		try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
-			isLoggedIn = conn.isLoggedIn(clientInfo.getChannel().remoteAddress().getAddress());
+			isIPVerified = conn.isLoggedIn(clientInfo.getChannel().remoteAddress().getAddress());
 		}
 	}
 	
 	@Override
 	public void handlerAdded(ChannelHandlerContext ctx) {
-		
-		ctx.channel().writeAndFlush(Unpooled.copyBoolean(isLoggedIn));
-
-		// If the user is logged in, remove this handler and start the messaging
-		// handler. Otherwise, wait for the user to send the entry type,
-		// handled in channelRead1.
-		if (isLoggedIn) {
-			EntryHandler.login(ctx, clientInfo);
-		}
+		ctx.channel().writeAndFlush(Unpooled.copyBoolean(isIPVerified));
+//		// If the user is logged in, remove this handler and start the messaging
+//		// handler. Otherwise, wait for the user to send the entry type,
+//		// handled in channelRead1.
+//		if (isIPVerified) {
+//			EntryHandler.login(ctx, clientInfo);
+//		}
 	}
 
 	@Override
 	public void channelRead1(ChannelHandlerContext ctx, ByteBuf msg) throws IOException {
-		
+
 		EntryType entryType = EntryType.fromId(msg.readInt());
 
-		if (entryType == EntryType.LOGIN) {
+		switch (entryType) {
+		case LOGIN -> {
+			if (isIPVerified && msg.readableBytes() > 0) {
+				
+				byte[] email = new byte[msg.readInt()];
+				msg.readBytes(email);
+				
+				byte[] passwordHash = new byte[msg.readableBytes()];
+				msg.readBytes(passwordHash);
+				
+				boolean check;
+				try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
+					check = conn.checkAuthenticationViaHash(new String(email), new String(passwordHash));
+				}
+				
+				ctx.channel().writeAndFlush(Unpooled.copyBoolean(check));
+				if (check) {
+					EntryHandler.login(ctx, clientInfo);
+					return;
+				}
+			}
+			logger.debug("Moving into login!");
 			ctx.pipeline().replace(this, LoginHandler.class.getName(), new LoginHandler(clientInfo));
-		} else if (entryType == EntryType.CREATE_ACCOUNT) {
-			ctx.pipeline().replace(this, CreateAccountHandler.class.getName(), new CreateAccountHandler(clientInfo));
-		} else {
-			logger.debug("Unknown registration type");
 		}
-		
+		case CREATE_ACCOUNT -> {
+			ctx.pipeline().replace(this, CreateAccountHandler.class.getName(), new CreateAccountHandler(clientInfo));
+		}
+		default -> logger.debug("Unknown registration type");
+		}
+
 	}
 }
 

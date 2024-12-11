@@ -18,7 +18,6 @@ package github.koukobin.ermis.client.main.java.util;
 import java.io.IOException;
 import java.util.function.Consumer;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.control.Notifications;
 
 import github.koukobin.ermis.client.main.java.info.GeneralAppInfo;

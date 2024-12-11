@@ -35,16 +35,18 @@ public final class ContextMenusUtil {
 
 	private ContextMenusUtil() {}
 	
-	public static void installContextMenu(Node owner, MyContextMenuItem... items) {
+	public static void installContextMenu(Node owner, Duration du, MyContextMenuItem... items) {
 		
 		final MFXContextMenu contextMenu = new MFXContextMenu(owner);
 		contextMenu.addItems(items);
 
-		MFXTooltip tooltip = setupTooltip(owner);
+		MFXTooltip tooltip = setupTooltip(owner, du);
 		
 		EventHandler<? super MouseEvent> previousMouseEventHandler = owner.getOnMouseClicked();
 		owner.setOnMouseClicked((MouseEvent e) -> {
-			previousMouseEventHandler.handle(e);
+			if (previousMouseEventHandler != null) {
+				previousMouseEventHandler.handle(e);
+			}
             if (e.getButton() == MouseButton.SECONDARY) {
                 contextMenu.show((Node) e.getSource(), e.getScreenX(), e.getScreenY());
                 tooltip.uninstall();
@@ -60,10 +62,10 @@ public final class ContextMenusUtil {
      * @param owner the Node for which the tooltip is created
      * @return the configured MFXTooltip
      */
-    private static MFXTooltip setupTooltip(Node owner) {
+    private static MFXTooltip setupTooltip(Node owner, Duration du) {
         MFXTooltip tooltip = new MFXTooltip(owner);
         tooltip.setText("Right-click for more actions!");
-        tooltip.setShowDelay(Duration.millis(200));
+        tooltip.setShowDelay(du);
         tooltip.install();
         return tooltip;
     }

@@ -45,6 +45,8 @@ public final class ServerSettings {
 	public static final int SERVER_BACKLOG = Integer.parseInt(GENERAL_PROPERTIES.getProperty("backlog"));
 	public static final int SERVER_PORT = Integer.parseInt(GENERAL_PROPERTIES.getProperty("port"));
 	public static final String SERVER_ADDRESS = GENERAL_PROPERTIES.getProperty("address");
+	
+	public static final int UDP_PORT = 8081;
 
 	/**
 	 * Duration before inactive clients are kicked from the server

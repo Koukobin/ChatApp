@@ -72,7 +72,11 @@ public abstract class Decoder extends ReplayingDecoder<ByteBuf> {
 	 */
 	public abstract boolean handleMessage(ChannelHandlerContext ctx, int length, ByteBuf in);
 
-	protected void sendMessageExceedsMaximumMessageLength(ChannelHandlerContext ctx, int maxLength) {
+	protected static void sendMessageExceedsMaximumMessageLength(ChannelHandlerContext ctx, int maxLength) {
 		MessageByteBufCreator.sendMessageInfo(ctx, "Message length exceeds maximum length (" + maxLength + " characters)");
+	}
+	
+	protected static void createErrorResponse(ChannelHandlerContext ctx, String message) {
+		MessageByteBufCreator.sendMessageInfo(ctx, message);
 	}
 }

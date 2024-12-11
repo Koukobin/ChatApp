@@ -29,6 +29,7 @@ class Message {
   Uint8List? imageBytes;
   late int timeWritten;
   late ContentType contentType;
+  bool isSent = false;
 
   Message(
       {required this.username,
@@ -39,11 +40,13 @@ class Message {
       this.text,
       this.fileName,
       required this.timeWritten,
-      required this.contentType});
+      required this.contentType,
+      required this.isSent});
 
   Message.empty();
 
   void setUsername(String username) => this.username = username;
+  void setIsSent(bool isSent) => this.isSent = isSent;
   void setClientID(int clientID) => this.clientID = clientID;
   void setMessageID(int messageID) => this.messageID = messageID;
   void setChatSessionID(int chatSessionID) => this.chatSessionID = chatSessionID;
@@ -62,6 +65,7 @@ class Message {
   Uint8List? get getFileName => fileName;
   int get getTimeWritten => timeWritten;
   ContentType get getContentType => contentType;
+  bool get getIsSent => isSent;
 
   @override
   int get hashCode => messageID.hashCode;

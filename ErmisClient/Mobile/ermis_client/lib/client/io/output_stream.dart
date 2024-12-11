@@ -17,9 +17,13 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:zstandard/zstandard.dart';
+
 import 'byte_buf.dart';
 
 class ByteBufOutputStream {
+  static final zstandard = Zstandard();
+  static const int _compressionLevel = 4; // 1 (fastest) to 22 (highest compression)
   SecureSocket secureSocket;
 
   ByteBufOutputStream({required this.secureSocket});
@@ -27,17 +31,23 @@ class ByteBufOutputStream {
   void write(ByteBuf msg) async {
     int msgLength = msg.readableBytes;
 
+    Uint8List msgBytes = msg.readBytes(msgLength);
+
+    if (msgLength > 262144) {
+      msgBytes = (await zstandard.compress(msgBytes, _compressionLevel))!;
+      msgLength = msgBytes.length;
+    }
+
     // Convert the message length to bytes (big-endian representation)
-    Uint8List lengthOfMsgBytes = Uint8List(4); // Integer.BYTES is 4
+    Uint8List lengthOfMsgBytes = Uint8List(4); // An integer is 4 bytes
     ByteData.view(lengthOfMsgBytes.buffer).setInt32(0, msgLength, Endian.big);
 
-    // Combine the length bytes and the message bytes
+    // Combine the length bytes and the message bytes;
+    // the length of the payload is explicitly declared at the beginning
     Uint8List payload = Uint8List(4 + msgLength);
     payload.setRange(0, 4, lengthOfMsgBytes); // Copy length bytes
-    payload.setRange(4, 4 + msgLength, msg.buffer); // Copy message bytes
+    payload.setRange(4, 4 + msgLength, msgBytes); // Copy message bytes
 
-    // Add payload to output
     secureSocket.add(payload);
   }
-
 }

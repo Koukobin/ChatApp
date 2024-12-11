@@ -145,11 +145,11 @@ public final class Server {
 			logger.info("Server started succesfully on port {} and at address {}", socketAddress.getPort(),
 					socketAddress.getHostName());
 			logger.info("Waiting for new connections...");
-			
-			
 		}  catch (Exception e) {
-			throw new RuntimeException(e);
+			throw new RuntimeException("Failed to start TCP server", e);
 		}
+		
+		ServerUDP.start();
 	}
 	
 	private static class ClientConnector extends ChannelInitializer<EpollSocketChannel> {

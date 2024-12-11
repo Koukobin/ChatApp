@@ -14,12 +14,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:ermis_client/client/io/byte_buf.dart';
 
+import '../util/database_service.dart';
 import 'common/chat_request.dart';
 import 'common/chat_session.dart';
 import 'common/file_heap.dart';
@@ -54,22 +57,22 @@ class Client {
 
   Client._();
 
-  Future<bool> initialize(InternetAddress remoteAddress, int remotePort, ServerCertificateVerification scv) async {
-    if (remotePort <= 0) {
+  Future<bool> initialize(Uri uri, ServerCertificateVerification scv) async {
+    if (uri.port <= 0) {
       throw ArgumentError("Port cannot be below zero");
     }
 
     try {
       final context = SecurityContext(withTrustedRoots: false);
 
-      _sslSocket = await SecureSocket.connect(remoteAddress, remotePort,
+      _sslSocket = await SecureSocket.connect(uri.host, uri.port,
           context: context,
           onBadCertificate: (X509Certificate cert) =>
               scv == ServerCertificateVerification.ignore);
 
       broadcastStream = _sslSocket!.asBroadcastStream();
 
-      uri = Uri(scheme: 'https', host: remoteAddress.toString(), port: remotePort);
+      this.uri = uri;
 
       _inputStream = ByteBufInputStream(broadcastStream: broadcastStream!);
       _outputStream = ByteBufOutputStream(secureSocket: _sslSocket!);
@@ -86,6 +89,21 @@ class Client {
       }
       rethrow;
     }
+  }
+
+  Future<bool> attemptShallowLogin(UserInformation userInfo) async {
+
+    ByteBuf buffer = ByteBuf.smallBuffer();
+
+    buffer.writeInt(EntryType.login.id);
+    buffer.writeInt(userInfo.email!.length);
+    buffer.writeBytes(utf8.encode(userInfo.email!));
+
+    buffer.writeBytes(utf8.encode(userInfo.passwordHash!));
+
+    _outputStream!.write(buffer);
+
+    return _isLoggedIn = (await _inputStream!.read()).readBoolean();
   }
 
   void sendMessageToClient(String text, int chatSessionIndex) {
@@ -116,13 +134,13 @@ class Client {
 		return LoginEntry(_outputStream!, _inputStream!);
 	}
 
-  void fetchUserInformation() {
+  Future<void> fetchUserInformation() async {
     if (!isLoggedIn()) {
       throw StateError(
           "User can't start writing to the server if they aren't logged in");
     }
     
-    _messageHandler.fetchUserInformation();
+    await _messageHandler.fetchUserInformation();
   }
 
   void startMessageHandler() {
@@ -135,6 +153,10 @@ class Client {
   
   void whenMessageReceived(void Function(Message message, int chatSessionIndex) runThis) {
     _messageHandler.whenMessageReceived(runThis);
+  }
+
+  void whenSuccesfullySentMessageReceived(void Function(ChatSession session, int messageID) runThis) {
+    _messageHandler.whenMessageSuccesfullySentReceived(runThis);
   }
 
   void whenAlreadyWrittenTextReceived(void Function(ChatSession chatSession) runThis) {
@@ -173,6 +195,10 @@ class Client {
     _messageHandler.whenChatSessionsReceived(runThis);
   }
 
+  void whenVoiceCallIncoming(bool Function(Member member) runThis) {
+    _messageHandler.whenVoiceCallIncoming(runThis);
+  }
+
   void whenMessageDeleted(void Function(ChatSession chatSession, int messageIDOfDeletedMessage) runThis) {
     _messageHandler.whenMessageDeleted(runThis);
   }
@@ -181,8 +207,13 @@ class Client {
     _messageHandler.whenProfilePhotoReceived(runThis);
   }
 
-  Commands get getCommands => _messageHandler.getCommands;
+  Commands get commands => _messageHandler.commands;
   int get clientID => _messageHandler.clientID;
+  String? get displayName => _messageHandler.username;
+  Uint8List? get profilePhoto => _messageHandler.profilePhoto;
+  List<ChatSession>? get chatSessions => _messageHandler.chatSessions;
+  List<ChatRequest>? get chatRequests => _messageHandler.chatRequests;
+  ServerInfo get serverInfo => ServerInfo(uri!);
 
   bool isLoggedIn() {
     return _isLoggedIn;
@@ -193,6 +224,54 @@ class Client {
       await _sslSocket!.close();
       _sslSocket = null;
       _isLoggedIn = false;
+    }
+  }
+
+}
+
+class UDPSocket {
+  RawDatagramSocket? _udpSocket;
+
+  InternetAddress? _remoteAddress;
+  int? _remotePort;
+
+  UDPSocket();
+
+  Future<void> initialize(InternetAddress remoteAddress, int remotePort) async {
+    if (remotePort <= 0) {
+      throw ArgumentError("Port cannot be below zero");
+    }
+
+    ByteBuf buffer = ByteBuf.smallBuffer();
+    buffer.writeInt(ClientMessageType.command.id);
+    buffer.writeInt(ClientCommandType.startVoiceCall.id);
+    buffer.writeInt(0);
+    buffer.writeInt(3143);
+    Client.getInstance()._outputStream!.write(buffer);
+
+    _udpSocket = await RawDatagramSocket.bind(
+      InternetAddress.anyIPv4,
+      9090,
+    );
+    _remoteAddress = remoteAddress;
+    _remotePort = remotePort;
+
+    _udpSocket!.listen((event) {
+      if (event == RawSocketEvent.read) {
+        final datagram = _udpSocket!.receive();
+        if (datagram != null) {
+          final message = String.fromCharCodes(datagram.data);
+          print("Received from server: $message");
+        }
+      }
+    });
+  }
+
+  void send(String message) {
+    if (_udpSocket != null) {
+      final data = Utf8Codec().encode(message);
+      _udpSocket!.send(data, _remoteAddress!, _remotePort!);
+      print("Sent to server: $message");
     }
   }
 
@@ -215,7 +294,7 @@ class Entry<T extends CredentialInterface> {
     bool isSuccessful = msg.readBoolean();
     Uint8List resultMessageBytes = msg.readBytes(msg.readableBytes);
 
-    return ResultHolder(isSuccessful, String.fromCharCodes(resultMessageBytes));
+    return ResultHolder(isSuccessful, utf8.decode(resultMessageBytes));
   }
 
   Future<void> sendCredentials(Map<T, String> credentials) async {
@@ -259,16 +338,24 @@ class Entry<T extends CredentialInterface> {
     outputStream.write(payload);
   }
 
-  Future<ResultHolder> getResult() async {
+  Future<EntryResult> getResult() async {
     ByteBuf msg = await inputStream.read();
 
     isVerificationComplete = msg.readBoolean();
     isLoggedIn = msg.readBoolean();
 
     Client.getInstance()._isLoggedIn = isLoggedIn;
-    List<int> resultMessageBytes = msg.readBytes(msg.readableBytes);
+    List<int> resultMessageBytes = msg.readBytes(msg.readInt32());
 
-    return ResultHolder(isLoggedIn, String.fromCharCodes(resultMessageBytes));
+    Map<AddedInfo, String> map = HashMap();
+    EntryResult result = EntryResult(ResultHolder(isLoggedIn, String.fromCharCodes(resultMessageBytes)), map);
+    while (msg.readableBytes > 0) {
+      AddedInfo addedInfo = AddedInfo.fromId(msg.readInt32());
+      Uint8List message = msg.readBytes(msg.readInt32());
+      map.putIfAbsent(addedInfo, () => utf8.decode(message.toList()));
+    }
+
+    return result;
   }
 
   Future<void> resendVerificationCode() async {

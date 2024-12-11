@@ -18,6 +18,7 @@ package github.koukobin.ermis.client.main.java.service.client.io_client;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import com.github.luben.zstd.Zstd;
 import com.google.common.primitives.Ints;
 import io.netty.buffer.ByteBuf;
 
@@ -27,6 +28,8 @@ import io.netty.buffer.ByteBuf;
  */
 class ByteBufOutputStream implements AutoCloseable {
 
+    private static final int compressionLevel = 4; // 1 (fastest) to 22 (highest compression)
+	
 	private final OutputStream out;
 	
 	public ByteBufOutputStream(OutputStream out) {
@@ -39,10 +42,15 @@ class ByteBufOutputStream implements AutoCloseable {
 
 		byte[] msgBytes = new byte[msgLength];
 		msg.readBytes(msgBytes);
-		
-		// The length of the payload is mentioned at its beginning.
-		byte[] lengthOfMsgBytes = Ints.toByteArray(msgLength);
 
+		if (msgLength > 262144) {
+			msgBytes = Zstd.compress(msgBytes, compressionLevel);
+			msgLength = msgBytes.length;
+		}
+
+		// The length of the payload is explicitly declared at the beginning
+		byte[] lengthOfMsgBytes = Ints.toByteArray(msgLength);
+		
 		byte[] payload = new byte[Integer.BYTES /* length of payload */ + msgLength];
 		System.arraycopy(lengthOfMsgBytes, 0, payload, 0, lengthOfMsgBytes.length);
 		System.arraycopy(msgBytes, 0, payload, Integer.BYTES, msgLength);

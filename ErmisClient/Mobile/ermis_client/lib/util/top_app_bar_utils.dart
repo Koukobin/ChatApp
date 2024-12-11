@@ -20,7 +20,17 @@ import '../constants/app_constants.dart';
 import '../theme/app_theme.dart';
 
 class ErmisAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const ErmisAppBar({super.key});
+
+  final List<Widget> actions;
+  final Widget title;
+
+  const ErmisAppBar(
+      {this.title = const Text(
+        applicationTitle,
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+      ),
+      this.actions = const [],
+      super.key});
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -31,11 +41,10 @@ class ErmisAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: appColors.secondaryColor,
       foregroundColor: appColors.primaryColor,
-      title: const Text(
-        applicationTitle,
-        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-      ),
-      centerTitle: true, // Center title for a cleaner look
+      title: title,
+      actions: actions,
+      centerTitle: // Could be simplified but I find this much more intuitive
+          actions.isEmpty ? true : false,
       elevation: 0, // Removes AppBar shadow for a flat, modern appearance
       bottom: DividerBottom(dividerColor: appColors.primaryColor),
     );

@@ -108,6 +108,7 @@ public abstract class MessageHandler implements AutoCloseable {
 
 	public abstract void usernameReceived(String username);
 	public abstract void messageReceived(Message message, int chatSessionIndex);
+	public abstract void messageSuccesfullySentReceived(ChatSession chatSession, int messageID);
 	public abstract void alreadyWrittenTextReceived(ChatSession chatSession);
 	public abstract void serverMessageReceived(String message);
 	public abstract void fileDownloaded(LoadedInMemoryFile file);
@@ -337,6 +338,14 @@ public abstract class MessageHandler implements AutoCloseable {
 							msg.readBytes(content);
 							
 							serverMessageReceived(new String(content));
+						}
+						case VOICE_CALL_INCOMING -> {
+							// Do nothing.
+						}
+						case MESSAGE_SUCCESFULLY_SENT -> {
+				          int chatSessionID = msg.readInt();
+				          int messageID = msg.readInt();
+				          messageSuccesfullySentReceived(chatSessionIDSToChatSessions.get(chatSessionID), messageID);
 						}
 						case CLIENT_CONTENT -> {
 

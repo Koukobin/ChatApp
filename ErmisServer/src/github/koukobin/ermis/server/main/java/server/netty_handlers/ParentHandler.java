@@ -34,7 +34,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
  * @author Ilias Koukovinis
  * 
  */
-abstract sealed class ParentHandler extends SimpleChannelInboundHandler<ByteBuf> permits MessageHadler, StartingEntryHandler, EntryHandler {
+abstract sealed class ParentHandler extends SimpleChannelInboundHandler<ByteBuf> permits MessageHandler, StartingEntryHandler, EntryHandler {
 
 	protected static final Logger logger = LogManager.getLogger("server");
 	

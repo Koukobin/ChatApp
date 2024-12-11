@@ -161,7 +161,7 @@
 }
 
 #otherMessageLabel {
-    -fx-background-color: rgb(130, 130, 130);
+    -fx-background-color: linear-gradient(to top, rgb(100, 100, 100), rgb(130, 130, 130));
 }
 
 #downloadFileButton {

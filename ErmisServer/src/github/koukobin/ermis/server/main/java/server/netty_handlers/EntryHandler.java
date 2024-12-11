@@ -43,7 +43,7 @@ abstract sealed class EntryHandler extends ParentHandler permits LoginHandler, C
 		}
 	}
 
-	public abstract void doEntryAction(ChannelHandlerContext ctx, ByteBuf msg) throws IOException;
+	public abstract void executeEntryAction(ChannelHandlerContext ctx, ByteBuf msg) throws IOException;
 	public abstract void channelRead2(ChannelHandlerContext ctx, ByteBuf msg) throws IOException;
 
 	@Override
@@ -52,7 +52,7 @@ abstract sealed class EntryHandler extends ParentHandler permits LoginHandler, C
 		boolean isAction = msg.readBoolean();
 		
 		if (isAction) {
-			doEntryAction(ctx, msg);
+			executeEntryAction(ctx, msg);
 		} else {
 			channelRead2(ctx, msg);
 		}
@@ -66,15 +66,15 @@ abstract sealed class EntryHandler extends ParentHandler permits LoginHandler, C
 	}
 
 	public void failed(ChannelHandlerContext ctx) {
-		resultRunnable = () -> registerFailed(ctx, clientInfo);
+		resultRunnable = () -> registrationFailed(ctx, clientInfo);
 		hasFailed = true;
 	}
 	
 	public static void login(ChannelHandlerContext ctx, ClientInfo clientInfo) {
-		ctx.pipeline().replace(ctx.handler(), MessageHadler.class.getName(), new MessageHadler(clientInfo));
+		ctx.pipeline().replace(ctx.handler(), MessageHandler.class.getName(), new MessageHandler(clientInfo));
 	}
 
-	public static void registerFailed(ChannelHandlerContext ctx, ClientInfo clientInfo) {
+	public static void registrationFailed(ChannelHandlerContext ctx, ClientInfo clientInfo) {
 		ctx.pipeline().replace(ctx.handler(), StartingEntryHandler.class.getName(), new StartingEntryHandler(clientInfo));
 	}
 }

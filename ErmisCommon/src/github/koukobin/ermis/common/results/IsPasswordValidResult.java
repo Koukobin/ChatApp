@@ -46,7 +46,6 @@ public enum IsPasswordValidResult {
         this.id = id;
     }
 
-
 	public static IsPasswordValidResult fromId(int id) {
 		return EnumIntConverter.fromId(values, id);
 	}

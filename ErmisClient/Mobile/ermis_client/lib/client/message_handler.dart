@@ -19,6 +19,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import 'client.dart';
 import 'common/common.dart';
 import 'io/byte_buf.dart';
 import 'common/chat_request.dart';
@@ -34,12 +35,13 @@ class MessageHandler {
   late final ByteBufOutputStream _outputStream;
   late final SecureSocket _secureSocket;
 
-  late String _username;
+  String? _username;
   int clientID = -1;
+  Uint8List? _profilePhoto;
 
   final Map<int, ChatSession> _chatSessionIDSToChatSessions = {};
-  final List<ChatSession> _chatSessions = List.empty(growable: true);
-	final List<ChatRequest> _chatRequests = List.empty(growable: true);
+  late List<ChatSession>? _chatSessions;
+	late List<ChatRequest>? _chatRequests;
 
   bool _isClientListeningToMessages = false;
   
@@ -53,7 +55,7 @@ class MessageHandler {
 
   void setByteBufOutputStream(ByteBufOutputStream outputStream) {
     _outputStream = outputStream;
-    _commands = Commands(_outputStream, _chatSessions);
+    _commands = Commands(_outputStream);
   }
 
   void setSecureSocket(SecureSocket secureSocket) {
@@ -112,6 +114,11 @@ class MessageHandler {
     messageFunction = runThis;
   }
 
+  void Function(ChatSession, int) messageSuccesfullySentReceivedFunction = (session, messageID) => {};
+  void whenMessageSuccesfullySentReceived(void Function(ChatSession, int) runThis) {
+    messageSuccesfullySentReceivedFunction = runThis;
+  }
+
   void Function(ChatSession chatSession) writtenTextFunction = (chatSession) => {};
   void whenAlreadyWrittenTextReceived(void Function(ChatSession chatSession) runThis) {
     writtenTextFunction = runThis;
@@ -121,7 +128,7 @@ class MessageHandler {
   void whenServerMessageReceived(void Function(String message) runThis) {
     serverMessageReceivedFunction = runThis;
   }
-  
+
   void Function(LoadedInMemoryFile file) whenFileDownloadedFunction = (file) => {};
   void whenFileDownloaded(void Function(LoadedInMemoryFile file) runThis) {
     whenFileDownloadedFunction = runThis;
@@ -157,6 +164,11 @@ class MessageHandler {
     chatSessionsReceived = runThis;
   }
 
+  bool Function(Member) voiceCallIncoming = (member) => false;
+  void whenVoiceCallIncoming(bool Function(Member member) runThis) {
+    voiceCallIncoming = runThis;
+  }
+
   void Function(ChatSession chatSession, int messageIDOfDeletedMessage) messageDeleted = (chatSession, messageIDOfDeletedMessage) => {};
   void whenMessageDeleted(void Function(ChatSession chatSession, int messageIDOfDeletedMessage) runThis) {
     messageDeleted = runThis;
@@ -167,12 +179,23 @@ class MessageHandler {
     profilePhotoReceived = runThis;
   }
 
-  void fetchUserInformation() {
-    getCommands.fetchUsername();
-    getCommands.fetchClientID();
-    getCommands.fetchChatSessions();
-    getCommands.fetchChatRequests();
-    getCommands.fetchAccountIcon();
+  void Function(bool) addProfilePhotoResult = (success) => {};
+  void whenAddProfilePhotoResult(void Function(bool success) runThis) {
+    addProfilePhotoResult = runThis;
+  }
+
+  Future<void> fetchUserInformation() async {
+    commands.fetchUsername();
+    commands.fetchClientID();
+    commands.fetchChatSessions();
+    commands.fetchChatRequests();
+    commands.fetchAccountIcon();
+
+    await Future.doWhile(() async {
+      return await Future.delayed(Duration(milliseconds: 100), () {
+        return (username == null || _profilePhoto == null || chatRequests == null || chatSessions == null);
+      });
+    });
   }
 
   Future<void> startListeningToMessages() async {
@@ -209,7 +232,27 @@ class MessageHandler {
           Uint8List content = msg.readBytes(msg.readableBytes);
           serverMessageReceivedFunction(String.fromCharCodes(content));
           break;
+        case ServerMessageType.voiceCallIncoming:
+          int clientID = msg.readInt32();
+          // Member? member;
+          // for (int i = 0; i < _chatSessions.length; i++) {
+          //   for (var j = 0; j < _chatSessions[i].getMembers.length; j++) {
+          //     if (_chatSessions[i].getMembers[j].clientID == clientID) {
+          //       member = _chatSessions[i].getMembers[j];
+          //     }
+          //   }
+          // }
 
+          Member? member = Member(username!, clientID, Uint8List(0), true);
+          if (member == null)  throw new Exception("What the fuck is this");
+          bool isAccepted = voiceCallIncoming(member);
+
+          break;
+        case ServerMessageType.messageSuccefullySent:
+          int chatSessionID = msg.readInt32();
+          int messageID = msg.readInt32();
+          messageSuccesfullySentReceivedFunction(_chatSessionIDSToChatSessions[chatSessionID]!, messageID);
+          break;
         case ServerMessageType.clientContent:
           Message message = Message.empty();
 
@@ -246,6 +289,7 @@ class MessageHandler {
           message.setText(text);
           message.setFileName(fileNameBytes);
           message.setTimeWritten(timeWritten);
+          message.setIsSent(true);
 
           ChatSession chatSession =
               _chatSessionIDSToChatSessions[chatSessionID]!;
@@ -285,8 +329,8 @@ class MessageHandler {
               break;
             case ClientCommandResultType.getDisplayName:
               var usernameBytes = msg.readBytes(msg.readableBytes);
-              var username = String.fromCharCodes(usernameBytes);
-              usernameFunction(username);
+              _username = String.fromCharCodes(usernameBytes);
+              usernameFunction(username!);
               break;
 
             case ClientCommandResultType.getClientId:
@@ -295,7 +339,7 @@ class MessageHandler {
               break;
 
             case ClientCommandResultType.getChatSessions:
-              _chatSessions.clear();
+              _chatSessions = [];
               int chatSessionsSize = msg.readInt32();
               for (int i = 0; i < chatSessionsSize; i++) {
                 int chatSessionIndex = i;
@@ -317,25 +361,24 @@ class MessageHandler {
                 }
 
                 chatSession.setMembers(members);
-                _chatSessions.insert(chatSessionIndex, chatSession);
+                _chatSessions?.insert(chatSessionIndex, chatSession);
                 _chatSessionIDSToChatSessions[chatSessionID] = chatSession;
               }
-              chatSessionsReceived(_chatSessions);
+              chatSessionsReceived(_chatSessions!);
               break;
-
             case ClientCommandResultType.getChatRequests:
-              _chatRequests.clear();
+              _chatRequests = [];
               int friendRequestsLength = msg.readInt32();
               for (int i = 0; i < friendRequestsLength; i++) {
                 int clientID = msg.readInt32();
-                _chatRequests.add(ChatRequest(clientID));
+                _chatRequests?.add(ChatRequest(clientID));
               }
-              chatRequestsReceived(_chatRequests);
+              chatRequestsReceived(_chatRequests!);
               break;
 
             case ClientCommandResultType.getWrittenText:
               int chatSessionIndex = msg.readInt32();
-              ChatSession chatSession = _chatSessions[chatSessionIndex];
+              ChatSession chatSession = _chatSessions![chatSessionIndex];
               List<Message> messages = chatSession.getMessages;
 
               while (msg.readableBytes > 0) {
@@ -366,7 +409,8 @@ class MessageHandler {
                     text: messageBytes,
                     fileName: fileNameBytes,
                     timeWritten: timeWritten,
-                    contentType: contentType));
+                    contentType: contentType,
+                    isSent: true));
               }
 
               messages.sort((a, b) => a.messageID.compareTo(b.messageID));
@@ -374,11 +418,23 @@ class MessageHandler {
               writtenTextFunction(chatSession);
               break;
             case ClientCommandResultType.deleteChatMessage:
-              // TODO: Handle this case.
+            
+              int chatSessionID = msg.readInt32();
+              int messageID = msg.readInt32();
+
+              messageDeleted(_chatSessionIDSToChatSessions[chatSessionID]!, messageID);
               break;
             case ClientCommandResultType.fetchAccountIcon:
-              Uint8List iconBytes = msg.readBytes(msg.readableBytes);
-              profilePhotoReceived(iconBytes);
+              _profilePhoto = msg.readBytes(msg.readableBytes);
+              profilePhotoReceived(_profilePhoto!);
+              break;
+            case ClientCommandResultType.setAccountIcon:
+              bool isSuccessful = msg.readBoolean();
+              if (isSuccessful) {
+                _profilePhoto = Commands.pendingAccountIcon;
+              }
+
+              addProfilePhotoResult(isSuccessful);
               break;
             case ClientCommandResultType.getDonationPage:
               Uint8List htmlBytes = msg.readBytes(msg.readInt32());
@@ -399,7 +455,7 @@ class MessageHandler {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('A useful message');
+        debugPrint(e.toString());
       }
     }
 
@@ -408,15 +464,17 @@ class MessageHandler {
   }
 
   bool get isListeningToMessages => _isClientListeningToMessages;
-  Commands get getCommands => _commands;
-  String get username => _username;
+  Commands get commands => _commands;
+  String? get username => _username;
+  Uint8List? get profilePhoto => _profilePhoto;
+  List<ChatSession>? get chatSessions => _chatSessions;
+  List<ChatRequest>? get chatRequests =>_chatRequests;
 }
 
 class Commands {
   final ByteBufOutputStream out;
-  final List<ChatSession> _chatSessions;
 
-  Commands(this.out, this._chatSessions);
+  Commands(this.out);
 
   void changeDisplayName(String newDisplayName) {
     var newUsernameBytes = utf8.encode(newDisplayName);
@@ -461,7 +519,7 @@ class Commands {
     payload.writeInt(ClientMessageType.command.id);
     payload.writeInt(ClientCommandType.fetchWrittenText.id);
     payload.writeInt(chatSessionIndex);
-    payload.writeInt(_chatSessions[chatSessionIndex]
+    payload.writeInt(Client.getInstance().chatSessions![chatSessionIndex]
         .getMessages
         .length /* Amount of messages client already has */);
 
@@ -581,11 +639,14 @@ class Commands {
     out.write(payload);
   }
 
+  static Uint8List? pendingAccountIcon;
+
   Future<void> setAccountIcon(Uint8List accountIconBytes) async {
     ByteBuf payload = ByteBuf.smallBuffer(growable: true);
     payload.writeInt(ClientMessageType.command.id);
     payload.writeInt(ClientCommandType.addAccountIcon.id);
     payload.writeBytes(accountIconBytes);
+    pendingAccountIcon = accountIconBytes;
 
     out.write(payload);
   }

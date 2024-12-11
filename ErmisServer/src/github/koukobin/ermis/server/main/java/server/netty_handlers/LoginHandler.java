@@ -21,6 +21,7 @@ import java.util.Map;
 import github.koukobin.ermis.common.entry.LoginInfo.Action;
 import github.koukobin.ermis.common.entry.LoginInfo.Credential;
 import github.koukobin.ermis.common.entry.LoginInfo.PasswordType;
+import github.koukobin.ermis.common.results.EntryResult;
 import github.koukobin.ermis.common.results.ResultHolder;
 import github.koukobin.ermis.server.main.java.configs.ServerSettings;
 import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.ErmisDatabase;
@@ -43,21 +44,19 @@ final class LoginHandler extends EntryHandler {
 	}
 	
 	@Override
-	public void doEntryAction(ChannelHandlerContext ctx, ByteBuf msg) {
+	public void executeEntryAction(ChannelHandlerContext ctx, ByteBuf msg) {
 
 		int readerIndex = msg.readerIndex();
 
 		Action action = Action.fromId(msg.readInt());
 
 		switch (action) {
-		case TOGGLE_PASSWORD_TYPE -> {
-			
+		case TOGGLE_PASSWORD_TYPE:
 			passwordType = switch (passwordType) {
 			case PASSWORD -> PasswordType.BACKUP_VERIFICATION_CODE;
 			case BACKUP_VERIFICATION_CODE -> PasswordType.PASSWORD;
 			};
-			
-		}
+			break;
 		}
 
 		msg.readerIndex(readerIndex);
@@ -122,7 +121,7 @@ final class LoginHandler extends EntryHandler {
 					if (entryResult.isSuccessful()) {
 						login(ctx, clientInfo);
 					} else {
-						registerFailed(ctx, clientInfo);
+						registrationFailed(ctx, clientInfo);
 					}
 					
 					byte[] resultMessageBytes = entryResult.getResultMessage().getBytes();
@@ -139,7 +138,7 @@ final class LoginHandler extends EntryHandler {
 							email) {
 						
 						@Override
-						public ResultHolder executeWhenVerificationSuccesfull() {
+						public EntryResult executeWhenVerificationSuccesfull() {
 							try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
 								return conn.loginUsingPassword(clientInfo.getChannel().remoteAddress().getAddress(), email, password);
 							}

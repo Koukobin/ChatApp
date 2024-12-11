@@ -31,12 +31,13 @@ public enum ClientCommandResultType {
     DOWNLOAD_IMAGE(3),
     GET_DISPLAY_NAME(4),
     FETCH_ACCOUNT_ICON(5),
-    GET_CLIENT_ID(6),
-    GET_CHAT_REQUESTS(7),
-    GET_CHAT_SESSIONS(8),
-    GET_WRITTEN_TEXT(9),
-    GET_DONATION_PAGE(10),
-    GET_SOURCE_CODE_PAGE(11);
+    SET_ACCOUNT_ICON(6),
+    GET_CLIENT_ID(7),
+    GET_CHAT_REQUESTS(8),
+    GET_CHAT_SESSIONS(9),
+    GET_WRITTEN_TEXT(10),
+    GET_DONATION_PAGE(12),
+    GET_SOURCE_CODE_PAGE(13);
 	
 	private static final HashMap<Integer, ClientCommandResultType> values;
 

@@ -70,6 +70,22 @@ Future<void> showExceptionDialog(BuildContext context, String exception) async {
   );
 }
 
+Future<T> showLoadingDialog<T>(BuildContext context, Future<T> executeWhileLoading) async {
+  showDialog(
+    context: context,
+    barrierDismissible: false, // Prevent dismissal by tapping outside
+    builder: (BuildContext context) {
+      return Center(
+        child: CircularProgressIndicator(),
+      );
+    },
+  );
+
+  T result = await executeWhileLoading;
+  Navigator.of(context).pop();
+  return result;
+}
+
 Future<void> showErrorDialog(BuildContext context, String message) async {
   await showSimpleAlertDialog(
     context: context,
@@ -144,7 +160,7 @@ Future<String?> showInputDialog({
     builder: (BuildContext context) {
       final appColors = Theme.of(context).extension<AppColors>()!;
       return AlertDialog(
-        backgroundColor: appColors.tertiaryColor,
+        backgroundColor: appColors.tertiaryColor.withOpacity(0.9),
         title: Text(
           title,
           style: TextStyle(

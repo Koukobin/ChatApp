@@ -25,22 +25,36 @@ import 'client/client.dart';
 import 'constants/app_constants.dart';
 import 'main.dart';
 import 'theme/app_theme.dart';
+import 'util/notifications_util.dart';
 import 'util/top_app_bar_utils.dart';
 
 String? serverUrl;
 
 class ChooseServer extends StatefulWidget {
 
-  Set<ServerInfo> cachedServerUrls;
+  final Set<ServerInfo> cachedServerUrls;
 
-  ChooseServer(this.cachedServerUrls, {super.key});
+  ChooseServer(this.cachedServerUrls, {super.key}) {
+    if (cachedServerUrls.isEmpty) {
+      return;
+    }
+
+    serverUrl = cachedServerUrls.first.serverUrl.toString();
+  }
 
   @override
   State<ChooseServer> createState() => ChooseServerState();
 }
 
 class ChooseServerState extends State<ChooseServer> {
-  bool _checkServerCertificate = true;
+  Set<ServerInfo> cachedServerUrls = {};
+  bool _checkServerCertificate = false;
+
+  @override
+  void initState() {
+    super.initState();
+    cachedServerUrls = widget.cachedServerUrls;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +80,7 @@ class ChooseServerState extends State<ChooseServer> {
               children: [
                 // Dropdown Menu for Server URLs
                 DropdownMenu(
-                  [for (final item in widget.cachedServerUrls) item.toString()],
+                  [for (final item in cachedServerUrls) item.toString()],
                 ),
                 const SizedBox(height: 20),
                 // Add Server and Certificate Options
@@ -78,7 +92,7 @@ class ChooseServerState extends State<ChooseServer> {
                         String? url = await showInputDialog(
                           context: context,
                           title: "Enter Server URL",
-                          hintText: "https://example.com",
+                          hintText: "example.com",
                         );
                         if (url == null) return;
 
@@ -92,7 +106,7 @@ class ChooseServerState extends State<ChooseServer> {
                         }
 
                         setState(() {
-                          widget.cachedServerUrls = widget.cachedServerUrls..add(serverInfo);
+                          cachedServerUrls = cachedServerUrls..add(serverInfo);
                         });
                         Database.createDBConnection().insertServerInfo(serverInfo);
           
@@ -132,24 +146,29 @@ class ChooseServerState extends State<ChooseServer> {
                 ElevatedButton(
                   onPressed: () async {
                     Uri url = Uri.parse(serverUrl!);
-                    var remoteAddress = InternetAddress(url.host);
-                    var remotePort = url.port;
-            
-                    bool isLoggedIn;
+
+                    DBConnection conn = Database.createDBConnection();
+                    conn.updateServerUrlLastUsed(ServerInfo(url));
+                    UserInformation userInfo = await conn.getUserInformation(ServerInfo(url));
+
+                    bool isIPVerified;
                     try {
-                      isLoggedIn = await Client.getInstance().initialize(
-                        remoteAddress,
-                        remotePort,
+                      isIPVerified = await Client.getInstance().initialize(
+                        url,
                         _checkServerCertificate
                             ? ServerCertificateVerification.verify
                             : ServerCertificateVerification.ignore,
                       );
-                    } on TlsException catch (e) {
-                      showExceptionDialog(context, e.message);
-                      return;
+                    } catch (e) {
+                      if (e is TlsException || e is SocketException) {
+                        showExceptionDialog(context, (e as dynamic).message);
+                        return;
+                      }
+                      
+                      rethrow;
                     }
-            
-                    if (!isLoggedIn) {
+
+                    if (!isIPVerified || userInfo.isNotValid()) {
                       // Navigate to the Registration interface
                       Navigator.pushAndRemoveUntil(
                         context,
@@ -158,6 +177,20 @@ class ChooseServerState extends State<ChooseServer> {
                         (route) => false, // Removes all previous routes.
                       );
                     } else {
+                      bool success = await showLoadingDialog(
+                          context, Client.getInstance().attemptShallowLogin(userInfo));
+                      if (!success) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => RegistrationInterface()),
+                          (route) => false, // Removes all previous routes.
+                        );
+                        return;
+                      }
+                      Client.getInstance().startMessageHandler();
+                      await showLoadingDialog(
+                          context, Client.getInstance().fetchUserInformation());
                       // Navigate to the main interface
                       Navigator.pushAndRemoveUntil(
                         context,
@@ -206,7 +239,7 @@ class _DropdownMenuState extends State<DropdownMenu> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         decoration: BoxDecoration(
-          color: appColors.secondaryColor.withOpacity(0.1), // Soft background for dropdown
+          color: appColors.secondaryColor.withOpacity(0.1),
           borderRadius: borderRadius,
           border: Border.all(color: appColors.primaryColor, width: 1.5),
         ),
@@ -215,12 +248,12 @@ class _DropdownMenuState extends State<DropdownMenu> {
             hint: Text(
               "Choose server URL",
               style: TextStyle(
-                color: appColors.secondaryColor,
+                color: appColors.primaryColor,
                 fontWeight: FontWeight.w500,
               ),
             ),
             value: serverUrl,
-            isExpanded: true, // Ensures the dropdown expands to full width
+            isExpanded: true,
             onChanged: (String? selectedUrl) {
               setState(() {
                 serverUrl = selectedUrl!;

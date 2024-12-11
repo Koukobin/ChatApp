@@ -26,19 +26,26 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.ResourceBundle;
+import java.util.concurrent.CompletableFuture;
 
 import com.jfoenix.controls.JFXButton;
 
 import github.koukobin.ermis.client.main.java.context_menu.MyContextMenuItem;
 import github.koukobin.ermis.client.main.java.info.Icons;
+import github.koukobin.ermis.client.main.java.service.client.ChatSession;
 import github.koukobin.ermis.client.main.java.service.client.io_client.Client;
 import github.koukobin.ermis.client.main.java.util.ContextMenusUtil;
 import github.koukobin.ermis.client.main.java.util.NotificationsUtil;
+import github.koukobin.ermis.client.main.java.util.Threads;
 import github.koukobin.ermis.client.main.java.util.dialogs.MFXDialogsUtil;
 import github.koukobin.ermis.common.message_types.ContentType;
 import github.koukobin.ermis.common.message_types.Message;
+import io.github.palexdev.materialfx.controls.MFXProgressSpinner;
 import io.github.palexdev.materialfx.controls.MFXScrollPane;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -54,8 +61,13 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
+import javafx.util.Duration;
 
 /**
  * @author Ilias Koukovinis
@@ -72,10 +84,12 @@ public class MessagingController extends GeneralController {
 	@FXML
 	private TextField inputField;
 	
+	private Queue<Message> pendingMessages = new ArrayDeque<>();
+	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 
-		// This basically retrieves more messages from the conversation when it reaches the top of the conversation
+		// This basically retrieves more messages from the conversation once user scrolls to the top
 		chatBoxScrollpane.setOnScroll(new EventHandler<ScrollEvent>() {
 
 			private Instant lastTimeRequrestedMoreMessages = Instant.EPOCH;
@@ -140,12 +154,19 @@ public class MessagingController extends GeneralController {
 		// In case that this message is the user's, the message label differs
 		if (clientID == Client.getClientID()) {
 			messageLabel.setId("userMessageLabel");
-			hbox.setAlignment(Pos.BOTTOM_RIGHT);
+			hbox.setAlignment(Pos.CENTER_RIGHT);
 			hbox.getChildren().add(messageLabel);
+			
+			// Small gap between messageLabel and timeLabel
+			Region region = new Region();
+			region.setPrefWidth(10);
+			hbox.getChildren().add(region);
+			// Small gap between messageLabel and timeLabel
+			
 			hbox.getChildren().add(timeLabel);
 		} else {
 			messageLabel.setId("otherMessageLabel");
-			hbox.setAlignment(Pos.BOTTOM_LEFT);
+			hbox.setAlignment(Pos.CENTER_LEFT);
 			hbox.getChildren().add(timeLabel);
 			hbox.getChildren().add(messageLabel);
 		}
@@ -169,7 +190,7 @@ public class MessagingController extends GeneralController {
 			clipboard.setContent(clipboardContent);
 		});
 		
-		ContextMenusUtil.installContextMenu(messageLabel, delete, copy);
+		ContextMenusUtil.installContextMenu(messageLabel, Duration.millis(200), delete, copy);
 		
 		switch(contentType) {
 		case TEXT -> {
@@ -255,21 +276,64 @@ public class MessagingController extends GeneralController {
 	
 	public void printToMessageArea(Message msg, int chatSessionIndex, int activeChatSessionIndex) {
 
-		if (chatSessionIndex == activeChatSessionIndex) {
-			
-			boolean isUserReadingThroughOldMessages = !chatBoxScrollpane.vvalueProperty().isEqualTo(chatBoxScrollpane.vmaxProperty()).get();
-			
-			printDateLabelIfNeeded(msg);
-			messagingBox.getChildren().add(createClientMessage(msg));
-
-			// Scroll to the bottom unless user is reading through old messages
-			if (isUserReadingThroughOldMessages) {
-				return;
-			}
-
-			setVvalue(chatBoxScrollpane.getVmax());
+		if (chatSessionIndex != activeChatSessionIndex) {
+			return;
 		}
 		
+		boolean isUserReadingThroughOldMessages = !chatBoxScrollpane.vvalueProperty().isEqualTo(chatBoxScrollpane.vmaxProperty()).get();
+		
+		printDateLabelIfNeeded(msg);
+		if (msg.getMessageID() == -1 /* Message is pending */) {
+
+	        MFXProgressSpinner spinner = new MFXProgressSpinner();
+	        spinner.setMinHeight(31);
+	        spinner.setMinWidth(31);
+	        spinner.setProgress(0.0);
+
+	        // HBox setup
+	        HBox hbox = new HBox();
+	        hbox.setPadding(new Insets(5));
+	        hbox.setAlignment(Pos.BOTTOM_CENTER);
+	        hbox.getChildren().add(spinner);
+
+	        // Overlay setup
+	        Rectangle overlay = new Rectangle();
+	        overlay.setFill(Color.BLACK);
+	        overlay.setOpacity(0.3); // Semi-transparent overlay
+	        overlay.widthProperty().bind(hbox.widthProperty());
+	        overlay.heightProperty().bind(hbox.heightProperty());
+
+	        HBox messageLabel = createClientMessage(msg);
+	        
+	        // StackPane to combine overlay and spinner
+	        StackPane stackPane = new StackPane();
+	        stackPane.getChildren().addAll(overlay, hbox, messageLabel);
+	        StackPane.setAlignment(hbox, Pos.CENTER);
+	        StackPane.setAlignment(messageLabel, Pos.CENTER_RIGHT);
+
+	        // Update spinner progress
+	        CompletableFuture.runAsync(() -> {
+	            while (spinner.getProgress() < 0.99) {
+	                try {
+	                    Thread.sleep(25);
+	                } catch (InterruptedException e) {
+	                    e.printStackTrace();
+	                }
+	                final double progress = spinner.getProgress() + 0.01;
+	                spinner.setProgress(progress);
+	            }
+	        });
+	        messagingBox.getChildren().add(stackPane);
+		} else {
+			messagingBox.getChildren().add(createClientMessage(msg));
+		}
+
+		// Scroll to the bottom unless user is reading through old messages
+		if (isUserReadingThroughOldMessages) {
+			return;
+		}
+
+		setVvalue(chatBoxScrollpane.getVmax());
 	}
 	
 	public void notifyUser(Message message, int chatSessionIndex, int activeChatSessionIndex) {
@@ -321,6 +385,7 @@ public class MessagingController extends GeneralController {
 
 		try {
 			Client.sendFile(file, RootReferences.getChatsController().getActiveChatSessionIndex());
+			addPendingMessage(null, file.getName().getBytes(), ContentType.FILE);
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
@@ -353,11 +418,41 @@ public class MessagingController extends GeneralController {
 
 		try {
 			Client.sendMessageToClient(message, RootReferences.getChatsController().getActiveChatSessionIndex());
+			addPendingMessage(message.getBytes(), null, ContentType.TEXT);
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
 
 		inputField.setText("");
+	}
+	
+	void addPendingMessage(byte[] text, byte[] fileName, ContentType contentType) {
+
+		Message pendingMessage = new Message(Client.getDisplayName(),
+				Client.getClientID(), -1,
+				RootReferences.getChatsController().getActiveChatSession().getChatSessionID(),
+				text,
+				fileName,
+				System.currentTimeMillis(),
+				contentType);
+
+		pendingMessages.add(pendingMessage);
+		printToMessageArea(pendingMessages.peek(),
+				RootReferences.getChatsController().getActiveChatSessionIndex(),
+				RootReferences.getChatsController().getActiveChatSessionIndex());
+	}
+
+	public void succesfullySentMessage(ChatSession chatSession, int messageID) {
+		Message message = pendingMessages.peek();
+		message.setMessageID(messageID);
+		chatSession.getMessages().add(message);
+		Threads.delay(50, () -> {
+			Platform.runLater(() -> {
+				messagingBox.getChildren().remove(messagingBox.getChildren().size() - 1);
+				printToMessageArea(message, messageID, messageID);
+			});
+		});
+		pendingMessages.poll();
 	}
 
 }

@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 import java.util.Scanner;
 
@@ -35,11 +36,15 @@ public final class FileEditor {
 	public static String readFile(String filePath) throws FileNotFoundException {
 		return readFile(new File(filePath));
 	}
-
+	
 	public static String readFile(File file) throws FileNotFoundException {
+		return readFile(new FileInputStream(file));
+	}
+
+	public static String readFile(InputStream is) {
 
 		StringBuilder fileContentStringBuilder = new StringBuilder();
-		try (Scanner scanner = new Scanner(file)) {
+		try (Scanner scanner = new Scanner(is)) {
 			while (scanner.hasNextLine()) {
 				fileContentStringBuilder.append(scanner.nextLine() + "\n");
 			}
@@ -74,4 +79,5 @@ public final class FileEditor {
 			props.store(writer, null);
 		}
 	}
+	
 }

@@ -41,10 +41,10 @@ public class ActiveChatSessions {
 	}
 
 	public static void addMember(int chatSessionID, ClientInfo member) {
-		chatSessionIDSToActiveChatSessions.get(chatSessionID).getActiveMembers().add(member);
+		chatSessionIDSToActiveChatSessions.get(chatSessionID).getActiveChannels().add(member.getChannel());
 	}
 	
 	public static void removeMember(int chatSessionID, ClientInfo member) {
-		chatSessionIDSToActiveChatSessions.get(chatSessionID).getActiveMembers().remove(member);
+		chatSessionIDSToActiveChatSessions.get(chatSessionID).getActiveChannels().remove(member.getChannel());
 	}
 }

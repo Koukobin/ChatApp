@@ -97,7 +97,7 @@ public class Main extends Application {
 	    			loadingScreen.showAndWait();
 	    			
 	    			ClientInitializationException cie = clientInitialization.get();
-					
+	    			
 					if (cie != null) {
 						throw cie;
 					}

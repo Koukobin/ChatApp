@@ -23,16 +23,16 @@ import github.koukobin.ermis.common.message_types.ContentType;
 
 /**
  * 
- * This class basically has the database content type integers hardcoded so they
+ * This class essentially has the database content type integers hardcoded so they
  * never change by accident
  * 
  * @author Ilias Koukovinis
  */
 final class ContentTypeConverter {
 
-	private static final int TEXT = 117;
-	private static final int FILE = 64;
-	private static final int PHOTO = 343;
+	private static final int TEXT = 117; // WARNING: DO NOT CHANGE
+	private static final int FILE = 64; // WARNING: DO NOT CHANGE
+	private static final int PHOTO = 343; // WARNING: DO NOT CHANGE
 	
 	
 	private static final Map<ContentType, Integer> contentTypesToDatabaseInts = new EnumMap<>(ContentType.class);

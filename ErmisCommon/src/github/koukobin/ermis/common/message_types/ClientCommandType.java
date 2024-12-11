@@ -49,10 +49,11 @@ public enum ClientCommandType {
 	FETCH_WRITTEN_TEXT(CommandLevel.HEAVY, 14),
 	DOWNLOAD_FILE(CommandLevel.HEAVY, 15),
 	DOWNLOAD_IMAGE(CommandLevel.HEAVY, 16),
+	START_VOICE_CALL(CommandLevel.HEAVY, 17),
 
 	// External Pages
-	REQUEST_DONATION_PAGE(CommandLevel.LIGHT, 17),
-	REQUEST_SOURCE_CODE_PAGE(CommandLevel.LIGHT, 18);
+	REQUEST_DONATION_PAGE(CommandLevel.LIGHT, 18),
+	REQUEST_SOURCE_CODE_PAGE(CommandLevel.LIGHT, 19);
 
 	
 	/*

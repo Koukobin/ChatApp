@@ -23,27 +23,12 @@ import 'package:ermis_client/util/dialogs_utils.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
 
 typedef FileCallBack = void Function(String fileName, Uint8List fileContent);
-
-// Future<void> saveFileToGallery(Uint8List fileData, String fileName) async {
-//   {
-//     final hasAccess = await Gal.hasAccess();
-//     await Gal.requestAccess();
-//   }
-
-//   {
-//     final hasAccess = await Gal.hasAccess(toAlbum: true);
-//     await Gal.requestAccess(toAlbum: true);
-//   }
-
-//   await ImageGallerySaver.saveImage(fileData,
-//       quality: 100, name: "$fileName-${DateTime.now().toIso8601String()}");
-// }
 
 class MyCamera {
 
@@ -67,42 +52,25 @@ class MyCamera {
       return pickedFile;
     }
     return null;
-
-    // XFile? photo;
-
-    // try {
-    //   CameraController controller = await initializeCamera();
-    //   photo = await controller.takePicture();
-    //   await controller.dispose();
-    // } catch (e) {
-    //   if (kDebugMode) {
-    //     debugPrint("Error capturing photo: $e");
-    //   }
-    // }
-
-    // return photo;
   }
 
 }
 
 
-Future<void> saveFileToDownloads(BuildContext context, Uint8List fileData, String fileName) async {
-  bool isSuccessful = await requestPermissions(context);
+Future<String?> saveFileToDownloads(String fileName, Uint8List fileData) async {
+  bool isSuccessful = await requestPermissions();
 
   if (!isSuccessful) {
-    return;
+    return null;
   }
 
-  // Attempt to retrieve the primary downloads folder of OS.
-  // If this fails retrieve the application's specific downloads folder.
-  Directory directory = Directory('/storage/emulated/0/Download');
-
-  if (!await directory.exists()) {
-    directory = (await getDownloadsDirectory())!;
-  }
-
-  String filePath = "${directory.path}/$fileName";
-  writeFile(fileData, filePath);
+  final params = SaveFileDialogParams(
+    fileName: fileName,
+    data: fileData,
+  );
+  
+  final filePath = await FlutterFileDialog.saveFile(params: params);
+  return filePath;
 }
 
 Future<void> writeFile(Uint8List fileData, String filePath) async {
@@ -116,12 +84,12 @@ Future<void> writeFile(Uint8List fileData, String filePath) async {
   await file.writeAsBytes(fileData, mode: FileMode.write, flush: true);
 }
 
-Future<bool> requestPermissions(BuildContext context) async {
+Future<bool> requestPermissions({BuildContext? context}) async {
 
   DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
   AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
 
-  if (kDebugMode) {
+  if (kDebugMode && context != null) {
     showSimpleAlertDialog(
         context: context,
         title: "Debug Mode",
@@ -180,7 +148,7 @@ Future<bool> requestPermissions(BuildContext context) async {
 }
 
 Future<void> attachSingleFile(BuildContext context, FileCallBack onFinished) async {
-  bool isSuccessful = await requestPermissions(context);
+  bool isSuccessful = await requestPermissions(context: context);
 
   if (!isSuccessful) {
     return;

@@ -51,6 +51,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
+import javafx.util.Duration;
 
 /**
  * @author Ilias Koukovinis
@@ -114,7 +115,7 @@ public class ChatsController extends GeneralController {
 				}
 			});
 
-			ContextMenusUtil.installContextMenu(this, delete);
+			ContextMenusUtil.installContextMenu(this, Duration.seconds(2), delete);
 		}
 
 		@Override
@@ -166,9 +167,9 @@ public class ChatsController extends GeneralController {
 
 	@FXML
 	public void searchChatSession(KeyEvent event) {
-		
+
 		String search = searchForChatSessionsTextField.getText();
-		
+
 		List<ChatSession> items = chatSessionsListView.getItems();
 
 		for (int i = 0; i < items.size(); i++) {
@@ -178,11 +179,11 @@ public class ChatsController extends GeneralController {
 				items.set(i - 1, temp);
 			}
 		}
-		
+
 		// Ensure the list view refreshes
 		chatSessionsListView.refresh();
 	}
-	
+
 	@FXML
 	public void refreshChatSessionsListView(ActionEvent event) {
 		try {
@@ -226,7 +227,7 @@ public class ChatsController extends GeneralController {
 	}
 
 	public int getActiveChatSessionIndex() {
-		// If no
+		// Check wether there is a currently selected cell or not
 		if (currentlySelectedCell != null) {
 			return chatSessionsListView.getSelectionModel().getSelectedIndex();
 		}

@@ -15,6 +15,12 @@
  */
 package github.koukobin.ermis.server.main.java.server.codec;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.github.luben.zstd.Zstd;
+import com.google.common.base.Throwables;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
@@ -23,12 +29,38 @@ import io.netty.handler.codec.MessageToByteEncoder;
  * @author Ilias Koukovinis
  *
  */
-public class Encoder extends MessageToByteEncoder<ByteBuf> {
+public final class Encoder extends MessageToByteEncoder<ByteBuf> {
+	
+	private static final Logger logger = LogManager.getLogger("server");
+	
+    private static final int compressionLevel = 4; // 1 (fastest) to 22 (highest compression)
 
 	@Override
 	protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
-		out.writeInt(msg.readableBytes());
-		out.writeBytes(msg);
+		int readableBytes = msg.readableBytes();
+
+		if (readableBytes < 262144 /* 256 KB */) {
+			out.writeInt(readableBytes);
+			out.writeBytes(msg);
+			return;
+		}
+
+		byte[] inputData = new byte[readableBytes];
+        msg.readBytes(inputData);
+
+        byte[] compressedData = compress(inputData);
+
+        out.writeInt(compressedData.length);
+        out.writeBytes(compressedData);
+	}
+	
+	private static byte[] compress(byte[] data) {
+	    try {
+	        return Zstd.compress(data, compressionLevel);
+	    } catch (Exception e) {
+	    	logger.debug(Throwables.getStackTraceAsString(e));
+	    }
+		return data;
 	}
 	
     @Override

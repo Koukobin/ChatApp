@@ -16,9 +16,23 @@
 
 import 'dart:typed_data';
 import 'package:synchronized/synchronized.dart';
+import 'package:zstandard/zstandard.dart';
 import 'byte_buf.dart';
 
+bool _isZstdCompressed(Uint8List data) {
+  if (data.length < 4) {
+    return false;
+  }
+
+  //  Signature of ZTSD decompression
+  return data[0] == 0x28 &&
+      data[1] == 0xB5 &&
+      data[2] == 0x2F &&
+      data[3] == 0xFD;
+}
+
 class ByteBufInputStream {
+  static final zstandard = Zstandard();
   Stream<Uint8List> broadcastStream;
 
   ByteBufInputStream({required this.broadcastStream});
@@ -32,16 +46,22 @@ class ByteBufInputStream {
   static final _lock = Lock();
 
   static Future<ByteBuf> decodeSimple(Uint8List data) {
-    return _lock.synchronized(() {
+    return _lock.synchronized(() async {
       buffer.writeBytes(Uint8List.fromList(data));
 
-      // Check if we have received enough data for the message
       buffer.markReaderIndex();
 
       int messageLength = buffer.readInt32();
 
+      // Check if we have received enough data for the message
       if (buffer.readableBytes >= messageLength) {
         Uint8List message = buffer.readBytes(messageLength);
+
+        if (_isZstdCompressed(message)) {
+          message = (await zstandard.decompress(message))!;
+          messageLength = message.length;
+        }
+
         buffer.removeLeftOverData();
         return ByteBuf.wrap(message);
       }

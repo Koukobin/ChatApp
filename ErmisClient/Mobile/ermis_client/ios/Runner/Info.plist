@@ -59,5 +59,10 @@
 		<string>We need access to save documents to your files.</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>UIBackgroundModes</key>
+		<array>
+    		<string>fetch</string>
+    		<string>remote-notification</string>
+		</array>
 	</dict>
 </plist>
