@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import github.koukobin.ermis.common.results.ResultHolder;
+import github.koukobin.ermis.common.util.EnumIntConverter;
 
 /**
  * 
@@ -51,9 +52,31 @@ public final class CreateAccountInfo {
 		}
 		
 		public static Credential fromId(int id) {
-			return valuesById.get(id);
+			return EnumIntConverter.fromId(valuesById, id);
 		}
 	}
+	
+    public enum Action {
+        ADD_DEVICE_INFO(1);
+
+        private static final Map<Integer, Action> valuesById = new HashMap<>();
+        
+        static {
+            for (Action action : Action.values()) {
+                valuesById.put(action.id, action);
+            }
+        }
+
+        public final int id;
+
+        Action(int id) {
+            this.id = id;
+        }
+
+        public static Action fromId(int id) {
+            return EnumIntConverter.fromId(valuesById, id);
+        }
+    }
 	
 	public enum AuthenticationStage {
         CREDENTIALS_VALIDATION(1), CREATE_ACCOUNT(2);
@@ -72,7 +95,7 @@ public final class CreateAccountInfo {
         }
 
         public static AuthenticationStage fromId(int id) {
-            return valuesById.get(id);
+            return EnumIntConverter.fromId(valuesById, id);
         }
 	}
 
@@ -101,7 +124,7 @@ public final class CreateAccountInfo {
 			}
 
 			public static Result fromId(int id) {
-				return valuesById.get(id);
+				return EnumIntConverter.fromId(valuesById, id);
 			}
 		}
 	}
@@ -129,7 +152,7 @@ public final class CreateAccountInfo {
             }
 
             public static Result fromId(int id) {
-                return valuesById.get(id);
+                return EnumIntConverter.fromId(valuesById, id);
             }
         }
 	}

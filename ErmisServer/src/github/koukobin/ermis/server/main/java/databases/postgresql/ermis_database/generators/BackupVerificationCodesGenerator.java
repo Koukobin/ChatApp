@@ -28,17 +28,15 @@ import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_databas
 public final class BackupVerificationCodesGenerator {
 
 	private static final SecureRandom secureRandom = new SecureRandom();
-	
-	private BackupVerificationCodesGenerator() {}
+
+	private BackupVerificationCodesGenerator() {
+	}
 	
 	public static String[] generateHashedBackupVerificationCodes(String salt) {
-		
 		String[] hashedBackupVerificationCodes = new String[BackupVerificationCodes.AMOUNT_OF_CODES];
-		
-		for (int i = 0; i < hashedBackupVerificationCodes.length; i++) {
 
+		for (int i = 0; i < hashedBackupVerificationCodes.length; i++) {
 			byte[] backupVerificationCodesByte = new byte[BackupVerificationCodes.AMOUNT_OF_CHARACTERS];
-			
 			secureRandom.nextBytes(backupVerificationCodesByte);
 
 			SimpleHash hash = HashUtil.createHash(
@@ -48,7 +46,7 @@ public final class BackupVerificationCodesGenerator {
 
 			hashedBackupVerificationCodes[i] = hash.getHashString();
 		}
-		
+
 		return hashedBackupVerificationCodes;
 	}
 }

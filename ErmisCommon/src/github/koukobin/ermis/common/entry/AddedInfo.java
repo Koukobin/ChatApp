@@ -18,28 +18,31 @@ package github.koukobin.ermis.common.entry;
 import java.util.HashMap;
 import java.util.Map;
 
+import github.koukobin.ermis.common.util.EnumIntConverter;
+
 /**
  * @author Ilias Koukovinis
  *
  */
 public enum AddedInfo {
-    PASSWORD_HASH(1);
+	PASSWORD_HASH(1),
+	BACKUP_VERIFICATION_CODES(2);
 
-    private static final Map<Integer, AddedInfo> valuesById = new HashMap<>();
-    
-    static {
-        for (AddedInfo entryType : AddedInfo.values()) {
-            valuesById.put(entryType.id, entryType);
-        }
-    }
+	private static final Map<Integer, AddedInfo> valuesById = new HashMap<>();
 
-    public final int id;
+	static {
+		for (AddedInfo entryType : AddedInfo.values()) {
+			valuesById.put(entryType.id, entryType);
+		}
+	}
 
-    AddedInfo(int id) {
-        this.id = id;
-    }
+	public final int id;
 
-    public static AddedInfo fromId(int id) {
-        return valuesById.get(id);
-    }
+	AddedInfo(int id) {
+		this.id = id;
+	}
+
+	public static AddedInfo fromId(int id) {
+		return EnumIntConverter.fromId(valuesById, id);
+	}
 }

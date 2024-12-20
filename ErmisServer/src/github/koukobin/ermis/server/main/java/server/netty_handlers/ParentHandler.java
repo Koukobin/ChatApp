@@ -79,7 +79,6 @@ abstract sealed class ParentHandler extends SimpleChannelInboundHandler<ByteBuf>
 				
 				// Block incoming messages for a certain time interval
 				ctx.executor().schedule(() -> isBanned = false, blockDurationSeconds, TimeUnit.SECONDS);
-
 				MessageByteBufCreator.sendMessageInfo(ctx,
 						"You have exceeded the maximum number of requests you can make per second. "
 						+ "Consequently, you have been banned from any kind of interaction with the server for a short time interval.");

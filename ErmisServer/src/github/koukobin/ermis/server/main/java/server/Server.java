@@ -91,7 +91,7 @@ public final class Server {
 		logger = LogManager.getLogger("server");
 		InternalLoggerFactory.setDefaultFactory(Log4J2LoggerFactory.INSTANCE);
 	}
-	
+
 	static {
 		try {
 			
@@ -107,6 +107,7 @@ public final class Server {
 			
 			isRunning = new AtomicBoolean(false);
 		} catch (Exception e) {
+			logger.fatal(Throwables.getStackTraceAsString(e));
 			throw new RuntimeException(e);
 		}
 	}
@@ -146,6 +147,7 @@ public final class Server {
 					socketAddress.getHostName());
 			logger.info("Waiting for new connections...");
 		}  catch (Exception e) {
+			logger.fatal(Throwables.getStackTraceAsString(e));
 			throw new RuntimeException("Failed to start TCP server", e);
 		}
 		
@@ -180,6 +182,7 @@ public final class Server {
 										SelectedListenerFailureBehavior.ACCEPT, ApplicationProtocolNames.HTTP_1_1))
 						.build();
 			} catch (Exception e) {
+				logger.fatal(Throwables.getStackTraceAsString(e));
 				throw new RuntimeException(e);
 			}
 		}
@@ -237,6 +240,7 @@ public final class Server {
 				logger.debug(Throwables.getStackTraceAsString(cause));
 			}
 		}
+		
 	}
 
 	public static void stop() {

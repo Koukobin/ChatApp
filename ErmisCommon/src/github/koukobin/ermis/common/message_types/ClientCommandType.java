@@ -28,32 +28,36 @@ import github.koukobin.ermis.common.util.EnumIntConverter;
 public enum ClientCommandType {
 
 	// Account Management 
-	CHANGE_USERNAME(CommandLevel.HEAVY, 0),
-	CHANGE_PASSWORD(CommandLevel.HEAVY, 1),
-	ADD_ACCOUNT_ICON(CommandLevel.HEAVY, 2),
-	LOGOUT(CommandLevel.LIGHT, 3),
+	CHANGE_USERNAME(CommandLevel.HEAVY, 100),
+	CHANGE_PASSWORD(CommandLevel.HEAVY, 101),
+	ADD_ACCOUNT_ICON(CommandLevel.HEAVY, 102),
+	LOGOUT_THIS_DEVICE(CommandLevel.HEAVY, 103),
+	LOGOUT_OTHER_DEVICE(CommandLevel.HEAVY, 104),
+	LOGOUT_ALL_DEVICES(CommandLevel.HEAVY, 105),
+	DELETE_ACCOUNT(CommandLevel.HEAVY, 106),
 
 	// User Information Requests
-	FETCH_USERNAME(CommandLevel.LIGHT, 4),
-	FETCH_CLIENT_ID(CommandLevel.LIGHT, 5),
-	FETCH_ACCOUNT_ICON(CommandLevel.HEAVY, 6),
+	FETCH_USERNAME(CommandLevel.LIGHT, 200),
+	FETCH_CLIENT_ID(CommandLevel.LIGHT, 201),
+	FETCH_USER_DEVICES(CommandLevel.HEAVY, 202),
+	FETCH_ACCOUNT_ICON(CommandLevel.HEAVY, 203),
 
 	// Chat Management
-	FETCH_CHAT_REQUESTS(CommandLevel.LIGHT, 7),
-	FETCH_CHAT_SESSIONS(CommandLevel.LIGHT, 8),
-	SEND_CHAT_REQUEST(CommandLevel.HEAVY, 9),
-	ACCEPT_CHAT_REQUEST(CommandLevel.HEAVY, 10),
-	DECLINE_CHAT_REQUEST(CommandLevel.HEAVY, 11),
-	DELETE_CHAT_SESSION(CommandLevel.HEAVY, 12),
-	DELETE_CHAT_MESSAGE(CommandLevel.HEAVY, 13),
-	FETCH_WRITTEN_TEXT(CommandLevel.HEAVY, 14),
-	DOWNLOAD_FILE(CommandLevel.HEAVY, 15),
-	DOWNLOAD_IMAGE(CommandLevel.HEAVY, 16),
-	START_VOICE_CALL(CommandLevel.HEAVY, 17),
+	FETCH_CHAT_REQUESTS(CommandLevel.LIGHT, 300),
+	FETCH_CHAT_SESSIONS(CommandLevel.LIGHT, 301),
+	SEND_CHAT_REQUEST(CommandLevel.HEAVY, 302),
+	ACCEPT_CHAT_REQUEST(CommandLevel.HEAVY, 303),
+	DECLINE_CHAT_REQUEST(CommandLevel.HEAVY, 304),
+	DELETE_CHAT_SESSION(CommandLevel.HEAVY, 305),
+	DELETE_CHAT_MESSAGE(CommandLevel.HEAVY, 306),
+	FETCH_WRITTEN_TEXT(CommandLevel.HEAVY, 307),
+	DOWNLOAD_FILE(CommandLevel.HEAVY, 308),
+	DOWNLOAD_IMAGE(CommandLevel.HEAVY, 309),
+	START_VOICE_CALL(CommandLevel.HEAVY, 310),
 
 	// External Pages
-	REQUEST_DONATION_PAGE(CommandLevel.LIGHT, 18),
-	REQUEST_SOURCE_CODE_PAGE(CommandLevel.LIGHT, 19);
+	REQUEST_DONATION_PAGE(CommandLevel.LIGHT, 400),
+	REQUEST_SOURCE_CODE_PAGE(CommandLevel.LIGHT, 401);
 
 	
 	/*

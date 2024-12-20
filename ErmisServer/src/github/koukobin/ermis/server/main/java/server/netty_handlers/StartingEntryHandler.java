@@ -48,12 +48,6 @@ public final class StartingEntryHandler extends ParentHandler {
 	@Override
 	public void handlerAdded(ChannelHandlerContext ctx) {
 		ctx.channel().writeAndFlush(Unpooled.copyBoolean(isIPVerified));
-//		// If the user is logged in, remove this handler and start the messaging
-//		// handler. Otherwise, wait for the user to send the entry type,
-//		// handled in channelRead1.
-//		if (isIPVerified) {
-//			EntryHandler.login(ctx, clientInfo);
-//		}
 	}
 
 	@Override
@@ -86,6 +80,7 @@ public final class StartingEntryHandler extends ParentHandler {
 			ctx.pipeline().replace(this, LoginHandler.class.getName(), new LoginHandler(clientInfo));
 		}
 		case CREATE_ACCOUNT -> {
+			logger.debug("Moving into account creation!");
 			ctx.pipeline().replace(this, CreateAccountHandler.class.getName(), new CreateAccountHandler(clientInfo));
 		}
 		default -> logger.debug("Unknown registration type");

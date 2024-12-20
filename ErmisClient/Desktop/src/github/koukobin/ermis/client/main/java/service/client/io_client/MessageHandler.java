@@ -284,7 +284,7 @@ public abstract class MessageHandler implements AutoCloseable {
 			
 			ByteBuf payload = Unpooled.buffer();
 			payload.writeInt(ClientMessageType.COMMAND.id);
-			payload.writeInt(ClientCommandType.LOGOUT.id);
+			payload.writeInt(ClientCommandType.LOGOUT_THIS_DEVICE.id);
 			
 			out.write(payload);
 		}

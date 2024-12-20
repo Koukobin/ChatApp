@@ -16,19 +16,19 @@
 package github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.generators;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.google.common.base.Throwables;
 
 /**
  * @author Ilias Koukovinis
@@ -38,10 +38,10 @@ public final class ChatSessionIDGenerator {
 
 	private static final Logger logger = LogManager.getLogger("database");
 
-	private static final Object lockObjectForGeneratingOrRetrievingChatSessionIDS = new Object();
+	private static final Object lockObject = new Object();
 	
-	private static final int AMOUNT_OF_CHAT_SESSION_IDS_TO_GENERATE_IN_EACH_GENERATION = 10_000;
-	private static final Deque<Integer> chatSessionIDS = new ArrayDeque<>();
+	private static final int IDS_PER_GENERATION = 5_000;
+	private static final Deque<Integer> chatSessionIDS = new ConcurrentLinkedDeque<>();
 	
 	private ChatSessionIDGenerator() {}
 	
@@ -50,58 +50,69 @@ public final class ChatSessionIDGenerator {
 	 * @param conn Connection to ermis database
 	 */
 	public static void generateAvailableChatSessionIDS(Connection conn) {
-		try (Statement stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
-			
-			ResultSet rs = stmt.executeQuery("SELECT chat_session_id FROM chat_sessions;");
-
-			// <GET CHAT SESSION COUNT>
-			rs.last();
-			int chatSessionsCount = rs.getRow();
-			rs.first();
-			// </GET CHAT SESSION COUNT>
-			
-			int[] chatSessionIDSToExclude = new int[chatSessionsCount];
-			for (int i = 0; i < chatSessionIDSToExclude.length; i++, rs.next()) {
-				chatSessionIDSToExclude[i] = rs.getInt(1);
+		synchronized (lockObject) {
+			if (!chatSessionIDS.isEmpty()) {
+				return;
 			}
+			
+			logger.debug("Generating new batch of chat session IDs...");
+			
+			try (PreparedStatement pstmt = conn.prepareStatement(
+					"SELECT chat_session_id FROM chat_sessions;",
+					ResultSet.TYPE_SCROLL_SENSITIVE, 
+					ResultSet.CONCUR_UPDATABLE)) {
 
-			List<Integer> availableChatSessionIDS = new ArrayList<>(AMOUNT_OF_CHAT_SESSION_IDS_TO_GENERATE_IN_EACH_GENERATION);
+				ResultSet rs = pstmt.executeQuery();
 
-			for (int chatSessionID = 0; AMOUNT_OF_CHAT_SESSION_IDS_TO_GENERATE_IN_EACH_GENERATION != availableChatSessionIDS.size(); chatSessionID++) {
+				Set<Integer> usedIDs = new HashSet<>();
+				while (rs.next()) {
+					usedIDs.add(rs.getInt(1));
+				}
 
-				boolean isAlreadyUsed = false;
-
-				for (int j = 0; j < chatSessionIDSToExclude.length; j++) {
-					if (chatSessionID == chatSessionIDSToExclude[j]) {
-						isAlreadyUsed = true;
+				List<Integer> availableIDs = new ArrayList<>(IDS_PER_GENERATION);
+				for (int id = 0; availableIDs.size() < IDS_PER_GENERATION; id++) {
+					if (!usedIDs.contains(id)) {
+						availableIDs.add(id);
 					}
 				}
 
-				if (isAlreadyUsed) {
-					continue;
-				}
-
-				availableChatSessionIDS.add(chatSessionID);
+				Collections.shuffle(availableIDs);
+				chatSessionIDS.addAll(availableIDs);
+			} catch (SQLException sqle) {
+				logger.fatal("Error generating available chat session IDs", sqle);
 			}
-			
-			Collections.shuffle(availableChatSessionIDS);
-			
-			for (int j = 0; j < availableChatSessionIDS.size(); j++) {
-				chatSessionIDS.push(availableChatSessionIDS.get(j));
-			}
-		} catch (SQLException sqle) {
-			logger.fatal(Throwables.getStackTraceAsString(sqle));
 		}
 	}
 
 	public static int retrieveAndDelete(Connection conn) {
-		synchronized (lockObjectForGeneratingOrRetrievingChatSessionIDS) {
+		int id = retrieve(conn);
+	    if (id != -1) {
+	        delete(id);
+	    }
+	    return id;
+	}
 
-			if (chatSessionIDS.isEmpty()) {
-				generateAvailableChatSessionIDS(conn);
-			}
+	public static void undo(int chatSessionID) {
+		chatSessionIDS.add(chatSessionID);
+	}
+	
+	private static int retrieve(Connection conn) {
+	    if (chatSessionIDS.isEmpty()) {
+	        generateAvailableChatSessionIDS(conn);
 
-			return chatSessionIDS.pollLast();
+	        if (chatSessionIDS.isEmpty()) {
+	            logger.warn("Failed to retrieve a chat session ID; no IDs available.");
+	            return -1;
+	        }
+	    }
+
+	    return chatSessionIDS.peekLast();
+	}
+	
+	private static void delete(Integer chatSessionID) {
+		boolean removed = chatSessionIDS.remove(chatSessionID);
+		if (!removed) {
+			logger.warn("Attempted to delete a non-existent chat session ID: {}", chatSessionID);
 		}
 	}
 	

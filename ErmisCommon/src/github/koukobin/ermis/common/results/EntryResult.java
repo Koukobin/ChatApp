@@ -27,20 +27,6 @@ import github.koukobin.ermis.common.entry.AddedInfo;
  */
 public final class EntryResult {
 	
-//	public static final class Empty {
-//		
-//	    private static final HashMap<ResultHolder, EntryResult> values;
-//
-//	    static {
-//			values = new HashMap<>(
-//					Arrays.stream(IsPasswordValidResult.values())
-//					.collect(Collectors.toMap(type -> type.id, type -> type))
-//					);
-//	    }
-//		
-//		private Empty() {}
-//	}
-	
 	private static final Map<AddedInfo, String> emptyAddedInfo = new EnumMap<>(AddedInfo.class);
 	
 	private final ResultHolder resultHolder;

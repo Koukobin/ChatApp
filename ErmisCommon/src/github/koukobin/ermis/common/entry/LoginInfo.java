@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import github.koukobin.ermis.common.results.ResultHolder;
+import github.koukobin.ermis.common.util.EnumIntConverter;
 
 /**
  * 
@@ -33,6 +34,7 @@ public final class LoginInfo {
         EMAIL(1), PASSWORD(2);
 
         private static final Map<Integer, Credential> valuesById = new HashMap<>();
+        
         static {
             for (Credential credential : Credential.values()) {
                 valuesById.put(credential.id, credential);
@@ -58,6 +60,7 @@ public final class LoginInfo {
         PASSWORD(1), BACKUP_VERIFICATION_CODE(2);
 
         private static final Map<Integer, PasswordType> valuesById = new HashMap<>();
+        
         static {
             for (PasswordType passwordType : PasswordType.values()) {
                 valuesById.put(passwordType.id, passwordType);
@@ -76,9 +79,10 @@ public final class LoginInfo {
     }
 
     public enum Action {
-        TOGGLE_PASSWORD_TYPE(1);
+        TOGGLE_PASSWORD_TYPE(1), ADD_DEVICE_INFO(2);
 
         private static final Map<Integer, Action> valuesById = new HashMap<>();
+        
         static {
             for (Action action : Action.values()) {
                 valuesById.put(action.id, action);
@@ -92,7 +96,7 @@ public final class LoginInfo {
         }
 
         public static Action fromId(int id) {
-            return valuesById.get(id);
+            return EnumIntConverter.fromId(valuesById, id);
         }
     }
 
@@ -100,6 +104,7 @@ public final class LoginInfo {
         CREDENTIALS_EXCHANGE(1), LOGIN(2);
 
         private static final Map<Integer, AuthenticationStage> valuesById = new HashMap<>();
+        
         static {
             for (AuthenticationStage stage : AuthenticationStage.values()) {
                 valuesById.put(stage.id, stage);
@@ -113,7 +118,7 @@ public final class LoginInfo {
         }
 
         public static AuthenticationStage fromId(int id) {
-            return valuesById.get(id);
+            return EnumIntConverter.fromId(valuesById, id);
         }
     }
 
@@ -124,6 +129,7 @@ public final class LoginInfo {
             ACCOUNT_DOESNT_EXIST(3, false, "Account doesn't exist!");
 
             private static final Map<Integer, Result> valuesById = new HashMap<>();
+            
             static {
                 for (Result result : Result.values()) {
                     valuesById.put(result.id, result);
@@ -139,7 +145,7 @@ public final class LoginInfo {
             }
 
             public static Result fromId(int id) {
-                return valuesById.get(id);
+                return EnumIntConverter.fromId(valuesById, id);
             }
         }
     }
@@ -152,6 +158,7 @@ public final class LoginInfo {
             INCORRECT_BACKUP_VERIFICATION_CODE(4, false, "Incorrect backup verification code.");
 
             private static final Map<Integer, Result> valuesById = new HashMap<>();
+            
             static {
                 for (Result result : Result.values()) {
                     valuesById.put(result.id, result);
@@ -167,7 +174,7 @@ public final class LoginInfo {
             }
 
             public static Result fromId(int id) {
-                return valuesById.get(id);
+                return EnumIntConverter.fromId(valuesById, id);
             }
         }
     }

@@ -16,17 +16,16 @@
 
 import 'dart:io';
 
-import 'package:ermis_client/entry_interface.dart';
+import 'package:ermis_client/main_ui/entry/entry_interface.dart';
 import 'package:ermis_client/util/database_service.dart';
 import 'package:ermis_client/util/dialogs_utils.dart';
 import 'package:flutter/material.dart';
 
-import 'client/client.dart';
-import 'constants/app_constants.dart';
-import 'main.dart';
-import 'theme/app_theme.dart';
-import 'util/notifications_util.dart';
-import 'util/top_app_bar_utils.dart';
+import '../client/client.dart';
+import '../constants/app_constants.dart';
+import '../main.dart';
+import '../theme/app_theme.dart';
+import '../util/top_app_bar_utils.dart';
 
 String? serverUrl;
 
@@ -99,7 +98,7 @@ class ChooseServerState extends State<ChooseServer> {
                         ServerInfo serverInfo;
 
                         try {
-                          serverInfo = ServerInfo(Uri.parse(url));
+                          serverInfo = ServerInfo(Uri.https(url));
                         } on InvalidServerUrlException catch (e) {
                           showExceptionDialog(context, e.message);
                           return;
@@ -150,6 +149,8 @@ class ChooseServerState extends State<ChooseServer> {
                     DBConnection conn = Database.createDBConnection();
                     conn.updateServerUrlLastUsed(ServerInfo(url));
                     UserInformation userInfo = await conn.getUserInformation(ServerInfo(url));
+                    print(userInfo.email);
+                    print(userInfo.passwordHash);
 
                     bool isIPVerified;
                     try {

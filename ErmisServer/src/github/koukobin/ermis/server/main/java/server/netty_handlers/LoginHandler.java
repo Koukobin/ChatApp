@@ -18,16 +18,19 @@ package github.koukobin.ermis.server.main.java.server.netty_handlers;
 import java.util.EnumMap;
 import java.util.Map;
 
+import github.koukobin.ermis.common.DeviceType;
+import github.koukobin.ermis.common.UserDeviceInfo;
 import github.koukobin.ermis.common.entry.LoginInfo.Action;
 import github.koukobin.ermis.common.entry.LoginInfo.Credential;
 import github.koukobin.ermis.common.entry.LoginInfo.PasswordType;
 import github.koukobin.ermis.common.results.EntryResult;
 import github.koukobin.ermis.common.results.ResultHolder;
-import github.koukobin.ermis.server.main.java.configs.ServerSettings;
 import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.ErmisDatabase;
 import github.koukobin.ermis.server.main.java.server.ClientInfo;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+
+import static github.koukobin.ermis.server.main.java.configs.ServerSettings.EmailCreator.Verification.Login.createEmail;
 
 /**
  * @author Ilias Koukovinis
@@ -36,6 +39,8 @@ import io.netty.channel.ChannelHandlerContext;
 final class LoginHandler extends EntryHandler {
 
 	private PasswordType passwordType = PasswordType.PASSWORD;
+	private DeviceType deviceType = DeviceType.UNSPECIFIED;
+	private String osName = "Unknown";
 	
 	private Map<Credential, String> credentials = new EnumMap<>(Credential.class);
 	
@@ -51,12 +56,19 @@ final class LoginHandler extends EntryHandler {
 		Action action = Action.fromId(msg.readInt());
 
 		switch (action) {
-		case TOGGLE_PASSWORD_TYPE:
+		case TOGGLE_PASSWORD_TYPE -> {
 			passwordType = switch (passwordType) {
 			case PASSWORD -> PasswordType.BACKUP_VERIFICATION_CODE;
 			case BACKUP_VERIFICATION_CODE -> PasswordType.PASSWORD;
 			};
-			break;
+		}
+		case ADD_DEVICE_INFO -> {
+			deviceType = DeviceType.fromId(msg.readInt());
+			
+			byte[] osNameBytes = new byte[msg.readableBytes()];
+			msg.readBytes(osNameBytes);
+			osName = new String(osNameBytes);
+		}
 		}
 
 		msg.readerIndex(readerIndex);
@@ -100,61 +112,58 @@ final class LoginHandler extends EntryHandler {
 	}
 
 	@Override
-	protected Runnable onSuccess(ChannelHandlerContext ctx) {
-		return new Runnable() {
+	protected void onSuccess(ChannelHandlerContext ctx) {
+		String email = credentials.get(Credential.EMAIL);
+		String password = credentials.get(Credential.PASSWORD);
 
-			@Override
-			public void run() {
+		switch (passwordType) {
+		case BACKUP_VERIFICATION_CODE -> {
 
-				String email = credentials.get(Credential.EMAIL);
-				String password = credentials.get(Credential.PASSWORD);
+			ResultHolder entryResult;
 
-				switch (passwordType) {
-				case BACKUP_VERIFICATION_CODE -> {
-					
-					ResultHolder entryResult;
-					
-					try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
-						entryResult = conn.loginUsingBackupVerificationCode(clientInfo.getChannel().remoteAddress().getAddress(), email, password);
-					}
-					
-					if (entryResult.isSuccessful()) {
-						login(ctx, clientInfo);
-					} else {
-						registrationFailed(ctx, clientInfo);
-					}
-					
-					byte[] resultMessageBytes = entryResult.getResultMessage().getBytes();
-					
-					ByteBuf payload = ctx.alloc().ioBuffer();
-					payload.writeBoolean(entryResult.isSuccessful());
-					payload.writeBytes(resultMessageBytes);
-					
-					ctx.channel().writeAndFlush(payload);
-				}
-				case PASSWORD -> {
-					VerificationHandler verificationHandler = new VerificationHandler(
-							clientInfo,
-							email) {
-						
-						@Override
-						public EntryResult executeWhenVerificationSuccesfull() {
-							try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
-								return conn.loginUsingPassword(clientInfo.getChannel().remoteAddress().getAddress(), email, password);
-							}
-						}
-						
-						@Override
-						public String createEmailMessage(String account, String generatedVerificationCode) {
-							return ServerSettings.EmailCreator.Verification.Login.createEmail(email, account, generatedVerificationCode);
-						}
-					};
-					
-					ctx.pipeline().replace(LoginHandler.this, VerificationHandler.class.getName(), verificationHandler);
-				}
-				}
-				
+			String address = clientInfo.getChannel().remoteAddress().getAddress().getHostName();
+			UserDeviceInfo deviceInfo = new UserDeviceInfo(address, deviceType, osName);
+			try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
+				entryResult = conn.loginUsingBackupVerificationCode(email, password, deviceInfo);
 			}
-		};
+
+			if (entryResult.isSuccessful()) {
+				login(ctx, clientInfo);
+			} else {
+				registrationFailed(ctx, clientInfo);
+			}
+
+			byte[] resultMessageBytes = entryResult.getResultMessage().getBytes();
+
+			ByteBuf payload = ctx.alloc().ioBuffer();
+			payload.writeBoolean(entryResult.isSuccessful());
+			payload.writeBytes(resultMessageBytes);
+
+			ctx.channel().writeAndFlush(payload);
+		}
+		case PASSWORD -> {
+			VerificationHandler verificationHandler = new VerificationHandler(clientInfo, email) {
+
+				@Override
+				public EntryResult executeWhenVerificationSuccessful() {
+
+					String address = clientInfo.getChannel().remoteAddress().getAddress().getHostName();
+					UserDeviceInfo deviceInfo = new UserDeviceInfo(address, deviceType, osName);
+
+					try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
+						return conn.loginUsingPassword(email, password, deviceInfo);
+					}
+				}
+
+				@Override
+				public String createEmailMessage(String account, String generatedVerificationCode) {
+					return createEmail(email, account, generatedVerificationCode);
+				}
+			};
+
+			ctx.pipeline().replace(LoginHandler.this, VerificationHandler.class.getName(), verificationHandler);
+		}
+		}
 	}
 }
+

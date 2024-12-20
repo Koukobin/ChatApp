@@ -15,6 +15,27 @@
  */
 
 
-const String applicationTitle = "Ermis";
-const String appIconPath = 'assets/primary_application_icon.png';
+import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
+const String applicationTitle = "Ermis";
+const String applicationVersion = "0.5.0";
+const String appIconPath = 'assets/primary_application_icon.png';
+const String parthenonasPath = 'assets/parthenonas.png';
+const String sourceCodeURL = "https://github.com/Koukobin/Ermis";
+
+const AppColors lightAppColors = AppColors(
+    primaryColor: Colors.green,
+    secondaryColor: Colors.white,
+    tertiaryColor: Color.fromARGB(255, 233, 233, 233),
+    quaternaryColor: Color.fromARGB(255, 150, 150, 150),
+    inferiorColor: Colors.black);
+
+const AppColors darkAppColors = AppColors(
+  primaryColor: Colors.green,
+  secondaryColor: Color.fromARGB(255, 17, 17, 17),
+  tertiaryColor: Color.fromARGB(221, 30, 30, 30),
+  quaternaryColor: Color.fromARGB(255, 46, 46, 46),
+  inferiorColor: Colors.white,
+);

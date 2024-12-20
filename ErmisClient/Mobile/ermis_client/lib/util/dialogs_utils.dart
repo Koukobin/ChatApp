@@ -21,12 +21,12 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-Future<void> confirmExitDialog(BuildContext context, String content, GestureTapCallback runOnConfirmation) async {
+Future<void> confirmExitDi1alog(BuildContext context, String content, GestureTapCallback runOnConfirmation) async {
   final shouldExit = await showDialog<bool>(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: const Text("Confirmation!"),
+        title: const Text("Are you sure!"),
         content: Text(content),
         actions: [
           TextButton(
@@ -48,21 +48,6 @@ Future<void> confirmExitDialog(BuildContext context, String content, GestureTapC
 }
 
 Future<void> showExceptionDialog(BuildContext context, String exception) async {
-  // String exceptionMessage = exception.toString();
-  // String simpleMessage = exceptionMessage.substring(
-  //     exceptionMessage.lastIndexOf(':'), exceptionMessage.length);
-
-  try {
-    int.parse("not a number");
-  } catch (e) {
-    if (e is FormatException) {
-      e.message;
-      print("Error: ${e.message}");
-    } else {
-      print("Error: ${e.toString()}");
-    }
-  }
-
   await showSimpleAlertDialog(
     context: context,
     title: "An error occurred",
@@ -91,6 +76,15 @@ Future<void> showErrorDialog(BuildContext context, String message) async {
     context: context,
     title: "Error",
     content: message,
+  );
+}
+
+void showSnackBarDialog({
+  required BuildContext context,
+  required String content,
+}) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(content)),
   );
 }
 
@@ -210,94 +204,4 @@ Future<String?> showInputDialog({
   );
 
   return input;
-}
-
-Future<void> showVerificationDialog({
-  required BuildContext context,
-  required String title,
-  required String promptMessage,
-  required VoidCallback onResendCode,
-  required void Function(String) onSubmitCode,
-}) {
-  final TextEditingController codeController = TextEditingController();
-  bool isSubmitting = false;
-
-  return showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return StatefulBuilder(
-        builder: (BuildContext context, StateSetter setState) {
-          return AlertDialog(
-            title: Text(title),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(promptMessage),
-                const SizedBox(height: 16.0),
-                TextField(
-                  controller: codeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Enter Verification Code',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16.0),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton(
-                      onPressed: isSubmitting
-                          ? null
-                          : () {
-                              onResendCode();
-                            },
-                      child: const Text('Resend Code'),
-                    ),
-                    ElevatedButton(
-                      onPressed: isSubmitting
-                          ? null
-                          : () {
-                              final code = codeController.text.trim();
-                              if (code.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Please enter the verification code'),
-                                  ),
-                                );
-                                return;
-                              }
-
-                              setState(() {
-                                isSubmitting = true;
-                              });
-
-                              Future.delayed(const Duration(seconds: 1), () {
-                                onSubmitCode(code);
-                                Navigator.of(context).pop();
-                              }).whenComplete(() {
-                                setState(() {
-                                  isSubmitting = false;
-                                });
-                              });
-                            },
-                      child: isSubmitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Submit'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        },
-      );
-    },
-  ).then((_) {
-    print("thios");
-    codeController.clear();
-  });
 }

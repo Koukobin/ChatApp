@@ -19,6 +19,8 @@ package github.koukobin.ermis.common.entry;
 import java.util.HashMap;
 import java.util.Map;
 
+import github.koukobin.ermis.common.util.EnumIntConverter;
+
 /**
  * @author Ilias Koukovinis
  *
@@ -42,7 +44,7 @@ public enum EntryType {
     }
 
     public static EntryType fromId(int id) {
-        return valuesById.get(id);
+        return EnumIntConverter.fromId(valuesById, id);
     }
 	
 	/**

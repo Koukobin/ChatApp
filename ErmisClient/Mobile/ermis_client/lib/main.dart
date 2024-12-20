@@ -14,74 +14,142 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import 'package:ermis_client/splash_screen.dart';
+import 'package:ermis_client/constants/app_constants.dart';
+import 'package:ermis_client/main_ui/splash_screen.dart';
 import 'package:ermis_client/util/notifications_util.dart';
+import 'package:ermis_client/util/settings_json.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
+import 'main_ui/settings/profile_settings.dart';
 import 'theme/app_theme.dart';
-import 'chat_interface.dart';
-import 'settings_interface.dart';
+import 'main_ui/chats/chat_interface.dart';
+import 'main_ui/settings/settings_interface.dart';
 import 'package:flutter/material.dart';
 import 'package:timezone/data/latest.dart' as tz;
 
-Future<void> main() async {
-  // Ensure that Flutter bindings are initialized before running the app
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize the background service
-  // Initialize the foreground task
-  FlutterForegroundTask.init(
-    androidNotificationOptions: AndroidNotificationOptions(
-      channelId: 'foreground_service_channel',
-      channelName: 'Foreground Service Channel',
-      channelDescription: 'This channel is used for the foreground service notification.',
-      channelImportance: NotificationChannelImportance.LOW,
-      priority: NotificationPriority.LOW,
-    ),
-    iosNotificationOptions: IOSNotificationOptions(
-      showNotification: true,
-    ),
-    foregroundTaskOptions: ForegroundTaskOptions(eventAction: ForegroundTaskEventAction.once()),
-  );  
-
-  // Start the foreground task when the app runs
-  FlutterForegroundTask.startService(
-    notificationTitle: 'App is running in the background',
-      notificationText: 'Your background task is active',
-      callback: () => debugPrint("Flutter foreground service callback"));
-
-  await NotificationService.init();
-  tz.initializeTimeZones();
-
-  // Defining themes
-  const AppColors lightAppColors = AppColors(
-      primaryColor: Colors.green,
-      secondaryColor: Colors.white,
-      tertiaryColor: Color.fromARGB(255, 233, 233, 233),
-      quaternaryColor: Color.fromARGB(255, 150, 150, 150),
-      inferiorColor: Colors.black);
-
-  const AppColors darkAppColors = AppColors(
-    primaryColor: Colors.green,
-    secondaryColor: Color.fromARGB(255, 17, 17, 17),
-    tertiaryColor: Color.fromARGB(221, 30, 30, 30),
-    quaternaryColor: Color.fromARGB(255, 46, 46, 46),
-    inferiorColor: Colors.white,
-  );
-
-  runApp(_MyApp(
-    lightAppColors: lightAppColors,
-    darkAppColors: darkAppColors,
-  ));
+class CharacterLimitTextField extends StatefulWidget {
+  @override
+  _CharacterLimitTextFieldState createState() =>
+      _CharacterLimitTextFieldState();
 }
+
+class _CharacterLimitTextFieldState extends State<CharacterLimitTextField> {
+  TextEditingController _controller = TextEditingController();
+  String _errorMessage = "";
+  
+  // Define allowed characters (for example, letters and numbers only)
+  final RegExp _allowedChars = RegExp(r'^[a-zA-Z0-9]*$');
+
+  // Check if the entered character is allowed
+  void _checkInput(String input) {
+    setState(() {
+      if (_allowedChars.hasMatch(input)) {
+        _errorMessage = ""; // Clear error message if the input is valid
+      } else {
+        _errorMessage = "Invalid character entered!";
+        _tooltipKey.currentState?.ensureTooltipVisible();
+      }
+    });
+  }
+
+  final GlobalKey<TooltipState> _tooltipKey = GlobalKey<TooltipState>();  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("TextField with Tooltip")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Tooltip(
+              key: _tooltipKey,
+              triggerMode: TooltipTriggerMode.longPress,
+              showDuration: const Duration(seconds: 1),
+              message: _errorMessage.isEmpty ? "" : _errorMessage,
+              child: TextField(
+                controller: _controller,
+                onChanged: (input) {
+                  _checkInput(input);
+                },
+                decoration: InputDecoration(
+                  labelText: "Enter text",
+                  border: OutlineInputBorder(),
+                  errorText: _errorMessage.isEmpty ? null : _errorMessage,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+void main() => runApp(MaterialApp(
+      home: CharacterLimitTextField(),
+    ));
+
+// void main() async {
+//   // Ensure that Flutter bindings are initialized before running the app
+//   WidgetsFlutterBinding.ensureInitialized();
+
+//   // Initialize the background service
+//   // Initialize the foreground task
+//   FlutterForegroundTask.init(
+//     androidNotificationOptions: AndroidNotificationOptions(
+//       channelId: 'foreground_service_channel',
+//       channelName: 'Foreground Service Channel',
+//       channelDescription: 'This channel is used for the foreground service notification.',
+//       channelImportance: NotificationChannelImportance.LOW,
+//       priority: NotificationPriority.LOW,
+//     ),
+//     iosNotificationOptions: IOSNotificationOptions(
+//       showNotification: true,
+//     ),
+//     foregroundTaskOptions: ForegroundTaskOptions(eventAction: ForegroundTaskEventAction.once()),
+//   );  
+
+//   // Start the foreground task when the app runs
+//   FlutterForegroundTask.startService(
+//     notificationTitle: 'App is running in the background',
+//       notificationText: 'Your background task is active',
+//       callback: () => debugPrint("Flutter foreground service callback"));
+
+//   await NotificationService.init();
+//   tz.initializeTimeZones();
+
+//   final jsonSettings = SettingsJson();
+//   await jsonSettings.loadSettingsJson();
+
+//   ThemeMode themeData;
+
+//   if (jsonSettings.useSystemDefaultTheme) {
+//     themeData = ThemeMode.system;
+//   } else {
+//     if (jsonSettings.useDarkMode) {
+//       themeData = ThemeMode.dark;
+//     } else {
+//       themeData = ThemeMode.light;
+//     }
+//   }
+
+//   runApp(_MyApp(
+//     lightAppColors: lightAppColors,
+//     darkAppColors: darkAppColors,
+//     themeMode: themeData,
+//   ));
+// }
 
 class _MyApp extends StatefulWidget {
   final AppColors lightAppColors;
   final AppColors darkAppColors;
+  final ThemeMode themeMode;
 
   const _MyApp({
     required this.lightAppColors,
     required this.darkAppColors,
+    required this.themeMode,
   });
   
   @override
@@ -100,9 +168,11 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.paused:
+        print("App is paused");
         // App is moved to the background
         break;
       case AppLifecycleState.resumed:
+        print("App is resumed");
         // App is moved to the foreground (resumed)
         break;
       case AppLifecycleState.detached:
@@ -112,6 +182,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         // App is inactive (e.g., a phone call or overlay)
         break;
       case AppLifecycleState.hidden:
+        print("App is hidden");
         // App is hidden
         break;
     }
@@ -125,136 +196,201 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      themeMode: ThemeMode.system, // Automatically switch between light and dark
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        extensions: [widget.darkAppColors],
-        visualDensity: VisualDensity.adaptivePlatformDensity, // Adapts to platform
-        splashFactory: InkRipple.splashFactory, // Smooth ripple
-        primaryColor: widget.darkAppColors.primaryColor,
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: widget.darkAppColors.primaryColor,
-            textStyle: const TextStyle(fontSize: 15),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          hintStyle: const TextStyle(color: Colors.grey),
-          labelStyle: const TextStyle(color: Colors.green),
-          border: OutlineInputBorder(
-            borderSide: const BorderSide(color: Colors.green),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          focusedBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.green, width: 2),
-          ),
-          enabledBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.green),
-          ),
-        ),
-        dialogTheme: DialogTheme(
-          backgroundColor: widget.darkAppColors.tertiaryColor.withOpacity(1.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          titleTextStyle: TextStyle(
-            color: widget.darkAppColors.primaryColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-          contentTextStyle: TextStyle(
-            color: widget.darkAppColors.inferiorColor,
-            fontSize: 16,
-          ),
-        ),
-        textSelectionTheme: TextSelectionThemeData(
-          cursorColor: Colors.green, // Color of the blinking text cursor
-          selectionColor: Colors.greenAccent.withOpacity(0.5), // Color of the selected text background
-          selectionHandleColor: Colors.green, // Color of the selection handles
-        ),
-        checkboxTheme: CheckboxThemeData(
-          checkColor: WidgetStateProperty.all(Colors.white), // Checkmark color
-          splashRadius: 20,
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-              style: ButtonStyle(
-            foregroundColor: WidgetStateProperty.all(widget.darkAppColors.secondaryColor),
-            backgroundColor: WidgetStateProperty.all(Colors.green),
-            overlayColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.pressed)) {
-                return Colors.green.withOpacity(0.2); // Splash effect color
-              }
-              return null; // Default for other states
-            }),
-          )),
-          progressIndicatorTheme:
-              ProgressIndicatorThemeData(color: Colors.grey),
-          bottomSheetTheme:
-              BottomSheetThemeData(backgroundColor: widget.darkAppColors.tertiaryColor.withOpacity(1.0))),
-      theme: ThemeData(
-        brightness: Brightness.light,
-        extensions: [widget.lightAppColors],
-        visualDensity: VisualDensity.adaptivePlatformDensity, // Adapts to platform
-        splashFactory: InkRipple.splashFactory, // Smooth ripple
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.green,
-            textStyle: const TextStyle(fontSize: 15),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          hintStyle: TextStyle(color: widget.lightAppColors.tertiaryColor),
-          labelStyle: TextStyle(color: widget.lightAppColors.primaryColor),
-          border: OutlineInputBorder(
-            borderSide: BorderSide(color: widget.lightAppColors.primaryColor),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: widget.lightAppColors.primaryColor, width: 2),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: widget.lightAppColors.primaryColor),
-          ),
-        ),
-        dialogTheme: DialogTheme(
-          backgroundColor: widget.lightAppColors.tertiaryColor.withOpacity(1.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          titleTextStyle: TextStyle(
-            color: widget.lightAppColors.primaryColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-          contentTextStyle: TextStyle(
-            color: widget.lightAppColors.inferiorColor,
-            fontSize: 16,
-          ),
-        ),
-        textSelectionTheme: TextSelectionThemeData(
-          cursorColor: Colors.green, // Color of the blinking text cursor
-          selectionColor: Colors.greenAccent.withOpacity(0.5), // Color of the selected text background
-          selectionHandleColor: Colors.green, // Color of the selection handles
-        ),
-        checkboxTheme: CheckboxThemeData(
-          checkColor: WidgetStateProperty.all(Colors.white), // Checkmark color
-          splashRadius: 20,
-        ),
-        progressIndicatorTheme: ProgressIndicatorThemeData(color: Colors.grey),
-        bottomSheetTheme: BottomSheetThemeData(
-            backgroundColor:
-                widget.darkAppColors.tertiaryColor.withOpacity(1.0)),
-      ),
+    return AppTheme(
+      darkAppColors: widget.darkAppColors,
+      lightAppColors: widget.lightAppColors,
+      theme: widget.themeMode,
       home: SplashScreen(),
+    );
+  }
+
+  ThemeData buildDarkThemeData() {
+    return ThemeData(
+      brightness: Brightness.dark,
+      extensions: [widget.darkAppColors],
+      visualDensity: VisualDensity.adaptivePlatformDensity, // Adapts to platform
+      splashFactory: InkRipple.splashFactory, // Smooth ripple
+      primaryColor: widget.darkAppColors.primaryColor,
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: widget.darkAppColors.primaryColor,
+          textStyle: const TextStyle(fontSize: 15),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        hintStyle: const TextStyle(color: Colors.grey),
+        labelStyle: const TextStyle(color: Colors.green),
+        border: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.green),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.green, width: 2),
+        ),
+        enabledBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.green),
+        ),
+      ),
+      dialogTheme: DialogTheme(
+        backgroundColor: widget.darkAppColors.tertiaryColor.withOpacity(1.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        titleTextStyle: TextStyle(
+          color: widget.darkAppColors.primaryColor,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+        contentTextStyle: TextStyle(
+          color: widget.darkAppColors.inferiorColor,
+          fontSize: 16,
+        ),
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: Colors.green, // Color of the blinking text cursor
+        selectionColor: Colors.greenAccent.withOpacity(0.5), // Color of the selected text background
+        selectionHandleColor: Colors.green, // Color of the selection handles
+      ),
+      checkboxTheme: CheckboxThemeData(
+        checkColor: WidgetStateProperty.all(Colors.white), // Checkmark color
+        splashRadius: 20,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ButtonStyle(
+          foregroundColor: WidgetStateProperty.all(widget.darkAppColors.secondaryColor),
+          backgroundColor: WidgetStateProperty.all(Colors.green),
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) {
+              return Colors.green.withOpacity(0.2); // Splash effect color
+            }
+            return null; // Default for other states
+          }),
+        )),
+        progressIndicatorTheme:
+            ProgressIndicatorThemeData(color: Colors.grey),
+        bottomSheetTheme: BottomSheetThemeData(
+            backgroundColor: widget.darkAppColors.tertiaryColor.withOpacity(1.0)),
+      popupMenuTheme: PopupMenuThemeData(
+        color: Colors.grey[900],
+        elevation: 5,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        textStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: const Color.fromARGB(195, 19, 19, 19),
+        contentTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+        ),
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: const Color.fromARGB(195, 10, 10, 10), width: 1.25),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        elevation: 1,
+          behavior: SnackBarBehavior.floating,
+        ),
+        switchTheme: SwitchThemeData(
+          trackColor: WidgetStateProperty.resolveWith<Color>((states) {
+            if (states.contains(WidgetState.selected)) {
+              return widget.darkAppColors.primaryColor; // Active color
+            }
+            return widget.darkAppColors.secondaryColor; // Inactive color
+          }),
+          thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
+            return widget.darkAppColors.quaternaryColor; // Thumb color
+          }),
+        ));
+  }
+
+  ThemeData buildWhiteThemeData() {
+    return ThemeData(
+      brightness: Brightness.light,
+      extensions: [widget.lightAppColors],
+      visualDensity: VisualDensity.adaptivePlatformDensity, // Adapts to platform
+      splashFactory: InkRipple.splashFactory, // Smooth ripple
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: Colors.green,
+          textStyle: const TextStyle(fontSize: 15),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        hintStyle: TextStyle(color: widget.lightAppColors.tertiaryColor),
+        labelStyle: TextStyle(color: widget.lightAppColors.primaryColor),
+        border: OutlineInputBorder(
+          borderSide: BorderSide(color: widget.lightAppColors.primaryColor),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: widget.lightAppColors.primaryColor, width: 2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: widget.lightAppColors.primaryColor),
+        ),
+      ),
+      dialogTheme: DialogTheme(
+        backgroundColor: widget.lightAppColors.tertiaryColor.withOpacity(1.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        titleTextStyle: TextStyle(
+          color: widget.lightAppColors.primaryColor,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+        contentTextStyle: TextStyle(
+          color: widget.lightAppColors.inferiorColor,
+          fontSize: 16,
+        ),
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: Colors.green, // Color of the blinking text cursor
+        selectionColor: Colors.greenAccent.withOpacity(0.5), // Color of the selected text background
+        selectionHandleColor: Colors.green, // Color of the selection handles
+      ),
+      checkboxTheme: CheckboxThemeData(
+        checkColor: WidgetStateProperty.all(Colors.white), // Checkmark color
+        splashRadius: 20,
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: Colors.grey),
+      bottomSheetTheme: BottomSheetThemeData(
+          backgroundColor:
+              widget.darkAppColors.tertiaryColor.withOpacity(1.0)),
+      popupMenuTheme: PopupMenuThemeData(
+        color: Colors.grey[400],
+        elevation: 5,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        textStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: Colors.black87,
+        contentTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 }
@@ -268,28 +404,26 @@ class MainInterface extends StatefulWidget {
 }
 
 class MainInterfaceState extends State<MainInterface> {
-  int _selectedIndex = 0;
-
+  
   static const TextStyle optionStyle = TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
 
-  static const List<StatefulWidget> _widgetOptions = <StatefulWidget>[
+  static const List<Widget> _widgetOptions = <Widget>[
     Chats(),
     ChatRequests(),
     Settings(),
-    AccountSettings()
+    ProfileSettings()
   ];
 
   late List<BottomNavigationBarItem> _barItems;
 
-  BottomNavigationBarItem _buildNavItem(
-      IconData activeIcon, IconData inActiveIcon, String label, int index) {
+  BottomNavigationBarItem _buildNavItem(IconData activeIcon, IconData inActiveIcon, String label, int index) {
     return BottomNavigationBarItem(
-      icon: Container(
-        child: _selectedIndex == index ? Icon(activeIcon) : Icon(inActiveIcon),
-      ),
+      icon: _selectedIndex == index ? Icon(activeIcon) : Icon(inActiveIcon),
       label: label,
     );
   }
+
+  int _selectedIndex = 0;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -298,17 +432,9 @@ class MainInterfaceState extends State<MainInterface> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColors>()!;
-
+    
     _barItems = <BottomNavigationBarItem>[
       _buildNavItem(Icons.chat, Icons.chat_outlined, "Chats", 0),
       _buildNavItem(Icons.person_add_alt_1, Icons.person_add_alt_1_outlined,

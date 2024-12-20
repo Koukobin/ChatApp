@@ -16,7 +16,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../chat_interface.dart';
+import '../main_ui/chats/chat_interface.dart';
 import '../theme/app_theme.dart';
 
 SizedBox createSimpleButton(BuildContext context, String text, IconData iconData, GestureTapCallback onTap) {

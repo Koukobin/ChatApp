@@ -39,10 +39,6 @@ public class ResultHolder {
 		this.resultMessage = resultMessage;
 	}
 	
-	public void addTextToResultMessage(String text) {
-		resultMessage = resultMessage + "\n\n" + text;
-	}
-	
 	public boolean isSuccessful() {
 		return isSuccessful;
 	}

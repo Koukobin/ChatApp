@@ -16,21 +16,21 @@
 package github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.generators;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Throwables;
-
-import github.koukobin.ermis.server.main.java.configs.DatabaseSettings;
 
 /**
  * @author Ilias Koukovinis
@@ -42,8 +42,8 @@ public final class ClientIDGenerator {
 
 	private static final Object lockObjectForGeneratingOrRetrievingClientIDS = new Object();
 	
-	private static final int AMOUNT_OF_CLIENT_IDS_TO_GENERATE_IN_EACH_GENERATION = 5000;
-	private static final Deque<Integer> clientIDS = new ArrayDeque<>();
+	private static final int IDS_PER_GENERATION = 5_000;
+	private static final Deque<Integer> clientIDS = new ConcurrentLinkedDeque<>();
 
 	private ClientIDGenerator() {}
 	
@@ -52,74 +52,64 @@ public final class ClientIDGenerator {
 	 * @param conn Connection to ermis database
 	 */
 	public static void generateAvailableClientIDS(Connection connToDatabase) {
-		try (Statement stmt = connToDatabase.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
-			
-			ResultSet rs = stmt.executeQuery("SELECT client_id FROM users;");
-			
-			// <GET USER COUNT>
-			rs.last();
-			int userCount = rs.getRow();
-			rs.first();
-			// </GET USER COUNT>
-			
-			if (userCount == DatabaseSettings.MAX_USERS) {
-				return;
-			}
-			
-			int[] clientIDSToExclude = new int[userCount];
-			for (int i = 0; i < clientIDSToExclude.length; i++, rs.next()) {
-				clientIDSToExclude[i] = rs.getInt(1);
-			}
-
-			List<Integer> availableClientIDS = new ArrayList<>(AMOUNT_OF_CLIENT_IDS_TO_GENERATE_IN_EACH_GENERATION);
-
-			for (int clientID = 0; clientID < DatabaseSettings.MAX_USERS; clientID++) {
+		synchronized (lockObjectForGeneratingOrRetrievingClientIDS) {
+			try (PreparedStatement pstmt = connToDatabase.prepareStatement(
+					"SELECT client_id FROM users;",
+					ResultSet.TYPE_SCROLL_SENSITIVE, 
+					ResultSet.CONCUR_UPDATABLE)) {
 				
-				boolean isAlreadyUsed = false;
-				
-				for (int j = 0; j < clientIDSToExclude.length; j++) {
-					if (clientID == clientIDSToExclude[j]) {
-						isAlreadyUsed = true;
+				ResultSet rs = pstmt.executeQuery();
+
+				Set<Integer> usedIDs = new HashSet<>();
+				while (rs.next()) {
+					usedIDs.add(rs.getInt(1));
+				}
+
+				List<Integer> availableIDs = new ArrayList<>(IDS_PER_GENERATION);
+				for (int id = 0; availableIDs.size() < IDS_PER_GENERATION; id++) {
+					if (!usedIDs.contains(id)) {
+						availableIDs.add(id);
 					}
 				}
-				
-				if (isAlreadyUsed) {
-					continue;
-				}
 
-				availableClientIDS.add(clientID);
-
-				if (AMOUNT_OF_CLIENT_IDS_TO_GENERATE_IN_EACH_GENERATION == availableClientIDS.size()) {
-					break;
-				}
+				Collections.shuffle(availableIDs);
+				clientIDS.addAll(availableIDs);
+			} catch (SQLException sqle) {
+				logger.fatal(Throwables.getStackTraceAsString(sqle));
+				throw new RuntimeException(sqle);
 			}
-
-			Collections.shuffle(availableClientIDS);
-			
-			for (int j = 0; j < availableClientIDS.size(); j++) {
-				clientIDS.push(availableClientIDS.get(j));
-			}
-		} catch (SQLException sqle) {
-			logger.fatal(Throwables.getStackTraceAsString(sqle));
 		}
 	}
 	
-	/**
-	 * @return an available client id. If no client id is available then it returns -1
-	 */
 	public static int retrieveAndDelete(Connection conn) {
-		synchronized (lockObjectForGeneratingOrRetrievingClientIDS) {
+		int id = retrieve(conn);
+	    if (id != -1) {
+	        delete(id);
+	    }
+	    return id;
+	}
+	
+	public static void undo(int chatSessionID) {
+		clientIDS.add(chatSessionID);
+	}
+	
+	private static int retrieve(Connection conn) {
+	    if (clientIDS.isEmpty()) {
+	        generateAvailableClientIDS(conn);
 
-			if (clientIDS.isEmpty()) {
+	        if (clientIDS.isEmpty()) {
+	            logger.warn("Failed to retrieve a client ID; no IDs available.");
+	            return -1;
+	        }
+	    }
 
-				generateAvailableClientIDS(conn);
-				
-				if (clientIDS.isEmpty()) {
-					return -1;
-				}
-			}
-
-			return clientIDS.pollLast();
+	    return clientIDS.peekLast();
+	}
+	
+	private static void delete(Integer chatSessionID) {
+		boolean removed = clientIDS.remove(chatSessionID);
+		if (!removed) {
+			logger.warn("Attempted to delete a non-existent client ID: {}", chatSessionID);
 		}
 	}
 	

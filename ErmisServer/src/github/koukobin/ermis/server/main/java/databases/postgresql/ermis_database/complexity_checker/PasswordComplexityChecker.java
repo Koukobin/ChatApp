@@ -65,9 +65,10 @@ public final class PasswordComplexityChecker {
 		this.requirements = requirements;
 	}
 
+	@Deprecated
 	public ResultHolder getResultWhenUnsuccesfull() {
 		ResultHolder result = IsPasswordValidResult.REQUIREMENTS_NOT_MET.resultHolder;
-		result.addTextToResultMessage("Requirements:\n" + requirements.toString());
+//		result.addTextToResultMessage("Requirements:\n" + requirements.toString());
 		return result;
 	}
 

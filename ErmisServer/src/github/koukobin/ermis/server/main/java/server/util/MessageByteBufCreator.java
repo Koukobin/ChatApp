@@ -18,6 +18,7 @@ package github.koukobin.ermis.server.main.java.server.util;
 import github.koukobin.ermis.common.message_types.ServerMessageType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.epoll.EpollSocketChannel;
 
 /**
  * Utility class that facilitates communication between the server and the client
@@ -34,6 +35,13 @@ public final class MessageByteBufCreator {
 		payload.writeInt(ServerMessageType.SERVER_MESSAGE_INFO.id);
 		payload.writeBytes(text.getBytes());
 		ctx.channel().writeAndFlush(payload);
+	}
+	
+	public static void sendMessageInfo(EpollSocketChannel channel, String text) {
+		ByteBuf payload = channel.alloc().ioBuffer();
+		payload.writeInt(ServerMessageType.SERVER_MESSAGE_INFO.id);
+		payload.writeBytes(text.getBytes());
+		channel.writeAndFlush(payload);
 	}
 	
 }

@@ -184,7 +184,7 @@ class ServerInfo {
 
   factory ServerInfo(Uri serverUrl, [DateTime? lastUsed]) {
     if (!serverUrl.toString().startsWith("https://")) {
-      serverUrl = Uri.parse("https://$url");
+      serverUrl = Uri.parse("https://${serverUrl.toString()}");
     }
 
     // Check if url is valid

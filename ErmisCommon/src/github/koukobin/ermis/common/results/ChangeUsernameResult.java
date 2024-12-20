@@ -27,7 +27,8 @@ import github.koukobin.ermis.common.util.EnumIntConverter;
  */
 public enum ChangeUsernameResult {
     SUCCESFULLY_CHANGED_USERNAME(0, true, "Succesfully changed username!"),
-    ERROR_WHILE_CHANGING_USERNAME(1, false, "There was an error while trying to change username!");
+    ERROR_WHILE_CHANGING_USERNAME(1, false, "There was an error while trying to change username!"),
+	REQUIREMENTS_NOT_MET(2, false, "Username requirements not met");
 
     private static final HashMap<Integer, ChangeUsernameResult> values;
 
@@ -41,8 +42,8 @@ public enum ChangeUsernameResult {
     public final ResultHolder resultHolder;
     public final int id;
 
-    ChangeUsernameResult(int id, boolean isSuccesfull, String message) {
-        resultHolder = new ResultHolder(isSuccesfull, message);
+    ChangeUsernameResult(int id, boolean isSuccessful, String message) {
+        resultHolder = new ResultHolder(isSuccessful, message);
         this.id = id;
     }
 

@@ -20,12 +20,12 @@ import 'package:ermis_client/util/dialogs_utils.dart';
 import 'package:flutter/material.dart';
 
 import 'messaging_interface.dart';
-import 'theme/app_theme.dart';
-import 'util/buttons_utils.dart';
-import 'client/common/chat_request.dart';
-import 'client/common/chat_session.dart';
-import 'client/client.dart';
-import 'util/top_app_bar_utils.dart';
+import '../../theme/app_theme.dart';
+import '../../util/buttons_utils.dart';
+import '../../client/common/chat_request.dart';
+import '../../client/common/chat_session.dart';
+import '../../client/client.dart';
+import '../../util/top_app_bar_utils.dart';
 
 class Chats extends StatefulWidget {
   const Chats({super.key});
@@ -179,10 +179,8 @@ class ChatsState extends LoadingState<Chats> {
 
             if (input == null) return;
             if (int.tryParse(input) == null) {
-              await showSimpleAlertDialog(
-                  context: context,
-                  title: "Error!",
-                  content: "Client id must be a number");
+              showSnackBarDialog(
+                  context: context, content: "Client id must be a number");
               return;
             }
 
@@ -213,7 +211,7 @@ class ChatsState extends LoadingState<Chats> {
               ListView(
                   children: [
                     SizedBox(
-                      height: MediaQuery.of(context).size.height,
+                      height: MediaQuery.of(context).size.height - 150,
                       width: MediaQuery.of(context).size.width,
                       child: Center(
                         child: Text(

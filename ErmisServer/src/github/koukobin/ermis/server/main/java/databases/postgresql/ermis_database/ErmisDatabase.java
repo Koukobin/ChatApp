@@ -31,12 +31,13 @@ import java.util.Map;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.checkerframework.checker.index.qual.UpperBoundBottom;
 
 import com.google.common.base.Throwables;
 import com.zaxxer.hikari.HikariDataSource;
 
+import github.koukobin.ermis.common.DeviceType;
 import github.koukobin.ermis.common.LoadedInMemoryFile;
+import github.koukobin.ermis.common.UserDeviceInfo;
 import github.koukobin.ermis.common.entry.AddedInfo;
 import github.koukobin.ermis.common.entry.CreateAccountInfo;
 import github.koukobin.ermis.common.entry.LoginInfo;
@@ -46,6 +47,7 @@ import github.koukobin.ermis.common.results.ChangePasswordResult;
 import github.koukobin.ermis.common.results.ChangeUsernameResult;
 import github.koukobin.ermis.common.results.EntryResult;
 import github.koukobin.ermis.common.results.ResultHolder;
+import github.koukobin.ermis.common.util.EmptyArrays;
 import github.koukobin.ermis.common.util.FileEditor;
 import github.koukobin.ermis.server.main.java.configs.ConfigurationsPaths.Database;
 import github.koukobin.ermis.server.main.java.configs.DatabaseSettings;
@@ -58,7 +60,6 @@ import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_databas
 import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.generators.MessageIDGenerator;
 import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.hashing.HashUtil;
 import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_database.hashing.SimpleHash;
-import io.netty.util.internal.EmptyArrays;
 
 /**
  * @author Ilias Koukovinis
@@ -122,10 +123,10 @@ public final class ErmisDatabase {
 				int usernameMaxLength = DatabaseSettings.Client.Username.REQUIREMENTS.getMaxLength();
 
 				String setupSQL = FileEditor.readFile(Database.DATABASE_SETUP_FILE)
-						.replace("USERNAME_LENGTH", Integer.toString(usernameMaxLength))
+						.replace("DISPLAY_LENGTH", Integer.toString(usernameMaxLength))
 						.replace("PASSWORD_HASH_LENGTH", Integer.toString(hashLength))
-						.replace("BACKUP_VERIFICATION_CODES_LENGTH", Integer.toString(DatabaseSettings.Client.BackupVerificationCodes.AMOUNT_OF_CODES))
-						.replace("BACKUP_VERIFICATION_CODES_AMOUNT", Integer.toString(backupVerificationCodesCharactersLength))
+						.replace("BACKUP_VERIFICATION_CODES_AMOUNT", Integer.toString(DatabaseSettings.Client.BackupVerificationCodes.AMOUNT_OF_CODES))
+						.replace("BACKUP_VERIFICATION_CODES_LENGTH", Integer.toString(backupVerificationCodesCharactersLength))
 						.replace("SALT_LENGTH", Integer.toString(saltLength));
 
 				stmt.execute(setupSQL);
@@ -134,6 +135,7 @@ public final class ErmisDatabase {
 				ClientIDGenerator.generateAvailableClientIDS(conn);
 			}
 		} catch (Exception e) {
+			logger.fatal(Throwables.getStackTraceAsString(e));
 			throw new RuntimeException(e);
 		}
 	}
@@ -146,6 +148,10 @@ public final class ErmisDatabase {
 		return new WriteChatMessagesDBConnection();
 	}
 
+	public enum Constant {
+	    NOT_FOUND, SUCCESSFUL_INSERT, DUPLICATE_ENTRY, NOTHING_CHANGED;
+	}
+	
 	private static class DBConnection implements AutoCloseable {
 
 		protected final Connection conn;
@@ -154,6 +160,7 @@ public final class ErmisDatabase {
 			try {
 				conn = hikariDataSource.getConnection();
 			} catch (SQLException sqle) {
+				logger.fatal(Throwables.getStackTraceAsString(sqle));
 				throw new RuntimeException(sqle);
 			}
 		}
@@ -163,13 +170,14 @@ public final class ErmisDatabase {
 			try {
 				conn.close();
 			} catch (SQLException sqle) {
+				logger.fatal(Throwables.getStackTraceAsString(sqle));
 				throw new RuntimeException(sqle);
 			}
 		}
 	}
 
 	public static class WriteChatMessagesDBConnection extends DBConnection {
-		
+
 		private WriteChatMessagesDBConnection() {
 			super(writeChatMessagesDataSource);
 		}
@@ -183,24 +191,29 @@ public final class ErmisDatabase {
 
 			int messageID = -1;
 
-			try (PreparedStatement addMessage = conn.prepareStatement(
-					"INSERT INTO chat_messages (chat_session_id, message_id, client_id, text, file_name, file_bytes, content_type) "
-					+ "VALUES(?, ?, ?, ?, ?, ?, ?) RETURNING message_id;")) {
+			String sql = """
+					    INSERT INTO chat_messages
+					    (chat_session_id, message_id, client_id, text, file_name, file_bytes, content_type)
+					    VALUES (?, ?, ?, ?, ?, ?, ?)
+					    RETURNING message_id;
+					""";
 
+			try (PreparedStatement addMessage = conn.prepareStatement(sql)) {
 				int chatSessionID = message.getChatSessionID();
+		        int generatedMessageID = MessageIDGenerator.incrementAndGetMessageID(chatSessionID, conn);
 
 				addMessage.setInt(1, chatSessionID);
-				addMessage.setInt(2, MessageIDGenerator.incrementAndGetMessageID(chatSessionID, conn));
+				addMessage.setInt(2, generatedMessageID);
 				addMessage.setInt(3, message.getClientID());
 				addMessage.setBytes(4, message.getText()); // keep in mind this converts the bytes to hexadecimal form
 				addMessage.setBytes(5, message.getFileName()); // keep in mind this converts the bytes to hexadecimal form
 				addMessage.setBytes(6, message.getFileBytes());
 				addMessage.setInt(7, ContentTypeConverter.getContentTypeAsDatabaseInt(message.getContentType()));
 
-				ResultSet rs = addMessage.executeQuery();
-				rs.next();
-
-				messageID = rs.getInt(1);
+				try (ResultSet rs = addMessage.executeQuery()) {
+					rs.next();
+					messageID = rs.getInt(1);
+				}
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
@@ -245,25 +258,28 @@ public final class ErmisDatabase {
 		/**
 		 * First checks if user meets requirements method before createAccount method
 		 */
-		public ResultHolder checkAndCreateAccount(String username, String password, InetAddress inetAddress,
+		public EntryResult checkAndCreateAccount(String username, String password, UserDeviceInfo deviceInfo,
 				String emailAddress) {
 
-			ResultHolder resultHolder = checkIfUserMeetsRequirementsToCreateAccount(username, password, emailAddress);
+			EntryResult resultHolder = new EntryResult(checkIfUserMeetsRequirementsToCreateAccount(username, password, emailAddress));
 
 			if (!resultHolder.isSuccessful()) {
 				return resultHolder;
 			}
 
-			return createAccount(username, password, inetAddress, emailAddress);
+			return createAccount(username, password, deviceInfo, emailAddress);
 		}
 
-		public ResultHolder createAccount(String username, String password, InetAddress inetAddress,
-				String emailAddress) {
+		public EntryResult createAccount(String username,
+				String password,
+				UserDeviceInfo deviceInfo, String emailAddress) {
 
+			// Retrieve and delete a unique client ID. If account creation fails, 
+			// the deleted client ID will be regenerated during the next generation.
 			int clientID = ClientIDGenerator.retrieveAndDelete(conn);
 
 			if (clientID == -1) {
-				return CreateAccountInfo.CreateAccount.Result.DATABASE_MAX_SIZE_REACHED.resultHolder;
+				return new EntryResult(CreateAccountInfo.CreateAccount.Result.DATABASE_MAX_SIZE_REACHED.resultHolder);
 			}
 
 			String salt;
@@ -281,58 +297,75 @@ public final class ErmisDatabase {
 				hashedBackupVerificationCodes = BackupVerificationCodesGenerator.generateHashedBackupVerificationCodes(salt);
 			}
 
-			try (PreparedStatement createAccount = conn.prepareStatement("INSERT INTO users ("
-					+ "username, password_hash, email, client_id, ips_logged_into, backup_verification_codes, salt) "
-					+ "VALUES(?, ?, ?, ?, ARRAY [?], ?, ?);")) {
+			try (PreparedStatement createUser = conn.prepareStatement("INSERT INTO users ("
+					+ "email, password_hash, client_id, backup_verification_codes, salt) "
+					+ "VALUES(?, ?, ?, ?, ?);")) {
 
-				createAccount.setString(1, username);
-				createAccount.setString(2, passwordHashResult);
-				createAccount.setString(3, emailAddress);
-				createAccount.setInt(4, clientID);
-				createAccount.setString(5, inetAddress.getHostName());
+				createUser.setString(1, emailAddress);
+				createUser.setString(2, passwordHashResult);
+				createUser.setInt(3, clientID);
 
 				Array backupVerificationCodesArray = conn.createArrayOf("TEXT", hashedBackupVerificationCodes);
-				createAccount.setArray(6, backupVerificationCodesArray);
+				createUser.setArray(4, backupVerificationCodesArray);
 				backupVerificationCodesArray.free();
 
-				createAccount.setString(7, salt);
+				createUser.setString(5, salt);
 
-				int resultUpdate = createAccount.executeUpdate();
-
-				if (resultUpdate == 1) {
-					
-					ResultHolder result = CreateAccountInfo.CreateAccount.Result.SUCCESFULLY_CREATED_ACCOUNT.resultHolder;
-					result.addTextToResultMessage("Backup Verification Codes:\n" + String.join("\n", hashedBackupVerificationCodes));
-					result.addTextToResultMessage("Backup Verification Codes are automatically generated and sent to your email in the case that you run out.");
-					
-					return result;
+				int resultUpdate = createUser.executeUpdate();
+				
+				if (resultUpdate == 0) {
+					return new EntryResult(CreateAccountInfo.CreateAccount.Result.ERROR_WHILE_CREATING_ACCOUNT.resultHolder);
 				}
 			} catch (SQLException sqle) {
-				logger.error(Throwables.getStackTraceAsString(sqle));
+				logger.trace(Throwables.getStackTraceAsString(sqle));
+			}
+			
+			try (PreparedStatement createProfile = conn.prepareStatement("INSERT INTO user_profiles ("
+					+ "display_name, client_id, about) "
+					+ "VALUES(?, ?, ?);")) {
+
+				createProfile.setString(1, username);
+				createProfile.setInt(2, clientID);
+				createProfile.setString(3, "");
+
+				int resultUpdate = createProfile.executeUpdate();
+
+				if (resultUpdate == 1) {
+
+					insertUserIp(clientID, deviceInfo);
+					
+					Map<AddedInfo, String> addedInfo = new EnumMap<>(AddedInfo.class);
+					addedInfo.put(AddedInfo.PASSWORD_HASH, passwordHashResult);
+					addedInfo.put(AddedInfo.BACKUP_VERIFICATION_CODES, String.join("\n", hashedBackupVerificationCodes));
+					
+					return new EntryResult(CreateAccountInfo.CreateAccount.Result.SUCCESFULLY_CREATED_ACCOUNT.resultHolder, addedInfo);
+				}
+			} catch (SQLException sqle) {
+				logger.trace(Throwables.getStackTraceAsString(sqle));
 			}
 
-			return CreateAccountInfo.CreateAccount.Result.ERROR_WHILE_CREATING_ACCOUNT.resultHolder;
+			return new EntryResult(CreateAccountInfo.CreateAccount.Result.ERROR_WHILE_CREATING_ACCOUNT.resultHolder);
 		}
 
-		@Deprecated
-		@UpperBoundBottom
-		public int deleteAccount(String email, String password) {
+		public int deleteAccount(String enteredEmail, String enteredPassword, int clientID) {
 
 			int resultUpdate = 0;
 
-//			if (!checkAuthentication(email, password) ) {
-//				return resultUpdate;
-//			}
-			
-			if (checkAuthentication(email, password) != null ) {
-			return resultUpdate;
-		}
+			// Verify that the entered email is associated with the provided client ID
+			int associatedClientID = getClientID(enteredEmail);
+			if (associatedClientID != clientID) {
+				return resultUpdate;
+			}
 
-			try (PreparedStatement deleteAccount = conn.prepareStatement("DELETE FROM users WHERE email=?;")) {
+			// Perform authentication to ensure email and password match
+			if (checkAuthentication(enteredEmail, enteredPassword) == null) {
+				return resultUpdate;
+			}
 
-				deleteAccount.setString(1, email);
+			try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM users WHERE client_id=?;")) {
+				pstmt.setInt(1, clientID);
 
-				resultUpdate = deleteAccount.executeUpdate();
+				resultUpdate = pstmt.executeUpdate();
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
@@ -364,7 +397,7 @@ public final class ErmisDatabase {
 			return LoginInfo.CredentialsExchange.Result.SUCCESFULLY_EXCHANGED_CREDENTIALS.resultHolder;
 		}
 
-		public EntryResult checkRequirementsAndLogin(String email, String password, InetAddress inetAddress) {
+		public EntryResult checkRequirementsAndLogin(String email, String password, UserDeviceInfo deviceInfo) {
 
 			ResultHolder resultHolder = checkIfUserMeetsRequirementsToLogin(email);
 
@@ -372,10 +405,11 @@ public final class ErmisDatabase {
 				return new EntryResult(resultHolder);
 			}
 
-			return loginUsingPassword(inetAddress, email, password);
+			return loginUsingPassword(email, password, deviceInfo);
 		}
 
-		public ResultHolder loginUsingBackupVerificationCode(InetAddress inetAddress, String email, String backupVerificationCode) {
+		@Deprecated
+		public ResultHolder loginUsingBackupVerificationCode(String email, String backupVerificationCode, UserDeviceInfo deviceInfo) {
 
 			String[] backupVerificationCodes = getBackupVerificationCodesAsStringArray(email);
 			
@@ -403,15 +437,15 @@ public final class ErmisDatabase {
 			}
 			
 			// Add address to user logged in ip addresses
-			int resultUpdate = addIpAddressLoggedInto(inetAddress, email);
+			Constant resultC = insertUserIp(email, deviceInfo);
 			
-			if (resultUpdate == 1) {
+			if (resultC == Constant.SUCCESSFUL_INSERT) {
 				
 				ResultHolder result = LoginInfo.Login.Result.SUCCESFULLY_LOGGED_IN.resultHolder;
 				
 				// If has regenerated backup verification codes then add the to the result message
 				if (hasRegeneratedBackupVerificationCodes) {
-					result.addTextToResultMessage("Backup Verification Codes:\n" + String.join("\n", getBackupVerificationCodesAsStringArray(email)));
+//					result.addTextToResultMessage("Backup Verification Codes:\n" + String.join("\n", getBackupVerificationCodesAsStringArray(email)));
 				}
 				
 				return result;
@@ -420,7 +454,7 @@ public final class ErmisDatabase {
 			return LoginInfo.Login.Result.ERROR_WHILE_LOGGING_IN.resultHolder;
 		}
 		
-		public EntryResult loginUsingPassword(InetAddress inetAddress, String email, String password) {
+		public EntryResult loginUsingPassword(String email, String password, UserDeviceInfo deviceInfo) {
 
 			String passwordHash = checkAuthentication(email, password);
 			if (passwordHash == null) {
@@ -428,9 +462,9 @@ public final class ErmisDatabase {
 			}
 
 			// Add address to user logged in ip addresses
-			int resultUpdate = addIpAddressLoggedInto(inetAddress, email);
+			Constant result = insertUserIp(email, deviceInfo);
 
-			if (resultUpdate == 1) {
+			if (result != Constant.NOTHING_CHANGED) {
 				Map<AddedInfo, String> info = new EnumMap<>(AddedInfo.class);
 				info.put(AddedInfo.PASSWORD_HASH, passwordHash);
 				return new EntryResult(LoginInfo.Login.Result.SUCCESFULLY_LOGGED_IN.resultHolder, info);
@@ -438,39 +472,45 @@ public final class ErmisDatabase {
 
 			return new EntryResult(LoginInfo.Login.Result.ERROR_WHILE_LOGGING_IN.resultHolder);
 		}
+
+		public Constant insertUserIp(String email, UserDeviceInfo deviceInfo) {
+			return insertUserIp(getClientID(email), deviceInfo);
+		}
 		
-		public int addIpAddressLoggedInto(InetAddress inetAddress, String email) {
+		public Constant insertUserIp(int clientID, UserDeviceInfo deviceInfo) {
+			String sql = """
+					  INSERT INTO user_ips (client_id, ip_address, device_type, os_name)
+					  VALUES (?, ?, ?, ?)
+					  ON CONFLICT (client_id, ip_address) DO NOTHING;
+					""";
 			
-			int resultUpdate = 0;
-			
-			try (PreparedStatement updateIPS = conn.prepareStatement(
-					"UPDATE users SET ips_logged_into=array_append(ips_logged_into, ?) where email=?;")) {
-
-				updateIPS.setString(1, inetAddress.getHostName());
-				updateIPS.setString(2, email);
-
-				resultUpdate = updateIPS.executeUpdate();
+			try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+				pstmt.setInt(1, clientID);
+				pstmt.setString(2, deviceInfo.ipAddress());
+				pstmt.setInt(3, DeviceTypeConverter.getDeviceTypeAsDatabaseInt(deviceInfo.deviceType()));
+				pstmt.setString(4, deviceInfo.osName());
+				
+		        int affectedRows = pstmt.executeUpdate();
+		        return affectedRows > 0 ? Constant.SUCCESSFUL_INSERT : Constant.DUPLICATE_ENTRY;
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
-			
-			return resultUpdate;
+
+			return Constant.NOTHING_CHANGED;
 		}
 
-		public ResultHolder changeUsername(int clientID, String newUsername) {
-
-			if (!usernameComplexityChecker.estimate(newUsername)) {
-				return usernameComplexityChecker.getResultWhenUnsuccesfull();
+		public ResultHolder changeDisplayName(int clientID, String newDisplayName) {
+			
+			if (!usernameComplexityChecker.estimate(newDisplayName)) {
+				return ChangeUsernameResult.REQUIREMENTS_NOT_MET.resultHolder;
 			}
-
-			try (PreparedStatement changeUsername = conn
-					.prepareStatement("UPDATE users SET username=? WHERE client_id=?")) {
-
-				changeUsername.setString(1, newUsername);
+			
+			String sql = "UPDATE user_profiles SET display_name=? WHERE client_id=?";
+			try (PreparedStatement changeUsername = conn.prepareStatement(sql)) {
+				changeUsername.setString(1, newDisplayName);
 				changeUsername.setInt(2, clientID);
-				
-				int resultUpdate = changeUsername.executeUpdate();
 
+				int resultUpdate = changeUsername.executeUpdate();
 				if (resultUpdate == 1) {
 					return ChangeUsernameResult.SUCCESFULLY_CHANGED_USERNAME.resultHolder;
 				}
@@ -480,7 +520,7 @@ public final class ErmisDatabase {
 
 			return ChangeUsernameResult.ERROR_WHILE_CHANGING_USERNAME.resultHolder;
 		}
-
+		
 		public ResultHolder changePassword(String emailAddress, String newPassword) {
 
 			if (!passwordComplexityChecker.estimate(newPassword)) {
@@ -509,54 +549,54 @@ public final class ErmisDatabase {
 			return ChangePasswordResult.ERROR_WHILE_CHANGING_PASSWORD.resultHolder;
 		}
 		
-		public String getUsername(InetAddress inetAddress) {
+//		public String getDisplayName(InetAddress inetAddress) {
+//
+//			String username = null;
+//
+//			try (PreparedStatement getUsername = conn
+//					.prepareStatement("SELECT username FROM users WHERE ?=ANY(ips_logged_into);")) {
+//
+//				getUsername.setString(1, inetAddress.getHostName());
+//				ResultSet rs = getUsername.executeQuery();
+//
+//				if (rs.next()) {
+//					username = rs.getString(1);
+//				}
+//			} catch (SQLException sqle) {
+//				logger.error(Throwables.getStackTraceAsString(sqle));
+//			}
+//
+//			return username;
+//		}
 
-			String username = null;
-
-			try (PreparedStatement getUsername = conn
-					.prepareStatement("SELECT username FROM users WHERE ?=ANY(ips_logged_into);")) {
-
-				getUsername.setString(1, inetAddress.getHostName());
-				ResultSet rs = getUsername.executeQuery();
-
-				if (rs.next()) {
-					username = rs.getString(1);
-				}
-			} catch (SQLException sqle) {
-				logger.error(Throwables.getStackTraceAsString(sqle));
-			}
-
-			return username;
-		}
-
-		public String getUsername(String emailAddress) {
-
-			String username = null;
-
-			try (PreparedStatement getUsername = conn.prepareStatement("SELECT username FROM users WHERE email=?;")) {
-
-				getUsername.setString(1, emailAddress);
-				ResultSet rs = getUsername.executeQuery();
-
-				if (rs.next()) {
-					username = rs.getString(1);
-				}
-			} catch (SQLException sqle) {
-				logger.error(Throwables.getStackTraceAsString(sqle));
-			}
-
-			return username;
-		}
+//		public String getUsername(String emailAddress) {
+//
+//			String username = null;
+//
+//			try (PreparedStatement getUsername = conn.prepareStatement("SELECT username FROM users WHERE email=?;")) {
+//
+//				getUsername.setString(1, emailAddress);
+//				ResultSet rs = getUsername.executeQuery();
+//
+//				if (rs.next()) {
+//					username = rs.getString(1);
+//				}
+//			} catch (SQLException sqle) {
+//				logger.error(Throwables.getStackTraceAsString(sqle));
+//			}
+//
+//			return username;
+//		}
 
 		public String getUsername(int clientID) {
 
 			String username = null;
 
-			try (PreparedStatement getUsername = conn
-					.prepareStatement("SELECT username FROM users WHERE client_id=?;")) {
+			try (PreparedStatement pstmt = conn
+					.prepareStatement("SELECT display_name FROM user_profiles WHERE client_id=?;")) {
 
-				getUsername.setInt(1, clientID);
-				ResultSet rs = getUsername.executeQuery();
+				pstmt.setInt(1, clientID);
+				ResultSet rs = pstmt.executeQuery();
 
 				if (rs.next()) {
 					username = rs.getString(1);
@@ -572,17 +612,29 @@ public final class ErmisDatabase {
 
 			String passwordHash = null;
 
-			try (PreparedStatement getPasswordHash = conn
-					.prepareStatement("SELECT password_hash FROM users WHERE email=?")) {
-
-				getPasswordHash.setString(1, email);
-
-				ResultSet rs = getPasswordHash.executeQuery();
-
+			try (PreparedStatement pstmt = conn.prepareStatement("SELECT password_hash FROM users WHERE email=?")) {
+				pstmt.setString(1, email);
+				ResultSet rs = pstmt.executeQuery();
 				if (rs.next()) {
 					passwordHash = rs.getString(1);
 				}
+			} catch (SQLException sqle) {
+				logger.error(Throwables.getStackTraceAsString(sqle));
+			}
 
+			return passwordHash;
+		}
+		
+		public String getPasswordHash(int clientID) {
+
+			String passwordHash = null;
+
+			try (PreparedStatement pstmt = conn.prepareStatement("SELECT password_hash FROM users WHERE client_id=?")) {
+				pstmt.setInt(1, clientID);
+				ResultSet rs = pstmt.executeQuery();
+				if (rs.next()) {
+					passwordHash = rs.getString(1);
+				}
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
@@ -600,7 +652,26 @@ public final class ErmisDatabase {
 				getPasswordHash.setString(1, email);
 
 				ResultSet rs = getPasswordHash.executeQuery();
+				if (rs.next()) {
+					salt = rs.getString(1);
+				}
+			} catch (SQLException sqle) {
+				logger.error(Throwables.getStackTraceAsString(sqle));
+			}
 
+			return salt;
+		}
+		
+		public String getSalt(int clientID) {
+
+			String salt = null;
+
+			try (PreparedStatement getPasswordHash = conn
+					.prepareStatement("SELECT salt FROM users WHERE client_id=?")) {
+
+				getPasswordHash.setInt(1, clientID);
+
+				ResultSet rs = getPasswordHash.executeQuery();
 				if (rs.next()) {
 					salt = rs.getString(1);
 				}
@@ -677,12 +748,13 @@ public final class ErmisDatabase {
 			
 			int resultUpdate = 0;
 			
-			try (PreparedStatement removeBackupVerificationCode = conn.prepareStatement("UPDATE users SET backup_verification_codes=array_remove(backup_verification_codes, ?) WHERE email=?")) {
+			String sql = "UPDATE users SET backup_verification_codes=array_remove(backup_verification_codes, ?) WHERE email=?";
+			try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 				
-				removeBackupVerificationCode.setString(1, backupVerificationCode);
-				removeBackupVerificationCode.setString(2, email);
+				pstmt.setString(1, backupVerificationCode);
+				pstmt.setString(2, email);
 				
-				removeBackupVerificationCode.executeUpdate();
+				pstmt.executeUpdate();
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
@@ -693,13 +765,13 @@ public final class ErmisDatabase {
 		public int getNumberOfBackupVerificationCodesLeft(String email) {
 		
 			int numberOfBackupVerificationCodesLeft = 0;
-			
-			try (PreparedStatement getNumberOfBackupVerificationCodesLeft = conn
-					.prepareStatement("SELECT array_length(backup_verification_codes, 1) FROM users WHERE email=?;")) {
+
+			String sql = "SELECT array_length(backup_verification_codes, 1) FROM users WHERE email=?;";
+			try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+				pstmt.setString(1, email);
 				
-				getNumberOfBackupVerificationCodesLeft.setString(1, email);
-				
-				ResultSet rs = getNumberOfBackupVerificationCodesLeft.executeQuery();
+				ResultSet rs = pstmt.executeQuery();
 				
 				if (rs.next()) {
 					numberOfBackupVerificationCodesLeft = rs.getInt(1);
@@ -715,12 +787,12 @@ public final class ErmisDatabase {
 
 			int clientID = -1;
 
-			try (PreparedStatement getClientID = conn
-					.prepareStatement("SELECT client_id FROM users WHERE ?=ANY(ips_logged_into);")) {
+			String sql = "SELECT client_id FROM user_ips WHERE ip_address=?;";
+			try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-				getClientID.setString(1, address.getHostName());
-				ResultSet rs = getClientID.executeQuery();
-
+				pstmt.setString(1, address.getHostName());
+				
+				ResultSet rs = pstmt.executeQuery();
 				if (rs.next()) {
 					clientID = rs.getInt(1);
 				}
@@ -735,10 +807,10 @@ public final class ErmisDatabase {
 
 			int clientID = -1;
 
-			try (PreparedStatement getClientID = conn.prepareStatement("SELECT client_id FROM users WHERE email=?;")) {
+			try (PreparedStatement pstmt = conn.prepareStatement("SELECT client_id FROM users WHERE email=?;")) {
 
-				getClientID.setString(1, email);
-				ResultSet rs = getClientID.executeQuery();
+				pstmt.setString(1, email);
+				ResultSet rs = pstmt.executeQuery();
 
 				if (rs.next()) {
 					clientID = rs.getInt(1);
@@ -750,155 +822,174 @@ public final class ErmisDatabase {
 			return clientID;
 		}
 
-		public String[] getIPSLoggedInto(String email) {
+		public UserDeviceInfo[] getUserIPS(int clientID) {
 
-			String[] ipsLoggedInto = ArrayUtils.EMPTY_STRING_ARRAY;
+			UserDeviceInfo[] userIPS = EmptyArrays.EMPTY_DEVICE_INFO_ARRAY;
 
-			try (PreparedStatement getClientID = conn
-					.prepareStatement("SELECT ips_logged_into FROM users WHERE email=?;")) {
+			try (PreparedStatement pstmt = conn.prepareStatement(
+					"SELECT ip_address, device_type, os_name FROM user_ips WHERE client_id=?", ResultSet.TYPE_SCROLL_SENSITIVE,
+					ResultSet.CONCUR_UPDATABLE)) {
 
-				getClientID.setString(1, email);
-				ResultSet rs = getClientID.executeQuery();
+				pstmt.setInt(1, clientID);
+				ResultSet rs = pstmt.executeQuery();
 
-				if (!rs.next()) {
-					return ipsLoggedInto;
+				// Move to the last row to get the row count
+				rs.last();
+				int rowCount = rs.getRow(); // Get total rows
+				rs.beforeFirst();
+				
+				userIPS = new UserDeviceInfo[rowCount];
+				
+				int i = 0;
+				while (rs.next()) {
+					String address = rs.getString("ip_address");
+					DeviceType deviceType = DeviceTypeConverter.getDatabaseIntAsDeviceType(rs.getInt("device_type"));
+					String osName = rs.getString("os_name");
+					userIPS[i] = new UserDeviceInfo(address, deviceType, osName);
+					i++;
 				}
-
-				ipsLoggedInto = (String[]) rs.getArray(1).getArray();
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
 
-			return ipsLoggedInto;
+			return userIPS;
 		}
+		
+//		public String[] getIPSLoggedInto(String email) {
+//
+//			String[] ipsLoggedInto = ArrayUtils.EMPTY_STRING_ARRAY;
+//
+//			try (PreparedStatement getClientID = conn
+//					.prepareStatement("SELECT ips_logged_into FROM users WHERE email=?;")) {
+//
+//				getClientID.setString(1, email);
+//				ResultSet rs = getClientID.executeQuery();
+//
+//				if (!rs.next()) {
+//					return ipsLoggedInto;
+//				}
+//
+//				ipsLoggedInto = (String[]) rs.getArray(1).getArray();
+//			} catch (SQLException sqle) {
+//				logger.error(Throwables.getStackTraceAsString(sqle));
+//			}
+//
+//			return ipsLoggedInto;
+//		}
 
-		public int createChatIfDoesntExist(int chatSessionID, int[] membersClientIDs) {
+		public int createChat(int chatSessionID, int... members) {
 
 			int resultUpdate = 0;
 
-			try (PreparedStatement createChat = conn.prepareStatement(
-					"INSERT INTO chat_sessions (chat_session_id, members) VALUES(?, ?) ON CONFLICT DO NOTHING;")) {
-
-				createChat.setInt(1, chatSessionID);
-
-				Array memberClientIDSObjectArray = conn.createArrayOf("INTEGER", ArrayUtils.toObject(membersClientIDs));
-				createChat.setArray(2, memberClientIDSObjectArray);
-				memberClientIDSObjectArray.free();
-
-				resultUpdate = createChat.executeUpdate();
-			} catch (SQLException sqle) {
-				logger.error(Throwables.getStackTraceAsString(sqle));
-			}
-
-			return resultUpdate;
-		}
-
-		private int createChat(int chatSessionID, int[] membersClientIDs) {
-
-			int resultUpdate = 0;
-
-			try (PreparedStatement createChat = conn
-					.prepareStatement("INSERT INTO chat_sessions (chat_session_id, members) VALUES(?, ?);")) {
-
-				createChat.setInt(1, chatSessionID);
-
-				Integer[] membersClientIDSObject = ArrayUtils.toObject(membersClientIDs);
-
-				Array array = conn.createArrayOf("INTEGER", membersClientIDSObject);
-				createChat.setArray(2, array);
-				array.free();
-
-				resultUpdate = createChat.executeUpdate();
-			} catch (SQLException sqle) {
-				logger.error(Throwables.getStackTraceAsString(sqle));
-			}
-
-			return resultUpdate;
-		}
-
-		/**
-		 * 
-		 * @return the newly created chat session id. If the creation of the chat
-		 *         session was unsuccesfull returns -1
-		 */
-		public int acceptChatRequestIfExists(int senderClientID, int receiverClientID) {
-
-			int chatSessionID = -1;
-
-			try {
-
-				// Check to see if the client even has a friend request with the given client id
-				try (PreparedStatement doesUserHaveFriendRequest = conn
-						.prepareStatement("SELECT 1 FROM users WHERE client_id=? AND (chat_requests @> ARRAY[?]);")) {
-
-					doesUserHaveFriendRequest.setInt(1, senderClientID);
-					doesUserHaveFriendRequest.setInt(2, receiverClientID);
-
-					ResultSet rs = doesUserHaveFriendRequest.executeQuery();
-
-					if (!rs.next()) {
-						return chatSessionID;
-					}
-
-					chatSessionID = acceptChatRequest(senderClientID, receiverClientID);
+			String createChatSQL = "INSERT INTO chat_sessions (chat_session_id) VALUES(?) ON CONFLICT DO NOTHING;";
+			try (PreparedStatement psmtp = conn.prepareStatement(createChatSQL)) {
+				psmtp.setInt(1, chatSessionID);
+				resultUpdate = psmtp.executeUpdate();
+				
+				if (resultUpdate == 1) {
+					insertMember(chatSessionID, members);
 				}
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
+			
 
-			return chatSessionID;
+			return resultUpdate;
 		}
-
-		/**
-		 * 
-		 * @return the newly created chat session id. If the creation of the chat
-		 *         session was unsuccesfull returns -1
-		 */
-		public int acceptChatRequest(int senderClientID, int receiverClientID) {
-
-			int chatSessionID = -1;
-
-			try {
-
-				int chatSessionIDTemp = ChatSessionIDGenerator.retrieveAndDelete(conn);
-
-				try (PreparedStatement updateChatSessionIDS = conn.prepareStatement(
-						"UPDATE users SET chat_session_ids = array_append(chat_session_ids, ?) WHERE client_id=?;")) {
-
-					updateChatSessionIDS.setInt(1, chatSessionIDTemp);
-					updateChatSessionIDS.setInt(2, senderClientID);
-
-					int resultUpdate = updateChatSessionIDS.executeUpdate();
-
-					if (resultUpdate == 0) {
-						return chatSessionID;
-					}
-
-					updateChatSessionIDS.setInt(2, receiverClientID);
-					resultUpdate = updateChatSessionIDS.executeUpdate();
-
-					if (resultUpdate == 0) {
-						return chatSessionID;
-					}
+		
+		public void insertMember(int chatSessionID, int... members) {
+			String insertMembers = "INSERT INTO chat_session_members (chat_session_id, member_id) VALUES(?, ?) ON CONFLICT DO NOTHING;";
+			try (PreparedStatement psmtp = conn.prepareStatement(insertMembers)){
+				
+				for (int i = 0; i < members.length; i++) {
+					psmtp.setInt(1, chatSessionID);
+					psmtp.setInt(2, members[i]);
+					psmtp.addBatch();
 				}
-
-				createChat(chatSessionIDTemp, new int[] { receiverClientID, senderClientID });
-				deleteChatRequest(senderClientID, receiverClientID);
-
-				chatSessionID = chatSessionIDTemp;
+				
+				psmtp.executeBatch();
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
-
-			return chatSessionID;
 		}
 
-		public int deleteChatRequest(int senderClientID, int receiverClientID) {
+//		private int createChat(int chatSessionID, int[] membersClientIDs) {
+//
+//			int resultUpdate = 0;
+//
+//			try (PreparedStatement createChat = conn
+//					.prepareStatement("INSERT INTO chat_sessions (chat_session_id, members) VALUES(?, ?);")) {
+//
+//				createChat.setInt(1, chatSessionID);
+//
+//				Integer[] membersClientIDSObject = ArrayUtils.toObject(membersClientIDs);
+//
+//				Array array = conn.createArrayOf("INTEGER", membersClientIDSObject);
+//				createChat.setArray(2, array);
+//				array.free();
+//
+//				resultUpdate = createChat.executeUpdate();
+//			} catch (SQLException sqle) {
+//				logger.error(Throwables.getStackTraceAsString(sqle));
+//			}
+//
+//			return resultUpdate;
+//		}
+
+		/**
+		 * Accepts a chat request and creates a new chat session.
+		 *
+		 * @param senderClientID   ID of the client who sent the chat request.
+		 * @param receiverClientID ID of the client who received the chat request.
+		 * @return the newly created chat session ID. If the creation of the chat session fails, returns -1.
+		 */
+		public int acceptChatRequest(int receiverClientID, int senderClientID) {
+			
+			int chatSessionID = -1;
+
+			try {
+		        // Check if the chat request exists
+		        String checkRequestSql = "SELECT 1 FROM chat_requests WHERE sender_client_id = ? AND receiver_client_id = ?";
+		        try (PreparedStatement pstmt = conn.prepareStatement(checkRequestSql)) {
+		            pstmt.setInt(1, senderClientID);
+					pstmt.setInt(2, receiverClientID);
+					if (!pstmt.execute()) {
+						return chatSessionID; // Chat request does not exist
+					}
+		        }
+
+		        // Generate a new chat session ID
+		        int newChatSessionID = ChatSessionIDGenerator.retrieveAndDelete(conn);
+
+				if (newChatSessionID == -1) {
+					return newChatSessionID;
+				}
+
+		        // Attempt to create the chat session
+		        if (createChat(newChatSessionID, senderClientID, receiverClientID) == 1) {
+		            // Delete the chat request upon successful creation of the chat session
+		            deleteChatRequest(receiverClientID, senderClientID);
+
+		            // Set the generated chat session ID as the result
+		            chatSessionID = newChatSessionID;
+
+		        } else {
+		        	ChatSessionIDGenerator.undo(newChatSessionID);
+		        }
+		    } catch (SQLException sqle) {
+		        logger.debug("Error accepting chat request", sqle);
+		    }
+
+		    return chatSessionID;
+		}
+
+
+		public int deleteChatRequest(int receiverClientID, int senderClientID) {
 
 			int resultUpdate = 0;
 
 			try (PreparedStatement deleteFriendRequest = conn.prepareStatement(
-					"UPDATE users SET chat_requests = array_remove(chat_requests, ?) WHERE client_id=?;")) {
+					"DELETE FROM chat_requests WHERE receiver_client_id=? AND sender_client_id=?")) {
 
 				deleteFriendRequest.setInt(1, receiverClientID);
 				deleteFriendRequest.setInt(2, senderClientID);
@@ -915,15 +1006,11 @@ public final class ErmisDatabase {
 
 			int resultUpdate = 0;
 
-			try (PreparedStatement updateUserFriendRequests = conn
-					.prepareStatement("UPDATE users SET chat_requests = array_append(chat_requests, ?) "
-							+ "WHERE client_id=? " + "AND NOT (chat_requests @> ARRAY[?]);")) {
-
-				updateUserFriendRequests.setInt(1, senderClientID);
-				updateUserFriendRequests.setInt(2, receiverClientID);
-				updateUserFriendRequests.setInt(3, senderClientID);
-
-				resultUpdate = updateUserFriendRequests.executeUpdate();
+		    String sql = "INSERT INTO chat_requests (receiver_client_id, sender_client_id) VALUES (?, ?)";
+		    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		        pstmt.setInt(1, receiverClientID);
+		        pstmt.setInt(2, senderClientID);
+				resultUpdate = pstmt.executeUpdate();
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
@@ -935,17 +1022,26 @@ public final class ErmisDatabase {
 
 			Integer[] friendRequests = ArrayUtils.EMPTY_INTEGER_OBJECT_ARRAY;
 
-			try (PreparedStatement getFriendRequests = conn
-					.prepareStatement("SELECT chat_requests FROM users WHERE client_id=?;")) {
+			try (PreparedStatement pstmt = conn
+					.prepareStatement("SELECT sender_client_id FROM chat_requests WHERE receiver_client_id=?;",
+							ResultSet.TYPE_SCROLL_SENSITIVE, 
+							ResultSet.CONCUR_UPDATABLE)) {
 
-				getFriendRequests.setInt(1, clientID);
-				ResultSet rs = getFriendRequests.executeQuery();
+				pstmt.setInt(1, clientID);
+				ResultSet rs = pstmt.executeQuery();
 
-				if (!rs.next()) {
-					return friendRequests;
+				// Move to the last row to get the row count
+				rs.last();
+				int rowCount = rs.getRow(); // Get total rows
+				rs.beforeFirst();
+
+				friendRequests = new Integer[rowCount];
+				
+				int i = 0;
+				while (rs.next()) {
+					friendRequests[i] = rs.getInt("sender_client_id");
+					i++;
 				}
-
-				friendRequests = (Integer[]) rs.getArray(1).getArray();
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
@@ -1015,14 +1111,18 @@ public final class ErmisDatabase {
 
 		/**
 		 * 
-		 * @return the ids of the chat sessions that the user belongs to.
+		 * @returns the ids of the chat sessions that the user belongs to.
 		 */
 		public Integer[] getChatSessionsUserBelongsTo(int clientID) {
 
 			Integer[] chatSessions = ArrayUtils.EMPTY_INTEGER_OBJECT_ARRAY;
 
-			try (PreparedStatement getChatSessionIDS = conn
-					.prepareStatement("SELECT chat_session_ids FROM users WHERE client_id=?;")) {
+			try (PreparedStatement getChatSessionIDS = conn.prepareStatement(
+					"SELECT chat_session_id FROM chat_session_members WHERE member_id=?;",
+					ResultSet.TYPE_SCROLL_SENSITIVE,
+					ResultSet.CONCUR_UPDATABLE /*
+												 * Pass these parameters so ResultSets can move forwards and backwards
+												 */)) {
 
 				getChatSessionIDS.setInt(1, clientID);
 				ResultSet rs = getChatSessionIDS.executeQuery();
@@ -1030,8 +1130,21 @@ public final class ErmisDatabase {
 				if (!rs.next()) {
 					return chatSessions;
 				}
+				
+				// Move to the last row to get the row count
+				rs.last();
+				int rowCount = rs.getRow(); // Get total rows
+				rs.beforeFirst();
 
-				chatSessions = (Integer[]) rs.getArray(1).getArray();
+				chatSessions = new Integer[rowCount];
+
+				int i = 0;
+				while (rs.next()) {
+					Integer chatSessionID = rs.getInt(1);
+					System.out.println(chatSessionID);
+					chatSessions[i] = chatSessionID;
+					i++;
+				}
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
@@ -1047,14 +1160,28 @@ public final class ErmisDatabase {
 
 			Integer[] members = ArrayUtils.EMPTY_INTEGER_OBJECT_ARRAY;
 
-			try (PreparedStatement getMembersOfChatSessions = conn
-					.prepareStatement("SELECT members FROM chat_sessions WHERE chat_session_id=?;")) {
+			try (PreparedStatement getMembersOfChatSessions = conn.prepareStatement(
+					"SELECT member_id FROM chat_session_members WHERE chat_session_id=?;", 
+					ResultSet.TYPE_SCROLL_SENSITIVE,
+					ResultSet.CONCUR_UPDATABLE /*
+												 * Pass these parameters so ResultSets can move forwards and backwards
+												 */)) {
 
 				getMembersOfChatSessions.setInt(1, chatSessionID);
 				ResultSet rs = getMembersOfChatSessions.executeQuery();
 
-				if (rs.next()) {
-					members = (Integer[]) rs.getArray(1).getArray();
+				// Move to the last row to get the row count
+				rs.last();
+				int rowCount = rs.getRow(); // Get total rows
+				rs.beforeFirst();
+
+				members = new Integer[rowCount];
+
+				int i = 0;
+				while (rs.next()) {
+					Integer memberID = rs.getInt(1);
+					members[i] = memberID;
+					i++;
 				}
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
@@ -1067,13 +1194,29 @@ public final class ErmisDatabase {
 
 			int resultUpdate = 0;
 
-			try (PreparedStatement logout = conn.prepareStatement(
-					"UPDATE users SET ips_logged_into = array_remove(ips_logged_into, ?) WHERE client_id=?;")) {
+			String sql = "DELETE FROM user_ips WHERE ip_address=? AND client_id=?";
+			try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-				logout.setString(1, address.getHostName());
-				logout.setInt(2, clientID);
+				pstmt.setString(1, address.getHostName());
+				pstmt.setInt(2, clientID);
 
-				resultUpdate = logout.executeUpdate();
+				resultUpdate = pstmt.executeUpdate();
+			} catch (SQLException sqle) {
+				logger.error(Throwables.getStackTraceAsString(sqle));
+			}
+
+			return resultUpdate;
+		}
+		
+		public int logoutAllDevices(int clientID) {
+
+			int resultUpdate = 0;
+
+			String sql = "DELETE FROM user_ips WHERE client_id=?";
+			try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+				pstmt.setInt(1, clientID);
+
+				resultUpdate = pstmt.executeUpdate();
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
@@ -1086,11 +1229,10 @@ public final class ErmisDatabase {
 			boolean isLoggedIn = false;
 
 			try (PreparedStatement getIsLoggedIn = conn
-					.prepareStatement("SELECT 1 from users WHERE ?=ANY(ips_logged_into);")) {
+					.prepareStatement("SELECT 1 from user_ips WHERE ip_address=?;")) {
 
 				getIsLoggedIn.setString(1, address.getHostName());
 				ResultSet rs = getIsLoggedIn.executeQuery();
-
 				isLoggedIn = rs.next();
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
@@ -1140,13 +1282,13 @@ public final class ErmisDatabase {
 			
 			int resultUpdate = 0;
 
-			try (PreparedStatement addMessage = conn.prepareStatement(
-					"UPDATE users SET user_icon = ? WHERE client_id = ?;")) {
+			try (PreparedStatement pstmt = conn.prepareStatement(
+					"UPDATE user_profiles SET profile_photo = ? WHERE client_id = ?;")) {
 
-				addMessage.setBytes(1, icon);
-				addMessage.setInt(2, clientID);
+				pstmt.setBytes(1, icon);
+				pstmt.setInt(2, clientID);
 
-				resultUpdate = addMessage.executeUpdate();
+				resultUpdate = pstmt.executeUpdate();
 			} catch (SQLException sqle) {
 				logger.error(Throwables.getStackTraceAsString(sqle));
 			}
@@ -1158,12 +1300,12 @@ public final class ErmisDatabase {
 			
 			byte[] icon = null;
 
-			try (PreparedStatement addMessage = conn.prepareStatement(
-					"SELECT user_icon FROM users WHERE client_id = ?;")) {
+			try (PreparedStatement pstmt = conn.prepareStatement(
+					"SELECT profile_photo FROM user_profiles WHERE client_id = ?;")) {
 
-				addMessage.setInt(1, clientID);
+				pstmt.setInt(1, clientID);
 
-				ResultSet rs = addMessage.executeQuery();
+				ResultSet rs = pstmt.executeQuery();
 				
 				if (rs.next()) {
 					icon = rs.getBytes(1);
@@ -1173,7 +1315,7 @@ public final class ErmisDatabase {
 			}
 			
 			if (icon == null) {
-				icon = EmptyArrays.EMPTY_BYTES;
+				icon = EmptyArrays.EMPTY_BYTE_ARRAY;
 			}
 
 			return icon;
@@ -1208,7 +1350,7 @@ public final class ErmisDatabase {
 			Message[] messages = new Message[0];
 
 			try (PreparedStatement selectMessages = conn.prepareStatement(
-					"SELECT message_id, client_id, convert_from(text, 'UTF8'), convert_from(file_name, 'UTF8'), ts_entered, content_type "
+					"SELECT message_id, client_id, text, file_name, ts_entered, content_type "
 							+ "FROM chat_messages "
 							+ "WHERE chat_session_id=? "
 							+ "AND message_id <= ? "

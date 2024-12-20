@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import github.koukobin.ermis.common.results.ResultHolder;
+import github.koukobin.ermis.common.util.EnumIntConverter;
 
 /**
  * 
@@ -47,7 +48,7 @@ public final class Verification {
         }
 
         public static Action fromId(int id) {
-            return valuesById.get(id);
+            return EnumIntConverter.fromId(valuesById, id);
         }
     }
 
@@ -73,7 +74,7 @@ public final class Verification {
         }
 
         public static Result fromId(int id) {
-            return valuesById.get(id);
+            return EnumIntConverter.fromId(valuesById, id);
         }
     }
 }

@@ -21,7 +21,7 @@ enum DirectionYAxis {
   bottomToTop;
 }
 
-Future<void> pushHorizontalTransition(BuildContext context, Widget newPage) async {
+Future<void> pushHorizontalTransition(BuildContext context, Widget newPage, [Widget? oldPage]) async {
   await Navigator.push(
     context,
     PageRouteBuilder(
@@ -31,9 +31,9 @@ Future<void> pushHorizontalTransition(BuildContext context, Widget newPage) asyn
         const end = Offset.zero; // End position
         const curve = Curves.easeOutQuad;
 
-        var tween =
+        final tween = 
             Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
+        final offsetAnimation = animation.drive(tween);
 
         return SlideTransition(
           position: offsetAnimation,
@@ -48,7 +48,7 @@ Route createVerticalTransition(Widget newPage, DirectionYAxis direction) {
   return PageRouteBuilder(
     pageBuilder: (context, animation, secondaryAnimation) => newPage,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final double startX = direction == DirectionYAxis.bottomToTop ? 0.5 : -0.5;
+      final double startX = 0;
       final double startY = direction == DirectionYAxis.bottomToTop ? 1.0 : -1.0;
       final begin = Offset(startX, startY); // Start position: off-screen at the bottom
       const end = Offset.zero; // End position: on-screen
@@ -65,7 +65,7 @@ Route createVerticalTransition(Widget newPage, DirectionYAxis direction) {
   );
 }
 
-PageRouteBuilder buildSlideTransition(Widget newPage, DirectionYAxis direction) {
+PageRouteBuilder buildSlideTransition(DirectionYAxis direction, Widget newPage, [Widget? oldPage]) {
   return PageRouteBuilder(
     pageBuilder: (context, animation, secondaryAnimation) => newPage,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {

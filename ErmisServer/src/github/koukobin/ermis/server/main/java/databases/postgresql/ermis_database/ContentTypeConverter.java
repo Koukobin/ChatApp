@@ -34,7 +34,6 @@ final class ContentTypeConverter {
 	private static final int FILE = 64; // WARNING: DO NOT CHANGE
 	private static final int PHOTO = 343; // WARNING: DO NOT CHANGE
 	
-	
 	private static final Map<ContentType, Integer> contentTypesToDatabaseInts = new EnumMap<>(ContentType.class);
 	private static final Map<Integer, ContentType> databaseIntsToContentTypes = new HashMap<>();
 
@@ -59,3 +58,4 @@ final class ContentTypeConverter {
 		return databaseIntsToContentTypes.get(contentTypeInt);
 	}
 }
+

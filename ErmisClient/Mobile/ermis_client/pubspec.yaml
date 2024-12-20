@@ -15,7 +15,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0-rc.1
+version: 0.5.0
 
 environment:
   sdk: ^3.5.4
@@ -48,6 +48,9 @@ dependencies:
   flutter_foreground_task: ^8.17.0
   flutter_local_notifications: ^18.0.1
   timezone: ^0.10.0
+  font_awesome_flutter: ^10.8.0
+  flutter_colorpicker: ^1.1.0
+  package_info_plus: ^8.1.2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -58,6 +61,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.2
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -78,12 +82,14 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/primary_application_icon.png"
+  image_path: "assets/primary_application_icon2.png"
   remove_alpha_ios: true
 
 flutter:
   assets:
     - assets/primary_application_icon2.png
+    - assets/primary_application_icon.png
+    - assets/parthenonas.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

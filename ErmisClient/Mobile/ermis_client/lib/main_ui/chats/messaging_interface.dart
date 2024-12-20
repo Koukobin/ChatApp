@@ -17,23 +17,26 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:ermis_client/main_ui/settings/theme_settings.dart';
+import 'package:ermis_client/util/settings_json.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../constants/app_constants.dart';
 import 'chat_interface.dart';
-import 'client/client.dart';
-import 'client/common/chat_session.dart';
-import 'client/common/common.dart';
-import 'client/common/file_heap.dart';
-import 'client/common/message.dart';
-import 'theme/app_theme.dart';
-import 'util/dialogs_utils.dart';
-import 'util/file_utils.dart';
-import 'util/notifications_util.dart';
-import 'util/top_app_bar_utils.dart';
+import '../../client/client.dart';
+import '../../client/common/chat_session.dart';
+import '../../client/common/file_heap.dart';
+import '../../client/common/message.dart';
+import '../../client/common/message_types/content_type.dart';
+import '../../theme/app_theme.dart';
+import '../../util/dialogs_utils.dart';
+import '../../util/file_utils.dart';
+import '../../util/notifications_util.dart';
+import '../../util/top_app_bar_utils.dart';
 
 class MessagingInterface extends StatefulWidget {
   final int chatSessionIndex;
@@ -108,10 +111,9 @@ class MessagingInterfaceState extends LoadingState<MessagingInterface> {
     Client.getInstance().whenFileDownloaded((file) async {
      
       String? filePath = await saveFileToDownloads(file.fileName, file.fileBytes);
-      
+
       if (filePath != null) {
-        showSimpleAlertDialog(
-            context: context, title: "Info", content: "Downloaded file");
+        showSnackBarDialog(context: context, content: "Downloaded file");
         return;
       }
 
@@ -282,32 +284,35 @@ class MessagingInterfaceState extends LoadingState<MessagingInterface> {
           // If user reaches top of conversation retrieve more messages
           Client.getInstance().commands.fetchWrittenText(_chatSessionIndex);
         },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: ListView.builder(
-            controller: _scrollController,
-            reverse: true,
-            itemCount: _messages.length,
-            itemBuilder: (context, index) {
-              final Message message = _messages[_messages.length - index - 1];
-              return GestureDetector(
-                  onLongPress: () {
-                    setState(() {
-                      _isEditingMessage = true;
-                      _messageBeingEdited = message;
-                    });
-                  },
-                  child: Container(
-                      decoration: _isEditingMessage &&
-                              message == _messageBeingEdited
-                          ? BoxDecoration(
-                              color: appColors.secondaryColor.withOpacity(0.4),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.white, width: 1.5),
-                            )
-                          : null,
-                      child: MessageBubble(message: message, appColors: appColors)));
-            },
+        child: Container(
+          decoration: _getDecoration(SettingsJson().chatsBackDrop),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: ListView.builder(
+              controller: _scrollController,
+              reverse: true,
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final Message message = _messages[_messages.length - index - 1];
+                return GestureDetector(
+                    onLongPress: () {
+                      setState(() {
+                        _isEditingMessage = true;
+                        _messageBeingEdited = message;
+                      });
+                    },
+                    child: Container(
+                        decoration: _isEditingMessage &&
+                                message == _messageBeingEdited
+                            ? BoxDecoration(
+                                color: appColors.secondaryColor.withOpacity(0.4),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.white, width: 1.5),
+                              )
+                            : null,
+                        child: MessageBubble(message: message, appColors: appColors)));
+              },
+            ),
           ),
         ),
       ),
@@ -345,18 +350,15 @@ class MessagingInterfaceState extends LoadingState<MessagingInterface> {
                     break;
                 }
                 if (data == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(
-                            "An error occured while trying to copy message to clipboard")),
-                  );
+                  showSnackBarDialog(
+                      context: context,
+                      content:
+                          "An error occured while trying to copy message to clipboard");
                   return;
                 }
 
                 Clipboard.setData(ClipboardData(text: utf8.decode(data)));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Message copied to clipboard")),
-                );
+                showSnackBarDialog(context: context, content: "Message copied to clipboard");
                 setState(() {
                   _isEditingMessage = false;
                 });
@@ -366,9 +368,7 @@ class MessagingInterfaceState extends LoadingState<MessagingInterface> {
               onPressed: () {
                 Client.getInstance().commands.deleteMessage(
                     _chatSessionIndex, _messageBeingEdited.messageID);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Message deleted")),
-                );
+                showSnackBarDialog(context: context, content: "Message deleted");
                 setState(() {
                   _isEditingMessage = false;
                 });
@@ -449,6 +449,31 @@ class MessagingInterfaceState extends LoadingState<MessagingInterface> {
       ),
       body: Center(child: CircularProgressIndicator()),
     );
+  }
+
+  BoxDecoration _getDecoration(ChatBackDrop chatsBackDrop) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
+    switch (chatsBackDrop) {
+      case ChatBackDrop.gradient:
+        return BoxDecoration(
+          gradient: LinearGradient(
+            colors: SettingsJson().gradientColors,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        );
+      case ChatBackDrop.abstract:
+        return BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(parthenonasPath),
+            fit: BoxFit.none,
+          ),
+        );
+      default:
+        return BoxDecoration(
+          color: appColors.secondaryColor,
+        );
+    }
   }
 }
 

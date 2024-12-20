@@ -22,27 +22,22 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
 /**
+ * Abstract base class for handling entry-related actions in the application
+ * pipeline.
+ * 
  * @author Ilias Koukovinis
  *
  */
 abstract sealed class EntryHandler extends ParentHandler permits LoginHandler, CreateAccountHandler, VerificationHandler {
 
-	private boolean hasFailed = false;
-	private boolean isSuccesfull = false;
-	
-	private Runnable resultRunnable;
-	
 	protected EntryHandler(ClientInfo clientInfo) {
 		super(clientInfo);
 	}
 
-	@Override
-	public final void channelReadComplete(ChannelHandlerContext ctx) {
-		if (hasFailed || isSuccesfull) {
-			resultRunnable.run();
-		}
-	}
-
+	/**
+	 * Executes non-related actions to the actual registration, which can be, for instance, adding device info
+	 * 
+	 */
 	public abstract void executeEntryAction(ChannelHandlerContext ctx, ByteBuf msg) throws IOException;
 	public abstract void channelRead2(ChannelHandlerContext ctx, ByteBuf msg) throws IOException;
 
@@ -50,30 +45,41 @@ abstract sealed class EntryHandler extends ParentHandler permits LoginHandler, C
 	public final void channelRead1(ChannelHandlerContext ctx, ByteBuf msg) throws IOException {
 
 		boolean isAction = msg.readBoolean();
-		
+
 		if (isAction) {
 			executeEntryAction(ctx, msg);
-		} else {
-			channelRead2(ctx, msg);
+			return;
 		}
+
+		channelRead2(ctx, msg);
 	}
-	
-	protected abstract Runnable onSuccess(ChannelHandlerContext ctx);
+
+    /**
+     * Self-evident 
+     *
+     */
+	protected abstract void onSuccess(ChannelHandlerContext ctx);
 
 	protected void success(ChannelHandlerContext ctx) {
-		resultRunnable = onSuccess(ctx);
-		isSuccesfull = true;
+		onSuccess(ctx);
 	}
 
-	public void failed(ChannelHandlerContext ctx) {
-		resultRunnable = () -> registrationFailed(ctx, clientInfo);
-		hasFailed = true;
+	protected void failed(ChannelHandlerContext ctx) {
+		registrationFailed(ctx, clientInfo);
 	}
-	
+
+	/**
+	 * Transitions the pipeline to the message handler.
+	 *
+	 */
 	public static void login(ChannelHandlerContext ctx, ClientInfo clientInfo) {
 		ctx.pipeline().replace(ctx.handler(), MessageHandler.class.getName(), new MessageHandler(clientInfo));
 	}
 
+	/**
+	 * Reverts the pipeline to the starting entry handler.
+	 *
+	 */
 	public static void registrationFailed(ChannelHandlerContext ctx, ClientInfo clientInfo) {
 		ctx.pipeline().replace(ctx.handler(), StartingEntryHandler.class.getName(), new StartingEntryHandler(clientInfo));
 	}

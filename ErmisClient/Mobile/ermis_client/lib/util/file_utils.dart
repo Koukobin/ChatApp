@@ -31,7 +31,6 @@ import 'package:image/image.dart' as img;
 typedef FileCallBack = void Function(String fileName, Uint8List fileContent);
 
 class MyCamera {
-
   static Future<CameraController> initializeCamera() async {
     // Get a list of available cameras
     final cameras = await availableCameras();
@@ -40,7 +39,8 @@ class MyCamera {
     final CameraDescription camera = cameras.first;
 
     // Initialize the camera
-    CameraController controller = CameraController(camera, ResolutionPreset.high);
+    CameraController controller =
+        CameraController(camera, ResolutionPreset.high);
     return controller..initialize();
   }
 
@@ -53,9 +53,7 @@ class MyCamera {
     }
     return null;
   }
-
 }
-
 
 Future<String?> saveFileToDownloads(String fileName, Uint8List fileData) async {
   bool isSuccessful = await requestPermissions();
@@ -68,7 +66,7 @@ Future<String?> saveFileToDownloads(String fileName, Uint8List fileData) async {
     fileName: fileName,
     data: fileData,
   );
-  
+
   final filePath = await FlutterFileDialog.saveFile(params: params);
   return filePath;
 }
@@ -85,7 +83,6 @@ Future<void> writeFile(Uint8List fileData, String filePath) async {
 }
 
 Future<bool> requestPermissions({BuildContext? context}) async {
-
   DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
   AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
 
@@ -93,61 +90,42 @@ Future<bool> requestPermissions({BuildContext? context}) async {
     showSimpleAlertDialog(
         context: context,
         title: "Debug Mode",
-        content: androidInfo.version.sdkInt.toString());
+        content: "Android Version:${androidInfo.version.sdkInt.toString()}");
   }
 
-  if (androidInfo.version.sdkInt == 30) {
-    if (await Permission.manageExternalStorage.request().isPermanentlyDenied) {
-      openAppSettings();
-      return false;
-    }
+  // WARNING: very shitty code
+  bool success = true;
 
-    if (!(await Permission.manageExternalStorage.request().isGranted)) {
-      openAppSettings();
+  Future<bool> checkPermission(Permission permission) async {
+    if (await permission.request().isPermanentlyDenied ||
+        await permission.request().isDenied) {
       return false;
     }
-  } else if (androidInfo.version.sdkInt <= 29) {
-    if (await Permission.storage.request().isPermanentlyDenied) {
-      openAppSettings();
-      return false;
-    }
+    return true;
+  }
 
-    if (!(await Permission.storage.request().isGranted)) {
-      return false;
-    }
+  if (androidInfo.version.sdkInt <= 29) {
+    success = await checkPermission(Permission.storage);
+  } else if (androidInfo.version.sdkInt < 33) {
+    success = await checkPermission(Permission.manageExternalStorage);
   } else if (androidInfo.version.sdkInt >= 33) {
-    if (await Permission.photos.request().isPermanentlyDenied) {
-      openAppSettings();
-      return false;
-    }
+    const permissions = [
+      Permission.photos,
+      Permission.audio,
+      Permission.videos,
+    ];
 
-    if (!(await Permission.photos.request().isGranted)) {
-      return false;
-    }
-
-    if (await Permission.audio.request().isPermanentlyDenied) {
-      openAppSettings();
-      return false;
-    }
-
-    if (!(await Permission.audio.request().isGranted)) {
-      return false;
-    }
-
-    if (await Permission.videos.request().isPermanentlyDenied) {
-      openAppSettings();
-      return false;
-    }
-
-    if (!(await Permission.videos.request().isGranted)) {
-      return false;
+    for (Permission permission in permissions) {
+      success = await checkPermission(permission);
     }
   }
 
-  return true;
+  if (!success) openAppSettings();
+  return success;
 }
 
-Future<void> attachSingleFile(BuildContext context, FileCallBack onFinished) async {
+Future<void> attachSingleFile(
+    BuildContext context, FileCallBack onFinished) async {
   bool isSuccessful = await requestPermissions(context: context);
 
   if (!isSuccessful) {
@@ -171,8 +149,8 @@ Future<void> attachSingleFile(BuildContext context, FileCallBack onFinished) asy
   }
 }
 
-/// This function checks for the given file's signature and allows 
-/// you to identify whether the byte data is valid for a particular 
+/// This function checks for the given file's signature and allows
+/// you to identify whether the byte data is valid for a particular
 /// image format.
 bool isImage(Uint8List bytes) {
   // Check for JPEG signature
@@ -207,9 +185,7 @@ bool isImage(Uint8List bytes) {
   }
 
   // Check for BMP (Windows bitmap) signature
-  if (bytes.length >= 2 &&
-      bytes[0] == 0x42 &&
-      bytes[1] == 0x4D) {
+  if (bytes.length >= 2 && bytes[0] == 0x42 && bytes[1] == 0x4D) {
     return true;
   }
 
@@ -253,7 +229,10 @@ bool isImage(Uint8List bytes) {
       bytes[5] == 0x74 &&
       bytes[6] == 0x79 &&
       bytes[7] == 0x70 &&
-      (bytes[8] == 0x68 || bytes[8] == 0x69 || bytes[8] == 0x6A || bytes[8] == 0x64)) {
+      (bytes[8] == 0x68 ||
+          bytes[8] == 0x69 ||
+          bytes[8] == 0x6A ||
+          bytes[8] == 0x64)) {
     return true;
   }
 

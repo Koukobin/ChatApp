@@ -62,6 +62,10 @@ class ByteBuf {
     _writtenBytes += bytes.length;
   }
 
+  void writeByteBuf(ByteBuf bytebuf) {
+    writeBytes(bytebuf.buffer);
+  }
+
   void writeInt(int value) {
     var byteData = ByteData(4)..setInt32(0, value, Endian.big);
     writeBytes(byteData.buffer.asUint8List());

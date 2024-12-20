@@ -17,9 +17,9 @@
 import 'package:flutter/material.dart';
 
 import 'choose_server_interface.dart';
-import 'constants/app_constants.dart';
-import 'theme/app_theme.dart';
-import 'util/database_service.dart';
+import '../constants/app_constants.dart';
+import '../theme/app_theme.dart';
+import '../util/database_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -82,4 +82,5 @@ class SplashScreenState extends State<SplashScreen> {
       ),
     );
   }
+  
 }

@@ -16,15 +16,10 @@
 package github.koukobin.ermis.server.main.java.server.netty_handlers;
 
 import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 
 import javax.mail.MessagingException;
-
-import com.google.common.base.Throwables;
 
 import github.koukobin.ermis.common.entry.AddedInfo;
 import github.koukobin.ermis.common.entry.Verification.Action;
@@ -32,6 +27,7 @@ import github.koukobin.ermis.common.entry.Verification.Result;
 import github.koukobin.ermis.common.results.EntryResult;
 import github.koukobin.ermis.server.main.java.server.ClientInfo;
 import github.koukobin.ermis.server.main.java.server.util.EmailerService;
+import github.koukobin.ermis.server.main.java.util.SecureRandomGenerator;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -41,41 +37,41 @@ import io.netty.channel.ChannelHandlerContext;
  */
 abstract non-sealed class VerificationHandler extends EntryHandler {
 
-	private static final SecureRandom secureRandom = new SecureRandom();
-
 	private static final int ATTEMPTS = 3;
-	private static final int GENERATED_VERIFICATIIN_CODE_LENGTH = 9;
-	
-	private static final CompletableFuture<?> pendingEmailsQueue = 
-			CompletableFuture.runAsync(() -> {}); // initialize it like this for thenRunAsync to work (i don't know why)
+	private static final int GENERATED_VERIFICATION_CODE_LENGTH = 5;
 
-	private int attemptsRemaining = ATTEMPTS;
-	private final byte[] generatedVerificationCode;
-	
+	// Initialize like this in order for theRunAsync to work properly
+	private static final CompletableFuture<?> pendingEmailsQueue = CompletableFuture.runAsync(() -> {});
+
+	private int attemptsRemaining;
+	private final int generatedVerificationCode;
+
 	private final String emailAddress;
-	
+
 	{
-		generatedVerificationCode = new byte[GENERATED_VERIFICATIIN_CODE_LENGTH];
-		secureRandom.nextBytes(generatedVerificationCode);
+		attemptsRemaining = ATTEMPTS;
+		generatedVerificationCode = SecureRandomGenerator.generateRandomNumber(GENERATED_VERIFICATION_CODE_LENGTH);
 	}
 	
 	VerificationHandler(ClientInfo clientInfo, String email) {
 		super(clientInfo);
 		this.emailAddress = email;
 	}
-
+	
 	@Override
 	public void handlerAdded(ChannelHandlerContext ctx) {
 		sendVerificationCode();
 	}
-	
+
 	private void sendVerificationCode() {
-		String generatedVerificationCodeEncoded = Base64.getEncoder().encodeToString(generatedVerificationCode);
+		
+		String codeString = Integer.toString(generatedVerificationCode);
+
 		pendingEmailsQueue.thenRunAsync(() -> {
 			try {
-				EmailerService.sendEmailWithHTML("Security Alert", createEmailMessage(emailAddress, generatedVerificationCodeEncoded), emailAddress);
+				EmailerService.sendEmailWithHTML("Security Alert", createEmailMessage(emailAddress, codeString), emailAddress);
 			} catch (MessagingException me) {
-				logger.debug(Throwables.getStackTraceAsString(me));
+				logger.error("Failed to send email", me);
 			}
 		});
 	}
@@ -86,50 +82,29 @@ abstract non-sealed class VerificationHandler extends EntryHandler {
 		Action action = Action.fromId(msg.readInt());
 
 		switch (action) {
-		case RESEND_CODE -> {
-			sendVerificationCode();
-		}
+		case RESEND_CODE -> sendVerificationCode();
 		}
 	}
-	
+
 	@Override
 	public void channelRead2(ChannelHandlerContext ctx, ByteBuf msg) throws IOException {
 		
 		EntryResult entryResult = new EntryResult(Result.WRONG_CODE.resultHolder);
 		attemptsRemaining--;
-		
+
 		boolean isVerificationComplete = false;
+
+		int clientGuessForVerificationCode = msg.readInt();
+		logger.debug("Client guessed: {}", clientGuessForVerificationCode);
+
+		if (generatedVerificationCode == clientGuessForVerificationCode) {
+			entryResult = executeWhenVerificationSuccessful();
+			isVerificationComplete = true;
+		} else if (attemptsRemaining == 0) {
+			entryResult = new EntryResult(Result.RUN_OUT_OF_ATTEMPTS.resultHolder);
+			isVerificationComplete = true;
+		}
 		
-		try {
-
-			byte[] clientGuessForVerificationCode = new byte[msg.readableBytes()];
-			msg.readBytes(clientGuessForVerificationCode);
-
-			// Throws IllegalArgumentException if src is not in valid Base64 scheme
-			clientGuessForVerificationCode = Base64.getDecoder().decode(clientGuessForVerificationCode);
-
-			if (Arrays.equals(generatedVerificationCode, clientGuessForVerificationCode)) {
-				entryResult = executeWhenVerificationSuccesfull();
-				isVerificationComplete = true;
-			}
-		} catch (IllegalArgumentException iae) {
-			logger.debug(Throwables.getStackTraceAsString(iae));
-		}
-
-		if (isVerificationComplete) {
-			if (entryResult.isSuccessful()) {
-				success(ctx);
-			} else {
-				failed(ctx);
-			}
-		} else {
-			if (attemptsRemaining == 0) {
-				entryResult = new EntryResult(Result.RUN_OUT_OF_ATTEMPTS.resultHolder);
-				failed(ctx);
-				isVerificationComplete = true;
-			}
-		}
-
 		byte[] resultMessageBytes = entryResult.getResultMessage().getBytes();
 		
 		ByteBuf payload = ctx.alloc().ioBuffer();
@@ -145,12 +120,21 @@ abstract non-sealed class VerificationHandler extends EntryHandler {
 		}
 		
 		ctx.channel().writeAndFlush(payload);
+		logger.debug("Sent result");
+		
+		if (isVerificationComplete) {
+			if (entryResult.isSuccessful()) {
+				success(ctx);
+			} else {
+				failed(ctx);
+			}
+		}
 	}
 
 	public abstract String createEmailMessage(String account, String generatedVerificationCode);
-	public abstract EntryResult executeWhenVerificationSuccesfull() throws IOException;
+	public abstract EntryResult executeWhenVerificationSuccessful() throws IOException;
 	
-	protected Runnable onSuccess(ChannelHandlerContext ctx) {
-		return () ->  login(ctx, clientInfo);
+	protected void onSuccess(ChannelHandlerContext ctx) {
+		login(ctx, clientInfo);
 	}
 }

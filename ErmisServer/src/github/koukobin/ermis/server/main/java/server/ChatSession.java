@@ -60,7 +60,7 @@ public final class ChatSession {
 		return activeMembers;
 	}
 
-	public List<Integer> getMembers() {
+	public List<Integer> getActiveMembers() {
 		return membersClientIDS;
 	}
 

@@ -20,6 +20,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.google.common.base.Throwables;
+
 import github.koukobin.ermis.common.util.FileEditor;
 
 /**
@@ -27,6 +32,8 @@ import github.koukobin.ermis.common.util.FileEditor;
  *
  */
 public final class ServerSettings {
+	
+	private static final Logger logger = LogManager.getLogger("server");
 
 	private static final Properties GENERAL_PROPERTIES;
 
@@ -34,6 +41,7 @@ public final class ServerSettings {
 		try {
 			GENERAL_PROPERTIES = FileEditor.readPropertiesFile(ConfigurationsPaths.Server.GENERAL_SETTINGS_PATH);
 		} catch (IOException ioe) {
+			logger.fatal(Throwables.getStackTraceAsString(ioe));
 			throw new RuntimeException(ioe);
 		}
 	}
@@ -70,6 +78,7 @@ public final class ServerSettings {
 			try {
 				SSL_PROPERTIES = FileEditor.readPropertiesFile(ConfigurationsPaths.Server.SSL_SETTINGS_PATH);
 			} catch (IOException ioe) {
+				logger.fatal(Throwables.getStackTraceAsString(ioe));
 				throw new RuntimeException(ioe);
 			}
 		}
@@ -106,6 +115,7 @@ public final class ServerSettings {
 				HTML_FILE_NAME = donationsHtmlFile.getName();
 				HTML_PAGE = FileEditor.readFile(donationsHtmlFile);
 			} catch (IOException ioe) {
+				logger.fatal(Throwables.getStackTraceAsString(ioe));
 				throw new RuntimeException(ioe);
 			}
 		}
@@ -140,6 +150,7 @@ public final class ServerSettings {
 					try {
 						VERIFICATION_EMAIL_BODY = FileEditor.readFile(verificationEmailBodyFile);
 					} catch (IOException ioe) {
+						logger.fatal(Throwables.getStackTraceAsString(ioe));
 						throw new RuntimeException(ioe);
 					}
 				}
@@ -161,6 +172,7 @@ public final class ServerSettings {
 					try {
 						VERIFICATION_EMAIL_BODY = FileEditor.readFile(verificationEmailBodyFile);
 					} catch (IOException ioe) {
+						logger.fatal(Throwables.getStackTraceAsString(ioe));
 						throw new RuntimeException(ioe);
 					}
 				}

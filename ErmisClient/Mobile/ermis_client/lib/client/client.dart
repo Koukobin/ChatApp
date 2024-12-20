@@ -21,17 +21,28 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:ermis_client/client/io/byte_buf.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import '../util/database_service.dart';
 import 'common/chat_request.dart';
 import 'common/chat_session.dart';
+import 'common/entry/added_info.dart';
+import 'common/entry/create_account_info.dart';
+import 'common/entry/entry_type.dart';
+import 'common/entry/login_info.dart';
+import 'common/entry/verification.dart';
 import 'common/file_heap.dart';
 import 'common/html_page.dart';
+import 'common/message_types/client_command_type.dart';
+import 'common/message_types/client_message_type.dart';
+import 'common/results/ResultHolder.dart';
+import 'common/results/entry_result.dart';
+import 'common/user_device.dart';
 import 'io/input_stream.dart';
 import 'common/message.dart';
 import 'message_handler.dart';
 import 'io/output_stream.dart';
-import 'common/common.dart';
 
 enum ServerCertificateVerification { verify, ignore }
 
@@ -148,63 +159,67 @@ class Client {
   }
 
   void whenUsernameReceived(void Function(String username) runThis) {
-    _messageHandler.whenUsernameReceived(runThis);
+    _messageHandler.callBacks.onUsernameReceived(runThis);
   }
   
   void whenMessageReceived(void Function(Message message, int chatSessionIndex) runThis) {
-    _messageHandler.whenMessageReceived(runThis);
+    _messageHandler.callBacks.onMessageReceived(runThis);
   }
 
   void whenSuccesfullySentMessageReceived(void Function(ChatSession session, int messageID) runThis) {
-    _messageHandler.whenMessageSuccesfullySentReceived(runThis);
+    _messageHandler.callBacks.onMessageSuccesfullySent(runThis);
   }
 
   void whenAlreadyWrittenTextReceived(void Function(ChatSession chatSession) runThis) {
-    _messageHandler.whenAlreadyWrittenTextReceived(runThis);
+    _messageHandler.callBacks.onWrittenTextReceived(runThis);
   }
   
   void whenServerMessageReceived(void Function(String message) runThis) {
-    _messageHandler.whenServerMessageReceived(runThis);
+    _messageHandler.callBacks.onServerMessageReceived(runThis);
   }
   
   void whenFileDownloaded(void Function(LoadedInMemoryFile file) runThis) {
-    _messageHandler.whenFileDownloaded(runThis);
+    _messageHandler.callBacks.onFileDownloaded(runThis);
   }
 
   void whenImageDownloaded(void Function(LoadedInMemoryFile file, int messageID) runThis) {
-    _messageHandler.whenImageDownloaded(runThis);
+    _messageHandler.callBacks.onImageDownloaded(runThis);
   }
 
   void whenDonationPageReceived(void Function(DonationHtmlPage donationPage) runThis) {
-    _messageHandler.whenDonationPageReceived(runThis);
+    _messageHandler.callBacks.onDonationPageReceived(runThis);
   }  
 
   void whenServerSourceCodeReceived(void Function(String serverSourceCodeURL) runThis) {
-    _messageHandler.whenServerSourceCodeReceived(runThis);
+    _messageHandler.callBacks.onServerSourceCodeReceived(runThis);
   }
 
   void whenClientIDReceived(void Function(int clientID) runThis) {
-    _messageHandler.whenClientIDReceived(runThis);
+    _messageHandler.callBacks.onClientIdReceived(runThis);
   }
 
   void whenChatRequestsReceived(void Function(List<ChatRequest> chatRequests) runThis) {
-    _messageHandler.whenChatRequestsReceived(runThis);
+    _messageHandler.callBacks.onChatRequestsReceived(runThis);
   }
 
   void whenChatSessionsReceived(void Function(List<ChatSession> chatSessions) runThis) {
-    _messageHandler.whenChatSessionsReceived(runThis);
+    _messageHandler.callBacks.onChatSessionsReceived(runThis);
   }
 
   void whenVoiceCallIncoming(bool Function(Member member) runThis) {
-    _messageHandler.whenVoiceCallIncoming(runThis);
+    _messageHandler.callBacks.onVoiceCallIncoming(runThis);
   }
 
   void whenMessageDeleted(void Function(ChatSession chatSession, int messageIDOfDeletedMessage) runThis) {
-    _messageHandler.whenMessageDeleted(runThis);
+    _messageHandler.callBacks.onMessageDeleted(runThis);
   }
 
   void whenProfilePhotoReceived(void Function(Uint8List iconBytes) runThis) {
-    _messageHandler.whenProfilePhotoReceived(runThis);
+    _messageHandler.callBacks.onProfilePhotoReceived(runThis);
+  }
+
+  void whenUserDevicesReceived(void Function(List<UserDeviceInfo>) runThis) {
+    _messageHandler.callBacks.onUserDevicesReceived(runThis);
   }
 
   Commands get commands => _messageHandler.commands;
@@ -214,6 +229,7 @@ class Client {
   List<ChatSession>? get chatSessions => _messageHandler.chatSessions;
   List<ChatRequest>? get chatRequests => _messageHandler.chatRequests;
   ServerInfo get serverInfo => ServerInfo(uri!);
+  List<UserDeviceInfo> get userDevices => _messageHandler.usesDevices;
 
   bool isLoggedIn() {
     return _isLoggedIn;
@@ -327,13 +343,12 @@ class Entry<T extends CredentialInterface> {
     outputStream.write(ByteBuf.smallBuffer()..writeInt(entryType.id));
   }
 
-  Future<void> sendVerificationCode(String verificationCode) async {
+  Future<void> sendVerificationCode(int verificationCode) async {
     bool isAction = false;
 
-    Uint8List verificationCodeBytes = Uint8List.fromList(verificationCode.codeUnits);
     ByteBuf payload = ByteBuf.smallBuffer();
     payload.writeBoolean(isAction);
-    payload.writeBytes(verificationCodeBytes);
+    payload.writeInt(verificationCode);
 
     outputStream.write(payload);
   }
@@ -349,10 +364,18 @@ class Entry<T extends CredentialInterface> {
 
     Map<AddedInfo, String> map = HashMap();
     EntryResult result = EntryResult(ResultHolder(isLoggedIn, String.fromCharCodes(resultMessageBytes)), map);
+
+    if (kDebugMode) {
+      debugPrint("fetched result: $result");
+    }
+
     while (msg.readableBytes > 0) {
       AddedInfo addedInfo = AddedInfo.fromId(msg.readInt32());
+      if (kDebugMode) {
+        debugPrint("fetched result: $addedInfo");
+      }
       Uint8List message = msg.readBytes(msg.readInt32());
-      map.putIfAbsent(addedInfo, () => utf8.decode(message.toList()));
+      map[addedInfo] = utf8.decode(message.toList());
     }
 
     return result;
@@ -371,6 +394,19 @@ class Entry<T extends CredentialInterface> {
 
 class CreateAccountEntry extends Entry<CreateAccountCredential> {
   CreateAccountEntry(ByteBufOutputStream outputStream, ByteBufInputStream inputStream) : super(EntryType.createAccount, outputStream, inputStream);
+
+    Future<void> addDeviceInfo(DeviceType deviceType, String osName) async {
+    bool isAction = true;
+    int actionId = CreateAccountAction.addDeviceInfo.id;
+
+    ByteBuf payload = ByteBuf.smallBuffer();
+    payload.writeBoolean(isAction);
+    payload.writeInt(actionId);
+    payload.writeInt(deviceType.id);
+    payload.writeBytes(utf8.encode(osName));
+
+    outputStream.write(payload);
+  }
 }
 
 class LoginEntry extends Entry<LoginCredential> {
@@ -386,6 +422,19 @@ class LoginEntry extends Entry<LoginCredential> {
     ByteBuf payload = ByteBuf.smallBuffer();
     payload.writeBoolean(isAction);
     payload.writeInt(actionId);
+
+    outputStream.write(payload);
+  }
+
+  Future<void> addDeviceInfo(DeviceType deviceType, String osName) async {
+    bool isAction = true;
+    int actionId = LoginAction.addDeviceInfo.id;
+
+    ByteBuf payload = ByteBuf.smallBuffer();
+    payload.writeBoolean(isAction);
+    payload.writeInt(actionId);
+    payload.writeInt(deviceType.id);
+    payload.writeBytes(utf8.encode(osName));
 
     outputStream.write(payload);
   }

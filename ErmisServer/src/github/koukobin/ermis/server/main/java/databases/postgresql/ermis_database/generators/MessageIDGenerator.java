@@ -20,7 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.logging.log4j.LogManager;
@@ -32,67 +32,44 @@ import org.apache.logging.log4j.Logger;
  */
 public final class MessageIDGenerator {
 
-	@SuppressWarnings("unused")
 	private static final Logger logger = LogManager.getLogger("database");
-	
-	private static final Object lockObjectForGettingMessageIDCountAsAtomicInteger = new Object();
-	private static final Map<Integer, AtomicInteger> chatSessionIDSToMessageIDValue = new TreeMap<>();
+	private static final Map<Integer, AtomicInteger> chatSessionIDToMessageID = new ConcurrentHashMap<>();
 
 	private MessageIDGenerator() {}
-	
-	private static AtomicInteger getMessageIDAsAtomicInteger(int chatSessionID, Connection conn) {
-		
-		AtomicInteger messageID = chatSessionIDSToMessageIDValue.get(chatSessionID);
-		
-		// Check if messageID is null
-		if (messageID == null) {
-			
-			// Synchronize so not multiple threads can try run getMessageIDCountAsAtomicInteger
-			synchronized (lockObjectForGettingMessageIDCountAsAtomicInteger) {
-				
-				messageID = chatSessionIDSToMessageIDValue.get(chatSessionID);
 
-				// Check again to see if it is null as this might have already been run by another thread
-				if (messageID == null) {
-					try (PreparedStatement getLastMessageID = conn
-							.prepareStatement("SELECT message_id FROM chat_messages WHERE chat_session_id=? ORDER BY message_id DESC LIMIT 1")) {
-
-						getLastMessageID.setInt(1, chatSessionID);
-						ResultSet rs = getLastMessageID.executeQuery();
-						
-						if (rs.next()) {
-							messageID = new AtomicInteger(rs.getInt(1));
-						} else {
-							messageID = new AtomicInteger(0);
-						}
-						
-						chatSessionIDSToMessageIDValue.put(chatSessionID, messageID);
-						
-						return messageID;
-					} catch (SQLException sqle) {
-						throw new RuntimeException(sqle);
-					}
+	/**
+	 * Retrieves or initializes the AtomicInteger for the given chat session ID.
+	 */
+	private static AtomicInteger getMessageIDAtomic(int chatSessionID, Connection conn) {
+		return chatSessionIDToMessageID.computeIfAbsent(chatSessionID, (Integer chatSessionIDKey) -> {
+			try (PreparedStatement stmt = conn.prepareStatement(
+					"SELECT message_id FROM chat_messages WHERE chat_session_id=? ORDER BY message_id DESC LIMIT 1")) {
+				stmt.setInt(1, chatSessionIDKey);
+				try (ResultSet rs = stmt.executeQuery()) {
+					int lastMessageID = rs.next() ? rs.getInt(1) : 0;
+					return new AtomicInteger(lastMessageID);
 				}
-				
+			} catch (SQLException sqle) {
+				logger.error("Error initializing message ID for chat session {}", chatSessionIDKey, sqle);
+				throw new RuntimeException("Failed to initialize message ID", sqle);
 			}
-		}
-		
-		return messageID;
+		});
 	}
 	
-	public static int incrementAndGetMessageID(Integer chatSessionID, Connection conn) {
+    /**
+     * Increment and retrieve the next message ID for the specified chat session.
+     */
+    public static int incrementAndGetMessageID(int chatSessionID, Connection conn) {
+        AtomicInteger messageID = getMessageIDAtomic(chatSessionID, conn);
+        return messageID.incrementAndGet();
+    }
 
-		AtomicInteger messageID = getMessageIDAsAtomicInteger(chatSessionID, conn);
-
-		return messageID.incrementAndGet();
-	}
-
-	
-	public static int getMessageIDCount(Integer chatSessionID, Connection conn) {
-
-		AtomicInteger messageID = getMessageIDAsAtomicInteger(chatSessionID, conn);
-
-		return messageID.intValue();
-	}
+    /**
+     * Retrieve the current message ID count for the specified chat session.
+     */
+    public static int getMessageIDCount(int chatSessionID, Connection conn) {
+        AtomicInteger messageID = getMessageIDAtomic(chatSessionID, conn);
+        return messageID.get();
+    }
 	
 }

@@ -18,46 +18,55 @@
 CREATE TABLE IF NOT EXISTS users (
     email TEXT NOT NULL UNIQUE,
     password_hash CHAR(PASSWORD_HASH_LENGTH) NOT NULL,
-    client_id INT PRIMARY KEY NOT NULL, -- IDs are generated manually within server
+    client_id INT NOT NULL, -- IDs are generated manually within server
     backup_verification_codes CHAR(BACKUP_VERIFICATION_CODES_LENGTH)[BACKUP_VERIFICATION_CODES_AMOUNT] NOT NULL,
     salt CHAR(SALT_LENGTH) NOT NULL,
     created_at TIMESTAMP DEFAULT now(),
-    updated_at TIMESTAMP DEFAULT now() ON UPDATE now()
+    password_last_updated_at TIMESTAMP DEFAULT now(),
+    PRIMARY KEY (client_id)
 );
 
 CREATE INDEX IF NOT EXISTS users_client_id_index ON users (client_id);
 CREATE INDEX IF NOT EXISTS users_email_index ON users (email);
 
 CREATE TABLE IF NOT EXISTS user_profiles (
-    client_id INT NOT NULL REFERENCES users(client_id) ON DELETE CASCADE,
-    display_name VARCHAR(USERNAME_LENGTH) NOT NULL,
+    client_id INTEGER NOT NULL REFERENCES users(client_id) ON DELETE CASCADE,
+    display_name VARCHAR(DISPLAY_LENGTH) NOT NULL,
     about VARCHAR(128) NOT NULL,
     profile_photo BYTEA,
-    updated_at TIMESTAMP DEFAULT now() ON UPDATE now(),
+    last_updated_at TIMESTAMP DEFAULT now(),
+    display_name_updated_at TIMESTAMP DEFAULT now(),
+    about_updated_at TIMESTAMP DEFAULT now(),
+    profile_photo_updated_at TIMESTAMP DEFAULT now(),
     PRIMARY KEY (client_id)
 );
 
 CREATE INDEX IF NOT EXISTS user_profiles_display_name_index ON user_profiles (display_name);
 CREATE INDEX IF NOT EXISTS user_profiles_about_index ON user_profiles (about);
 
+-- Create device type enum table
+--DO $$
+--BEGIN
+--    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'device_type_enum') THEN
+--        CREATE TYPE device_type_enum AS ENUM ('MOBILE', 'DESKTOP');
+--    END IF;
+--END
+--$$;
+
 -- Create user ips table
-CREATE TYPE device_type_enum AS ENUM ('MOBILE', 'DESKTOP');
-
 CREATE TABLE IF NOT EXISTS user_ips (
-    ip_id SERIAL PRIMARY KEY,
-    client_id INT NOT NULL REFERENCES users(client_id) ON DELETE CASCADE,
-    ip_address TEXT NOT NULL UNIQUE,
-    device_type device_type_enum NOT NULL
+    client_id INTEGER NOT NULL REFERENCES users(client_id) ON DELETE CASCADE,
+    ip_address TEXT NOT NULL,
+    device_type INTEGER NOT NULL,
+    os_name TEXT NOT NULL,
+    PRIMARY KEY (client_id, ip_address)
 );
-
-CREATE INDEX IF NOT EXISTS user_ips_id_index ON user_ips (ip_id);
-CREATE INDEX IF NOT EXISTS user_ips_ip_address_index ON user_ips (ip_address);
 
 -- Create chat requests tables
 CREATE TABLE IF NOT EXISTS chat_requests (
     chat_request_id SERIAL,
-    receiver_client_id INTEGER NOT NULL,
-    sender_client_id INTEGER NOT NULL,
+    receiver_client_id INTEGER NOT NULL REFERENCES users(client_id) ON DELETE CASCADE,
+    sender_client_id INTEGER NOT NULL REFERENCES users(client_id) ON DELETE CASCADE,
     PRIMARY KEY (receiver_client_id, sender_client_id)
 );
 
@@ -68,8 +77,8 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
 );
 
 CREATE TABLE IF NOT EXISTS chat_session_members (
-    chat_session_id INT NOT NULL REFERENCES chat_sessions(chat_session_id) ON DELETE CASCADE,
-    member_id INT NOT NULL REFERENCES users(client_id) ON DELETE CASCADE,
+    chat_session_id INTEGER NOT NULL REFERENCES chat_sessions(chat_session_id) ON DELETE CASCADE,
+    member_id INTEGER NOT NULL REFERENCES users(client_id) ON DELETE CASCADE,
     joined_at TIMESTAMP NOT NULL DEFAULT now(),
     PRIMARY KEY (chat_session_id, member_id) -- Ensures unique member-session relationships
 );

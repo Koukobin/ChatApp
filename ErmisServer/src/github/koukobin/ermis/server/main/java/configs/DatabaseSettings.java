@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.google.common.base.Throwables;
 import com.password4j.Argon2Function;
 import com.password4j.BcryptFunction;
 import com.password4j.HashingFunction;
@@ -33,6 +37,8 @@ import github.koukobin.ermis.server.main.java.databases.postgresql.ermis_databas
  */
 public final class DatabaseSettings {
 
+	private static final Logger logger = LogManager.getLogger("server");
+	
 	private static final Properties GENERAL_PROPERTIES;
 	
 	static {
@@ -68,6 +74,7 @@ public final class DatabaseSettings {
 				try {
 					CLIENT_GENERAL_PROPERTIES = FileEditor.readPropertiesFile(ConfigurationsPaths.Database.Client.GENERAL_SETTINGS_PATH);
 				} catch (IOException ioe) {
+					logger.fatal(Throwables.getStackTraceAsString(ioe));
 					throw new RuntimeException(ioe);
 				}
 			}
@@ -90,6 +97,7 @@ public final class DatabaseSettings {
 				try {
 					CLIENT_USERNAME_PROPERTIES = FileEditor.readPropertiesFile(ConfigurationsPaths.Database.Client.USERNAME_SETTINGS_PATH);
 				} catch (IOException ioe) {
+					logger.fatal(Throwables.getStackTraceAsString(ioe));
 					throw new RuntimeException(ioe);
 				}
 			}
@@ -112,6 +120,7 @@ public final class DatabaseSettings {
 				try {
 					CLIENT_PASSWORD_PROPERTIES = FileEditor.readPropertiesFile(ConfigurationsPaths.Database.Client.Password.GENERAL_SETTINGS_PATH);
 				} catch (IOException ioe) {
+					logger.fatal(Throwables.getStackTraceAsString(ioe));
 					throw new RuntimeException(ioe);
 				}
 			}
@@ -154,6 +163,7 @@ public final class DatabaseSettings {
 							try {
 								ARGON2_PROPERTIES = FileEditor.readPropertiesFile(ConfigurationsPaths.Database.Client.Password.HashingAlgorithms.ARGON2_SETTINGS_PATH);
 							} catch (IOException ioe) {
+								logger.fatal(Throwables.getStackTraceAsString(ioe));
 								throw new RuntimeException(ioe);
 							}
 						}
@@ -176,6 +186,7 @@ public final class DatabaseSettings {
 							try {
 								SCRYPT_PROPERTIES = FileEditor.readPropertiesFile(ConfigurationsPaths.Database.Client.Password.HashingAlgorithms.SCRYPT_SETTINGS_PATH);
 							} catch (IOException ioe) {
+								logger.fatal(Throwables.getStackTraceAsString(ioe));
 								throw new RuntimeException(ioe);
 							}
 						}
@@ -197,6 +208,7 @@ public final class DatabaseSettings {
 							try {
 								BCRYPT_PROPERTIES = FileEditor.readPropertiesFile(ConfigurationsPaths.Database.Client.Password.HashingAlgorithms.BCRYPT_SETTINGS_PATH);
 							} catch (IOException ioe) {
+								logger.fatal(Throwables.getStackTraceAsString(ioe));
 								throw new RuntimeException(ioe);
 							}
 						}
@@ -223,6 +235,7 @@ public final class DatabaseSettings {
 				try {
 					CLIENT_BACKUP_VERIFICATION_CODES_PROPERTIES = FileEditor.readPropertiesFile(ConfigurationsPaths.Database.Client.BackupVerificationCodes.GENERAL_SETTINGS_PATH);
 				} catch (IOException ioe) {
+					logger.fatal(Throwables.getStackTraceAsString(ioe));
 					throw new RuntimeException(ioe);
 				}
 			}
@@ -259,6 +272,7 @@ public final class DatabaseSettings {
 							try {
 								ARGON2_PROPERTIES = FileEditor.readPropertiesFile(ConfigurationsPaths.Database.Client.BackupVerificationCodes.HashingAlgorithms.ARGON2_SETTINGS_PATH);
 							} catch (IOException ioe) {
+								logger.fatal(Throwables.getStackTraceAsString(ioe));
 								throw new RuntimeException(ioe);
 							}
 						}
@@ -281,6 +295,7 @@ public final class DatabaseSettings {
 							try {
 								SCRYPT_PROPERTIES = FileEditor.readPropertiesFile(ConfigurationsPaths.Database.Client.BackupVerificationCodes.HashingAlgorithms.SCRYPT_SETTINGS_PATH);
 							} catch (IOException ioe) {
+								logger.fatal(Throwables.getStackTraceAsString(ioe));
 								throw new RuntimeException(ioe);
 							}
 						}
@@ -302,6 +317,7 @@ public final class DatabaseSettings {
 							try {
 								BCRYPT_PROPERTIES = FileEditor.readPropertiesFile(ConfigurationsPaths.Database.Client.BackupVerificationCodes.HashingAlgorithms.BCRYPT_SETTINGS_PATH);
 							} catch (IOException ioe) {
+								logger.fatal(Throwables.getStackTraceAsString(ioe));
 								throw new RuntimeException(ioe);
 							}
 						}
@@ -330,6 +346,7 @@ public final class DatabaseSettings {
 			try {
 				POOLING_SETTINGS = FileEditor.readPropertiesFile(ConfigurationsPaths.Database.POOLING_SETTINGS_PATH);
 			} catch (IOException ioe) {
+				logger.fatal(Throwables.getStackTraceAsString(ioe));
 				throw new RuntimeException(ioe);
 			}
 		}
@@ -361,6 +378,7 @@ public final class DatabaseSettings {
 			try {
 				DRIVER_SETTINGS = FileEditor.readPropertiesFile(ConfigurationsPaths.Database.DRIVER_SETTINGS_PATH);
 			} catch (IOException ioe) {
+				logger.fatal(Throwables.getStackTraceAsString(ioe));
 				throw new RuntimeException(ioe);
 			}
 		}

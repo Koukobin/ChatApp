@@ -16,16 +16,20 @@
 package github.koukobin.ermis.server.main.java.server.netty_handlers;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 import com.google.common.primitives.Ints;
 
 import github.koukobin.ermis.common.LoadedInMemoryFile;
+import github.koukobin.ermis.common.UserDeviceInfo;
 import github.koukobin.ermis.common.message_types.ClientCommandResultType;
 import github.koukobin.ermis.common.message_types.ClientCommandType;
 import github.koukobin.ermis.common.message_types.ClientMessageType;
@@ -40,6 +44,7 @@ import github.koukobin.ermis.server.main.java.server.ActiveChatSessions;
 import github.koukobin.ermis.server.main.java.server.ChatSession;
 import github.koukobin.ermis.server.main.java.server.ClientInfo;
 import github.koukobin.ermis.server.main.java.server.codec.MessageHandlerDecoder;
+import github.koukobin.ermis.server.main.java.server.util.MessageByteBufCreator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -52,10 +57,10 @@ import io.netty.channel.epoll.EpollSocketChannel;
  */
 final class MessageHandler extends ParentHandler {
 	
-	private static final Map<Integer, ClientInfo> clientIDSToActiveClients = new ConcurrentHashMap<>(ServerSettings.SERVER_BACKLOG);
+	private static final Map<Integer, List<ClientInfo>> clientIDSToActiveClients = new ConcurrentHashMap<>(ServerSettings.SERVER_BACKLOG);
 
 	private CompletableFuture<?> commandsToBeExecutedQueue = 
-			CompletableFuture.runAsync(() -> {}); // initialize it like this for thenRunAsync to work (i don't know why)
+			CompletableFuture.runAsync(() -> {}); // initialize it like this for thenRunAsync to work
 	
 	public MessageHandler(ClientInfo clientInfo) {
 		super(clientInfo);
@@ -116,7 +121,8 @@ final class MessageHandler extends ParentHandler {
 			clientInfo.setChatRequests(chatRequestsList);
 		}
 
-		clientIDSToActiveClients.put(clientInfo.getClientID(), clientInfo);
+		clientIDSToActiveClients.putIfAbsent(clientInfo.getClientID(), new ArrayList<>());
+		clientIDSToActiveClients.get(clientInfo.getClientID()).add(clientInfo);
 	}
 
 	@Override
@@ -345,23 +351,25 @@ final class MessageHandler extends ParentHandler {
 			if (newUsername.equals(currentUsername)) {
 				payload.writeBytes("Username cannot be the same as old username!".getBytes());
 			} else {
-
 				ResultHolder resultHolder;
 				try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
-					resultHolder = conn.changeUsername(clientInfo.getClientID(), newUsername);
+					resultHolder = conn.changeDisplayName(clientInfo.getClientID(), newUsername);
 				}
 
 				payload.writeBytes(resultHolder.getResultMessage().getBytes());
-				
+
 				if (resultHolder.isSuccessful()) {
 					clientInfo.setUsername(newUsername);
+					
+					// Fetch username on behalf of the user
+					executeCommand(clientInfo, ClientCommandType.FETCH_USERNAME, Unpooled.EMPTY_BUFFER);
 				}
 			}
 
 			channel.writeAndFlush(payload);
 		}
 		case CHANGE_PASSWORD -> {
-			
+
 			byte[] newPasswordBytes = new byte[args.readableBytes()];
 			args.readBytes(newPasswordBytes);
 
@@ -441,9 +449,12 @@ final class MessageHandler extends ParentHandler {
 				payload.writeInt(ServerMessageType.SERVER_MESSAGE_INFO.id);
 				payload.writeBytes("An error occured while trying to send chat request!".getBytes());
 				channel.writeAndFlush(payload);
-			} else {
-				clientIDSToActiveClients.get(receiverID).getChatRequests().add(senderClientID);
+				return;
 			}
+			
+			forClient(receiverID, (ClientInfo ci) -> {
+				ci.getChatRequests().add(senderClientID);
+			});
 		}
 		case ACCEPT_CHAT_REQUEST -> {
 			
@@ -452,7 +463,7 @@ final class MessageHandler extends ParentHandler {
 			
 			int chatSessionID;
 			try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
-				chatSessionID = conn.acceptChatRequestIfExists(receiverClientID, senderClientID);
+				chatSessionID = conn.acceptChatRequest(receiverClientID, senderClientID);
 			}
 
 			if (chatSessionID != -1) {
@@ -467,11 +478,7 @@ final class MessageHandler extends ParentHandler {
 				clientInfo.getChatRequests().remove(Integer.valueOf(senderClientID));
 				clientInfo.getChatSessions().add(chatSession);
 
-				ClientInfo senderClientInfo = clientIDSToActiveClients.get(senderClientID);
-
-				if (senderClientInfo != null) {
-					senderClientInfo.getChatSessions().add(chatSession);
-				}
+				forClient(senderClientID, (ClientInfo ci) -> ci.getChatSessions().add(chatSession));
 			} else {
 				ByteBuf payload = channel.alloc().ioBuffer();
 				payload.writeInt(ServerMessageType.SERVER_MESSAGE_INFO.id);
@@ -527,9 +534,9 @@ final class MessageHandler extends ParentHandler {
 				
 				if (chatSession != null) {
 					
-					List<Integer> activeMembers = chatSession.getMembers();
+					List<Integer> activeMembers = chatSession.getActiveMembers();
 					for (int i = 0; i < activeMembers.size(); i++) {
-						clientIDSToActiveClients.get(activeMembers.get(i)).getChatSessions().remove(chatSession);
+						forClient(activeMembers.get(i), (ClientInfo ci) -> ci.getChatSessions().remove(chatSession));
 					}
 					
 					ActiveChatSessions.removeChatSession(chatSessionID);
@@ -565,13 +572,52 @@ final class MessageHandler extends ParentHandler {
 				broadcastToChatSession(payload, messageID, ActiveChatSessions.getChatSession(chatSessionID));
 			}
 		}
-		case LOGOUT -> {
-			
+		case LOGOUT_THIS_DEVICE -> {
+
 			try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
 				conn.logout(channel.remoteAddress().getAddress(), clientInfo.getClientID());
 			}
-			
+
 			channel.close();
+		}
+		case LOGOUT_OTHER_DEVICE -> {
+
+			byte[] addressBytes = new byte[args.readableBytes()];
+			args.readBytes(addressBytes);
+
+			InetAddress address;
+			
+			try {
+				address = InetAddress.getByName(new String(addressBytes));
+			} catch (UnknownHostException uhe) {
+				logger.debug(String.format("Address not recognized %s", new String(addressBytes)), uhe);
+				MessageByteBufCreator.sendMessageInfo(channel, "Address not recognized!");
+				return;
+			}
+
+			try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
+				conn.logout(address, clientInfo.getClientID());
+			}
+
+			// Search for the specific IP address and if found logout that address
+			forClient(clientInfo.getClientID(), (ClientInfo ci) -> {
+				if (!ci.getInetAddress().equals(address)) {
+					return;
+				}
+				
+				ci.getChannel().close();
+			});
+		}
+		case LOGOUT_ALL_DEVICES -> {
+
+			try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
+				conn.logoutAllDevices(clientInfo.getClientID());
+			}
+
+			// Close all channels associated with this client id
+			forClient(clientInfo.getClientID(), (ClientInfo ci) -> {
+				ci.getChannel().close();
+			});
 		}
 		case FETCH_USERNAME -> {
 			ByteBuf payload = channel.alloc().ioBuffer();
@@ -587,6 +633,51 @@ final class MessageHandler extends ParentHandler {
 			payload.writeInt(clientInfo.getClientID());
 			channel.writeAndFlush(payload);
 		}
+		case FETCH_USER_DEVICES -> {
+			ByteBuf payload = channel.alloc().ioBuffer();
+			payload.writeInt(ServerMessageType.COMMAND_RESULT.id);
+			payload.writeInt(ClientCommandResultType.FETCH_USER_DEVICES.id);
+			
+			UserDeviceInfo[] devices;
+			
+			try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
+				devices = conn.getUserIPS(clientInfo.getClientID());
+			}
+
+			for (int i = 0; i < devices.length; i++) {
+				payload.writeInt(devices[i].deviceType().id);
+				
+				String ipAddress = devices[i].ipAddress();
+				payload.writeInt(ipAddress.length());
+				payload.writeBytes(ipAddress.getBytes());
+				
+				String osName = devices[i].osName();
+				payload.writeInt(osName.length());
+				payload.writeBytes(osName.getBytes());
+			}
+			
+			channel.writeAndFlush(payload);
+		}
+		case DELETE_ACCOUNT -> {
+			
+			byte[] emailAddress = new byte[args.readInt()];
+			args.readBytes(emailAddress);
+			
+			byte[] password = new byte[args.readInt()];
+			args.readBytes(password);
+
+			int resultUpdate;
+			try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
+				resultUpdate = conn.deleteAccount(new String(emailAddress), new String(password), clientInfo.getClientID());
+			}
+			
+			if (resultUpdate == 1) {
+				channel.close();
+				return;
+			}
+			
+			MessageByteBufCreator.sendMessageInfo(channel, "An error occured while trying to delete your account");
+		}
 		case ADD_ACCOUNT_ICON -> {
 			
 			byte[] icon = new byte[args.readableBytes()];
@@ -597,6 +688,7 @@ final class MessageHandler extends ParentHandler {
 			try (ErmisDatabase.GeneralPurposeDBConnection conn = ErmisDatabase.getGeneralPurposeConnection()) {
 				resultUpdate = conn.addUserIcon(clientInfo.getClientID(), icon);
 			}
+			
 			ByteBuf payload = channel.alloc().ioBuffer();
 			payload.writeInt(ServerMessageType.COMMAND_RESULT.id);
 			payload.writeInt(ClientCommandResultType.SET_ACCOUNT_ICON.id);
@@ -702,7 +794,7 @@ final class MessageHandler extends ParentHandler {
 
 					ChatSession chatSession = chatSessions.get(i);
 					int chatSessionID = chatSession.getChatSessionID();
-					List<Integer> membersClientIDS = chatSession.getMembers();
+					List<Integer> membersClientIDS = chatSession.getActiveMembers();
 
 					payload.writeInt(chatSessionID);
 
@@ -714,7 +806,7 @@ final class MessageHandler extends ParentHandler {
 							int clientID = membersClientIDS.get(j);
 
 							boolean isActive;
-							ClientInfo memberClientInfo = clientIDSToActiveClients.get(clientID);
+							List<ClientInfo> memberClientInfo = clientIDSToActiveClients.get(clientID);
 							
 							byte[] usernameBytes;
 							byte[] iconBytes = conn.selectUserIcon(clientID);
@@ -723,11 +815,12 @@ final class MessageHandler extends ParentHandler {
 								usernameBytes = conn.getUsername(clientID).getBytes();
 								isActive = false;
 							} else {
-								if (clientInfo.getChannel().equals(memberClientInfo.getChannel())) {
+								ClientInfo random = memberClientInfo.get(0);
+								if (clientInfo.getChannel().equals(random.getChannel())) {
 									continue;
 								}
 								
-								usernameBytes = memberClientInfo.getUsername().getBytes();
+								usernameBytes = random.getUsername().getBytes();
 								isActive = true;
 							}
 
@@ -803,19 +896,27 @@ final class MessageHandler extends ParentHandler {
 		
 	}
 	
+	private static void forClient(int clientID, Consumer<ClientInfo> DO) {
+		List<ClientInfo> idont =  clientIDSToActiveClients.get(clientID);
+		
+		if (idont == null) {
+			return;
+		}
+		
+		for (ClientInfo clientInfo : idont) {
+			DO.accept(clientInfo);;
+		}
+	}
+
 	private static void refreshChatSession(ChatSession chatSession) {
-		List<Integer> activeMembers = chatSession.getMembers();
+		List<Integer> activeMembers = chatSession.getActiveMembers();
 		for (int i = 0; i < activeMembers.size(); i++) {
-			ClientInfo member = clientIDSToActiveClients.get(activeMembers.get(i));
-
-			if (member == null) {
-				continue;
-			}
-
-			executeCommand(member,
-					ClientCommandType.FETCH_CHAT_SESSIONS,
-					Unpooled.EMPTY_BUFFER);
+			forClient(activeMembers.get(i), (ClientInfo member) -> {
+				executeCommand(member, ClientCommandType.FETCH_CHAT_SESSIONS, Unpooled.EMPTY_BUFFER);
+			});
 		}
 	}
 
 }
+
+

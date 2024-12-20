@@ -145,6 +145,7 @@ public final class EmailerService {
 			InternetAddress emailAddr = new InternetAddress(email);
 			emailAddr.validate();
 		} catch (AddressException ex) {
+			logger.debug("Invalid email address", ex);
 			result = false;
 		}
 		return result;

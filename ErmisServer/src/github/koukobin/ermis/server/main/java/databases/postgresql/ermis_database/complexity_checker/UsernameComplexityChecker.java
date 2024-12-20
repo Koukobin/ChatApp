@@ -38,9 +38,10 @@ public final class UsernameComplexityChecker {
 		this.requirements = requirements;
 	}
 	
+	@Deprecated
 	public ResultHolder getResultWhenUnsuccesfull() {
 		ResultHolder result = IsUsernameValidResult.REQUIREMENTS_NOT_MET.resultHolder;
-		result.addTextToResultMessage("Requirements:\n" + requirements.toString());
+//		result.addTextToResultMessage("Requirements:\n" + requirements.toString());
 		return result;
 	}
 

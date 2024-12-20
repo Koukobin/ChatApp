@@ -16,7 +16,7 @@
 
 import 'dart:typed_data';
 
-import 'common.dart';
+import 'message_types/content_type.dart';
 
 class Message {
   late String username;

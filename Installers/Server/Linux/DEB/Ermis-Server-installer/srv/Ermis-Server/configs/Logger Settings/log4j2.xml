@@ -33,13 +33,13 @@
 
 		<Console name="Console" target="SYSTEM_OUT">
 			<PatternLayout
-				pattern="%d{dd-MM-yyyy HH:mm} [%t] %-5level %logger{36} - %msg%n" />
+				pattern="%d{dd-MM-yyyy HH:mm} [%t] %highlight{%-5level}{FATAL=red blink, ERROR=red, WARN=yellow, INFO=green, DEBUG=cyan, TRACE=blue} %style{%logger{36}}{magenta} - %msg%n" />
 		</Console>
 	</Appenders>
 
 	<Loggers>
 		<Root level="ALL">
-			<AppenderRef ref="Console" level="INFO"/>
+			<AppenderRef ref="Console" level="DEBUG"/>
 		</Root>
         
         <Logger name="server" level="ALL">

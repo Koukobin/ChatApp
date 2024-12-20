@@ -24,7 +24,7 @@ bool _isZstdCompressed(Uint8List data) {
     return false;
   }
 
-  //  Signature of ZTSD decompression
+  // Signature of ZTSD decompression
   return data[0] == 0x28 &&
       data[1] == 0xB5 &&
       data[2] == 0x2F &&
@@ -39,7 +39,7 @@ class ByteBufInputStream {
 
   Future<ByteBuf> read() async {
     Uint8List data = await broadcastStream.first;
-    return decodeSimple(data);
+    return await decodeSimple(data);
   }
 
   static ByteBuf buffer = ByteBuf.empty(growable: true);
@@ -70,20 +70,6 @@ class ByteBufInputStream {
 
       return ByteBuf.empty();
     });
-  }
-
-  static ByteBuf decodeOld(Uint8List data) {
-
-    ByteBuf byffer = ByteBuf.wrap(data);
-
-    int messageLength = byffer.readInt32();
-
-    if (byffer.readableBytes == messageLength) {
-      Uint8List message = byffer.readBytes(messageLength);
-      return ByteBuf.wrap(message);
-    }
-
-    return ByteBuf.empty();
   }
 
   Stream<Uint8List> get stream => broadcastStream;

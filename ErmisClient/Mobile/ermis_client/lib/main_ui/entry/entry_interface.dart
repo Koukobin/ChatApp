@@ -14,17 +14,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import 'package:ermis_client/client/common/common.dart';
+import 'package:ermis_client/main_ui/custom_textfield.dart';
+import 'package:ermis_client/util/device_utils.dart';
 import 'package:ermis_client/util/dialogs_utils.dart';
 import 'package:flutter/material.dart';
 
-import 'constants/app_constants.dart';
-import 'theme/app_theme.dart';
-import 'main.dart';
-import 'util/database_service.dart';
-import 'util/top_app_bar_utils.dart';
-import 'client/client.dart';
-import 'util/transitions_util.dart';
+import '../../client/common/entry/added_info.dart';
+import '../../client/common/entry/create_account_info.dart';
+import '../../client/common/entry/entry_type.dart';
+import '../../client/common/entry/login_info.dart';
+import '../../client/common/results/ResultHolder.dart';
+import '../../client/common/results/entry_result.dart';
+import '../../constants/app_constants.dart';
+import '../../theme/app_theme.dart';
+import '../../main.dart';
+import '../../util/database_service.dart';
+import '../../util/top_app_bar_utils.dart';
+import '../../client/client.dart';
+import '../../util/transitions_util.dart';
 
 class RegistrationInterface extends StatefulWidget {
   final EntryType entryType;
@@ -34,16 +41,16 @@ class RegistrationInterface extends StatefulWidget {
   State<RegistrationInterface> createState() => RegistrationInterfaceState();
   
 }
+
 class RegistrationInterfaceState extends State<RegistrationInterface> {
+  static bool hasSwitched = false;
+
   // Controllers for user input
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   bool _useBackupverificationCode = false;
-  bool _obscureText = true;
-
-  Key key = UniqueKey();
 
   late List<Widget> loginWidgets;
   late List<Widget> createAccountWidgets;
@@ -55,6 +62,12 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
   void initState() {
     super.initState();
     // Can't access context here, so use didChangeDependencies if necessary
+  }
+
+    @override
+  void dispose() {
+    super.dispose();
+    hasSwitched = false;
   }
 
   @override
@@ -69,11 +82,15 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
         backgroundColor: appColors.primaryColor,
         textColor: appColors.secondaryColor,
         onPressed: () {
-          Navigator.of(context).pushAndRemoveUntil(
+          if (hasSwitched) {
+            Navigator.of(context).pop();
+            return;
+          }
+          hasSwitched = true;
+          Navigator.of(context).push(
               createVerticalTransition(
                   RegistrationInterface(entryType: EntryType.createAccount),
-                  DirectionYAxis.bottomToTop),
-              (route) => false);
+                  DirectionYAxis.bottomToTop));
         });
 
     switchToLogin = _buildButton(
@@ -82,11 +99,15 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
       backgroundColor: appColors.primaryColor,
       textColor: appColors.secondaryColor,
       onPressed: () {
-        Navigator.of(context).pushAndRemoveUntil(
+        if (hasSwitched) {
+          Navigator.of(context).pop();
+          return;
+        }
+        hasSwitched = false;
+        Navigator.of(context).push(
             createVerticalTransition(
                 RegistrationInterface(entryType: EntryType.login),
-                DirectionYAxis.topToBottom),
-            (route) => false);
+                DirectionYAxis.bottomToTop));
       },
     );
   }
@@ -98,13 +119,13 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
     bool isSuccessful = false;
 
     while (!verificationEntry.isVerificationComplete) {
-      showVerificationDialog(context: context, 
-      title: "Verification", 
-      promptMessage: "Enter verification code sent to your email", 
-      onResendCode: () => verificationEntry.resendVerificationCode(), 
-      onSubmitCode: (String verificationCode) {
-        verificationEntry.sendVerificationCode(verificationCode);
-      });
+      await _showVerificationDialog(
+          context: context,
+          title: "Verification",
+          promptMessage: "Enter verification code sent to your email",
+          onResendCode: () => verificationEntry.resendVerificationCode(),
+          onSumbittedCode: (int code) =>
+              verificationEntry.sendVerificationCode(code));
 
       entryResult = await verificationEntry.getResult();
       isSuccessful = entryResult.isSuccessful;
@@ -138,9 +159,9 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
 
     loginWidgets = [];
     loginWidgets.addAll([
-      _buildTextField(_emailController, "Email", false),
+      CustomTextField(controller: _emailController, hint: "Email"),
       SizedBox(height: 8),
-      _buildTextField(_passwordController, "Password", true),
+      CustomTextField(controller: _usernameController, hint: "Password", obscureText: true),
       SizedBox(height: 8),
       _buildButton(
         label: "Login",
@@ -150,6 +171,7 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
         onPressed: () async {
           LoginEntry loginEntry = Client.getInstance().createNewLoginEntry();
           loginEntry.sendEntryType();
+          loginEntry.addDeviceInfo(await getDeviceType(), await getDeviceDetails());
 
           if (_useBackupverificationCode) {
             loginEntry.togglePasswordType();
@@ -166,7 +188,9 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
           String resultMessage = entryResult.message;
 
           if (!isSuccessful) {
-            showSimpleAlertDialog(context: context, title: "Registration failed", content: resultMessage);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Registration failed: $resultMessage")),
+            );
             return;
           }
 
@@ -203,11 +227,11 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
 
     createAccountWidgets = [];
     createAccountWidgets.addAll([
-      _buildTextField(_emailController, "Email", false),
+      CustomTextField(controller: _emailController, hint: "Email"),
       SizedBox(height: 8),
-      _buildTextField(_usernameController, "Display Name", false),
+      CustomTextField(controller: _usernameController, hint: "Display Name"),
       SizedBox(height: 8),
-      _buildTextField(_passwordController, "Password", true),
+      CustomTextField(controller: _passwordController, hint: "Password", obscureText: true),
       SizedBox(height: 8),
       _buildButton(
         label: "Create Account",
@@ -217,6 +241,7 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
         onPressed: () async {
           CreateAccountEntry createAccountEntry = Client.getInstance().createNewCreateAccountEntry();
           createAccountEntry.sendEntryType();
+          createAccountEntry.addDeviceInfo(await getDeviceType(), await getDeviceDetails());
           createAccountEntry.sendCredentials({
             CreateAccountCredential.email: _emailController.text,
             CreateAccountCredential.username: _usernameController.text,
@@ -229,7 +254,7 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
           String resultMessage = entryResult.message;
 
           if (!isSuccessful) {
-            showSimpleAlertDialog(context: context, title: "Registration failed", content: resultMessage);
+            showSnackBarDialog(context: context, content: resultMessage);
             return;
           }
 
@@ -299,41 +324,6 @@ class RegistrationInterfaceState extends State<RegistrationInterface> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, bool obscureText) {
-    final appColors = Theme.of(context).extension<AppColors>()!;
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: controller,
-            obscureText: obscureText ? _obscureText : false,
-            decoration: InputDecoration(
-              hintText: hint,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              filled: true,
-              fillColor: appColors.inferiorColor,
-              suffixIcon: obscureText ? IconButton(
-                icon: Icon(
-                  _obscureText ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.black54,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscureText = !_obscureText;
-                  });
-                },
-              ) : null,
-            ),
-            style: TextStyle(color: appColors.secondaryColor),
-          ),
-        ),
-
-      ],
-    );
-  }
-
   Widget _buildButton({
     required String label,
     required IconData icon,
@@ -388,4 +378,101 @@ Widget _buildTextButton({
       style: TextStyle(fontSize: 18, color: textColor),
     ),
   );
+}
+
+Future<void> _showVerificationDialog({
+  required BuildContext context,
+  required String title,
+  required String promptMessage,
+  required VoidCallback onResendCode,
+  required void Function(int code) onSumbittedCode,
+}) async {
+  final TextEditingController codeController = TextEditingController();
+  bool isSubmitting = false;
+
+  await showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (BuildContext context, StateSetter setState) {
+          return AlertDialog(
+            title: Text(title),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(promptMessage),
+                const SizedBox(height: 16.0),
+                TextField(
+                  controller: codeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Enter Verification Code',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: isSubmitting
+                          ? null
+                          : () {
+                              onResendCode();
+                            },
+                      child: const Text('Resend Code'),
+                    ),
+                    ElevatedButton(
+                      onPressed: isSubmitting
+                          ? null
+                          : () {
+                              final codeString = codeController.text.trim();
+                              if (codeString.isEmpty) {
+                                showSnackBarDialog(
+                                    context: context,
+                                    content:
+                                        'Please enter the verification code');
+                                return;
+                              }
+
+                              int? codeInt = int.tryParse(codeString);
+
+                              if (codeInt == null) {
+                                showSnackBarDialog(
+                                    context: context,
+                                    content:
+                                        "Verification code must be number");
+                                return;
+                              }
+
+                              setState(() {
+                                isSubmitting = true;
+                              });
+
+                              // Set a delay to close dialog
+                              Future.delayed(const Duration(seconds: 1), () {
+                                Navigator.of(context).pop();
+                                onSumbittedCode(codeInt);
+                              }).whenComplete(() {
+                                setState(() {
+                                  isSubmitting = false;
+                                });
+                              });
+                            },
+                      child: isSubmitting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Submit'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  ).then((_) => codeController.clear());
 }
